@@ -246,25 +246,105 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
             </div>
           </div>
 
-          {/* Creature Display - Fixed at bottom */}
-          <div className="flex-shrink-0 bg-gradient-to-br from-slate-800/60 via-purple-900/20 to-cyan-900/20 border border-slate-700/50 backdrop-blur-sm rounded-xl p-6 text-center shadow-2xl">
-            <div className="text-6xl mb-4 animate-pulse">
-              {lesson.id === 1 ? (isValidated ? "👁️‍🗨️" : "😴") : "🧬"}
+          {/* Creature Display - Integrated and minimal */}
+          <div className="flex-shrink-0 relative h-96 flex flex-col items-center justify-center p-4">
+            {/* Creature Image - Integrated with breathing effects */}
+            <div className="relative flex items-center justify-center mb-6">
+              {lesson.id === 1 ? (
+                // Lesson 1: Show creature progression
+                currentStep === 0 ? (
+                  // Step 1 only: Egg waiting to hatch
+                  <div className="relative">
+                    <img
+                      src="/creatures/first_egg.png"
+                      alt="Creature egg"
+                      className="w-80 h-80 object-contain transition-all duration-1000 ease-in-out"
+                      style={{
+                        filter: "drop-shadow(0 0 15px rgba(139, 92, 246, 0.3))"
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-purple-400/5 rounded-full animate-pulse" style={{ animationDuration: '2s' }} />
+                  </div>
+                ) : (
+                  // Steps 2-5: Show the creature! Sleeping until step 5 is validated
+                  <div className="relative">
+                    <img
+                      src={isValidated && currentStep === 4 ? "/creatures/first_awake.png" : "/creatures/first_sleeping.png"}
+                      alt={isValidated && currentStep === 4 ? "Awakened creature" : "Sleeping creature"}
+                      className="w-80 h-80 object-contain transition-all duration-1000 ease-in-out"
+                      style={{
+                        filter: isValidated && currentStep === 4
+                          ? "drop-shadow(0 0 30px rgba(168, 85, 247, 0.6))" 
+                          : "drop-shadow(0 0 20px rgba(71, 85, 105, 0.4))"
+                      }}
+                    />
+                    {isValidated && currentStep === 4 && (
+                      <div className="absolute inset-0 bg-purple-400/10 rounded-full animate-pulse" style={{ animationDuration: '1.5s' }} />
+                    )}
+                    {/* Gentle breathing animation for sleeping creature */}
+                    {!(isValidated && currentStep === 4) && (
+                      <div className="absolute inset-0 bg-blue-400/3 rounded-full animate-pulse" style={{ animationDuration: '4s' }} />
+                    )}
+                  </div>
+                )
+              ) : lesson.id === 2 ? (
+                // Lesson 2: Show creature with body
+                <div className="relative">
+                  <img
+                    src="/creatures/second_body.png"
+                    alt="Creature with body"
+                    className="w-80 h-80 object-contain"
+                    style={{ filter: "drop-shadow(0 0 25px rgba(168, 85, 247, 0.5))" }}
+                  />
+                </div>
+              ) : (
+                // Future lessons: Placeholder
+                <div className="w-56 h-56 bg-slate-800/30 rounded-full flex items-center justify-center">
+                  <span className="text-7xl">🔬</span>
+                </div>
+              )}
             </div>
-            <h3 className="text-xl font-semibold bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent mb-2">
-              Your Creature
-            </h3>
-            <p className="text-slate-300 text-sm">
-              {lesson.id === 1 
-                ? (isValidated ? "🌟 Eyes are awakening! Your creature is coming to life!" : "💤 Sleeping peacefully... waiting for the awakening...")
-                : "🔬 Ready for bio-engineering..."
-              }
-            </p>
-            {isValidated && (
-              <div className="mt-3 text-xs text-green-400 animate-bounce">
-                ✨ Achievement Unlocked!
-              </div>
-            )}
+
+            {/* Text info - Below creature */}
+            <div className="text-center">
+              {/* Creature Name - Small and elegant */}
+              <h3 className="text-lg font-medium text-slate-300 mb-1">
+                {lesson.id === 1 ? (currentStep === 0 ? "Mysterious Egg" : "Bio-Specimen Alpha") : lesson.id === 2 ? "Enhanced Creature" : "Specimen"}
+              </h3>
+              
+              {/* Status - Very concise */}
+              <p className="text-xs text-slate-400 mb-3">
+                {lesson.id === 1 
+                  ? currentStep === 0
+                    ? "Waiting to hatch..."
+                    : currentStep < 4
+                      ? "Sleeping peacefully"
+                      : isValidated 
+                        ? "Fully conscious!"
+                        : "Ready to awaken"
+                  : lesson.id === 2 
+                    ? "Growing stronger"
+                    : "In development"
+                }
+              </p>
+
+              {/* Minimal Progress Indicators */}
+              {lesson.id === 1 && currentStep > 0 && (
+                <div className="flex justify-center space-x-1 mb-2">
+                  <div className={`w-1.5 h-1.5 rounded-full transition-colors ${currentStep >= 1 ? 'bg-purple-400/80' : 'bg-slate-600/50'}`} />
+                  <div className={`w-1.5 h-1.5 rounded-full transition-colors ${currentStep >= 2 ? 'bg-purple-400/80' : 'bg-slate-600/50'}`} />
+                  <div className={`w-1.5 h-1.5 rounded-full transition-colors ${currentStep >= 3 ? 'bg-purple-400/80' : 'bg-slate-600/50'}`} />
+                  <div className={`w-1.5 h-1.5 rounded-full transition-colors ${isValidated && currentStep >= 4 ? 'bg-green-400/80' : currentStep >= 4 ? 'bg-amber-400/80' : 'bg-slate-600/50'}`} />
+                </div>
+              )}
+
+              {/* Achievement - Only when earned */}
+              {isValidated && currentStep === 4 && lesson.id === 1 && (
+                <div className="text-center">
+                  <span className="text-xs text-green-400">✨ Awakened</span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
