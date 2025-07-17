@@ -244,14 +244,13 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
 
       <div className="flex flex-1 overflow-hidden">
         {/* Left Column: Instructions */}
-        <div className="w-1/2 p-6 flex flex-col relative">
-          <div className="flex-1 overflow-y-auto">
-            <div className="max-w-2xl">
+        <div className="w-2/5 p-4 flex flex-col">
+          <div className="max-w-none flex-1 flex flex-col">
               {/* Lesson Header */}
-              <div className="mb-8 pb-6 border-b border-slate-700/50">
-                <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-white via-slate-100 to-slate-300 bg-clip-text text-transparent leading-tight">{lesson.title}</h1>
-                <div className="flex items-center space-x-6 text-sm">
-                  <span className={`px-3 py-1.5 rounded-full font-medium ${
+              {/* <div className="mb-4 pb-3 border-b border-slate-700/50 flex-shrink-0">
+                <h1 className="text-3xl font-bold mb-3 bg-gradient-to-r from-white via-slate-100 to-slate-300 bg-clip-text text-transparent leading-tight">{lesson.title}</h1>
+                <div className="flex items-center space-x-4 text-sm">
+                  <span className={`px-2 py-1 rounded-full font-medium text-xs ${
                     lesson.difficulty === "Beginner" ? "bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-400 border border-green-500/30" :
                     lesson.difficulty === "Intermediate" ? "bg-gradient-to-r from-yellow-500/20 to-amber-500/20 text-yellow-400 border border-yellow-500/30" :
                     lesson.difficulty === "Advanced" ? "bg-gradient-to-r from-orange-500/20 to-red-500/20 text-orange-400 border border-orange-500/30" :
@@ -259,33 +258,28 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
                   }`}>
                     {lesson.difficulty}
                   </span>
-                  <span className="flex items-center space-x-2 text-slate-400 bg-slate-800/50 px-3 py-1.5 rounded-full">
+                  <span className="flex items-center space-x-1 text-slate-400 bg-slate-800/50 px-2 py-1 rounded-full text-xs">
                     <span>⏱️</span>
                     <span>{lesson.duration}</span>
                   </span>
                 </div>
-              </div>
+              </div> */}
 
               {/* Step Content */}
               {currentStepData && (
-                <div className="mb-8">
-                  <div className="bg-gradient-to-r from-purple-500/10 to-cyan-500/10 rounded-xl p-6 border border-purple-500/20 mb-6">
-                    <h2 className="text-2xl font-bold mb-2 bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
-                      {currentStepData.title}
-                    </h2>
-                  </div>
+                <div className="flex-1 flex flex-col min-h-0">
                   <div 
-                    className="prose prose-invert prose-purple max-w-none text-slate-200 leading-relaxed
-                    [&>h1]:text-3xl [&>h1]:font-bold [&>h1]:text-white [&>h1]:mb-6 [&>h1]:leading-tight
-                    [&>h2]:text-xl [&>h2]:font-semibold [&>h2]:text-purple-300 [&>h2]:mb-4 [&>h2]:mt-8
-                    [&>h3]:text-lg [&>h3]:font-medium [&>h3]:text-cyan-300 [&>h3]:mb-3 [&>h3]:mt-6
-                    [&>p]:mb-6 [&>p]:text-base [&>p]:leading-7 [&>p]:text-slate-200
-                    [&>ul]:mb-6 [&>ul]:space-y-2 [&>ol]:mb-6 [&>ol]:space-y-2
-                    [&>li]:text-slate-200 [&>li]:leading-6 [&>li]:pl-2
-                    [&>code]:bg-slate-800 [&>code]:text-purple-300 [&>code]:px-2 [&>code]:py-1 [&>code]:rounded [&>code]:text-sm [&>code]:font-mono
+                    className="prose prose-invert prose-purple max-w-none text-slate-200 leading-relaxed flex-1 overflow-y-auto
+                    [&>h1]:text-2xl [&>h1]:font-bold [&>h1]:text-white [&>h1]:mb-4 [&>h1]:leading-tight
+                    [&>h2]:text-lg [&>h2]:font-semibold [&>h2]:text-purple-300 [&>h2]:mb-3 [&>h2]:mt-4
+                    [&>h3]:text-base [&>h3]:font-medium [&>h3]:text-cyan-300 [&>h3]:mb-2 [&>h3]:mt-3
+                    [&>p]:mb-4 [&>p]:text-sm [&>p]:leading-6 [&>p]:text-slate-200
+                    [&>ul]:mb-4 [&>ul]:space-y-1 [&>ol]:mb-4 [&>ol]:space-y-1
+                    [&>li]:text-slate-200 [&>li]:leading-5 [&>li]:pl-1 [&>li]:text-sm
+                    [&>code]:bg-slate-800 [&>code]:text-purple-300 [&>code]:px-1 [&>code]:py-0.5 [&>code]:rounded [&>code]:text-xs [&>code]:font-mono
                     [&>strong]:text-white [&>strong]:font-semibold
                     [&>em]:text-slate-100 [&>em]:italic
-                    [&>blockquote]:border-l-4 [&>blockquote]:border-purple-500 [&>blockquote]:pl-4 [&>blockquote]:italic [&>blockquote]:text-slate-300 [&>blockquote]:bg-slate-800/30 [&>blockquote]:py-2 [&>blockquote]:my-4"
+                    [&>blockquote]:border-l-4 [&>blockquote]:border-purple-500 [&>blockquote]:pl-3 [&>blockquote]:italic [&>blockquote]:text-slate-300 [&>blockquote]:bg-slate-800/30 [&>blockquote]:py-2 [&>blockquote]:my-3"
                     dangerouslySetInnerHTML={{ __html: currentStepData.content }}
                   />
                 </div>
@@ -293,21 +287,21 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
 
               {/* Hint */}
               {currentStepData?.hint && (
-                <div className="mb-8">
+                <div className="mb-4 flex-shrink-0">
                   <button
                     onClick={() => setShowHint(!showHint)}
-                    className="flex items-center space-x-3 text-amber-400 hover:text-amber-300 transition-all duration-200 bg-amber-500/10 hover:bg-amber-500/20 px-4 py-2 rounded-lg border border-amber-500/30 hover:border-amber-500/50"
+                    className="flex items-center space-x-2 text-amber-400 hover:text-amber-300 transition-all duration-200 bg-amber-500/10 hover:bg-amber-500/20 px-3 py-1.5 rounded-lg border border-amber-500/30 hover:border-amber-500/50 text-sm"
                   >
-                    <span className="text-lg">💡</span>
+                    <span>💡</span>
                     <span className="font-medium">{showHint ? "Hide Hint" : "Show Hint"}</span>
                   </button>
                   {showHint && (
-                    <div className="mt-4 p-6 bg-gradient-to-r from-amber-900/30 to-yellow-900/20 border border-amber-600/40 rounded-xl backdrop-blur-sm">
+                    <div className="mt-3 p-4 bg-gradient-to-r from-amber-900/30 to-yellow-900/20 border border-amber-600/40 rounded-lg backdrop-blur-sm">
                       <div className="flex items-start space-x-3">
-                        <span className="text-2xl mt-1">💡</span>
+                        <span className="text-lg mt-0.5">💡</span>
                         <div>
-                          <h4 className="text-amber-300 font-semibold mb-2">Hint</h4>
-                          <p className="text-amber-100 leading-relaxed">{currentStepData.hint}</p>
+                          <h4 className="text-amber-300 font-semibold mb-1 text-sm">Hint</h4>
+                          <p className="text-amber-100 leading-relaxed text-sm">{currentStepData.hint}</p>
                         </div>
                       </div>
                     </div>
@@ -345,22 +339,22 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
               </div>
 
               {/* Navigation */}
-              <div className="flex justify-between items-center mb-8 p-6 bg-slate-800/30 rounded-xl border border-slate-700/50 backdrop-blur-sm">
+              <div className="flex justify-between items-center p-4 bg-slate-800/30 rounded-lg border border-slate-700/50 backdrop-blur-sm flex-shrink-0">
                 <button
                   onClick={previousStep}
                   disabled={currentStep === 0}
-                  className="px-6 py-3 bg-slate-700 hover:bg-slate-600 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg transition-all duration-200 font-medium flex items-center space-x-2 border border-slate-600 hover:border-slate-500"
+                  className="px-4 py-2 bg-slate-700 hover:bg-slate-600 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg transition-all duration-200 font-medium flex items-center space-x-1 border border-slate-600 hover:border-slate-500 text-sm"
                 >
                   <span>←</span>
                   <span>Previous</span>
                 </button>
 
-                <div className="flex space-x-3">
+                <div className="flex space-x-2">
                   {Array.from({ length: lesson.steps.length }, (_, i) => (
                     <button
                       key={i}
                       onClick={() => setCurrentStep(i)}
-                      className={`w-4 h-4 rounded-full transition-all duration-200 hover:scale-110 ${
+                      className={`w-3 h-3 rounded-full transition-all duration-200 hover:scale-110 ${
                         i === currentStep
                           ? "bg-gradient-to-r from-purple-400 to-cyan-400 shadow-lg shadow-purple-400/30"
                           : i < currentStep
@@ -377,135 +371,134 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
                     currentStep === lesson.steps.length - 1 ||
                     (currentStepData?.validation && !isValidated)
                   }
-                  className="px-6 py-3 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg transition-all duration-200 font-medium flex items-center space-x-2 shadow-lg"
+                  className="px-4 py-2 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg transition-all duration-200 font-medium flex items-center space-x-1 shadow-lg text-sm"
                 >
                   <span>{currentStep === lesson.steps.length - 1 ? "Complete" : "Next"}</span>
                   <span>→</span>
                 </button>
               </div>
             </div>
-          </div>
+        </div>
 
-          {/* Creature Display - Integrated and minimal */}
-          <div className="flex-shrink-0 relative flex flex-col items-center justify-center">
-            {/* Creature Image - Integrated with breathing effects */}
-            <div className="relative flex items-center justify-center mb-4">
-              {lesson.id === 1 ? (
-                // Lesson 1: Show creature progression
-                currentStep === 0 ? (
-                  // Step 1 only: Egg waiting to hatch
-                  <div className="relative">
-                    <img
-                      src="/creatures/first_egg.png"
-                      alt="Creature egg"
-                      className="w-80 h-80 object-contain transition-all duration-1000 ease-in-out"
-                      style={{
-                        filter: "drop-shadow(0 0 15px rgba(139, 92, 246, 0.3))"
-                      }}
-                    />
-                    <div className="absolute inset-0 bg-purple-400/5 rounded-full animate-pulse" style={{ animationDuration: '2s' }} />
-                  </div>
-                ) : (
-                  // Steps 2-5: Show the creature! Sleeping until step 5 is validated
-                  <div className="relative">
-                    <img
-                      src={isValidated && currentStep === 4 ? "/creatures/first_awake.png" : "/creatures/first_sleeping.png"}
-                      alt={isValidated && currentStep === 4 ? "Awakened creature" : "Sleeping creature"}
-                      className="w-80 h-80 object-contain transition-all duration-1000 ease-in-out"
-                      style={{
-                        filter: isValidated && currentStep === 4
-                          ? "drop-shadow(0 0 30px rgba(168, 85, 247, 0.6))" 
-                          : "drop-shadow(0 0 20px rgba(71, 85, 105, 0.4))"
-                      }}
-                    />
-                    {isValidated && currentStep === 4 && (
-                      <div className="absolute inset-0 bg-purple-400/10 rounded-full animate-pulse" style={{ animationDuration: '1.5s' }} />
-                    )}
-                    {/* Gentle breathing animation for sleeping creature */}
-                    {!(isValidated && currentStep === 4) && (
-                      <div className="absolute inset-0 bg-blue-400/3 rounded-full animate-pulse" style={{ animationDuration: '4s' }} />
-                    )}
-                  </div>
-                )
-              ) : lesson.id === 2 ? (
-                // Lesson 2: Show creature with body
+        {/* Center Column: Creature Display */}
+        <div className="w-1/5 flex flex-col items-center justify-center p-2 border-l border-r border-slate-700/50">
+          {/* Creature Image */}
+          <div className="relative flex items-center justify-center mb-3">
+            {lesson.id === 1 ? (
+              // Lesson 1: Show creature progression
+              currentStep === 0 ? (
+                // Step 1 only: Egg waiting to hatch
                 <div className="relative">
                   <img
-                    src="/creatures/second_body.png"
-                    alt="Creature with body"
-                    className="w-80 h-80 object-contain"
-                    style={{ filter: "drop-shadow(0 0 25px rgba(168, 85, 247, 0.5))" }}
+                    src="/creatures/first_egg.png"
+                    alt="Creature egg"
+                    className="w-48 h-48 object-contain transition-all duration-1000 ease-in-out"
+                    style={{
+                      filter: "drop-shadow(0 0 15px rgba(139, 92, 246, 0.3))"
+                    }}
                   />
+                  <div className="absolute inset-0 bg-purple-400/5 rounded-full animate-pulse" style={{ animationDuration: '2s' }} />
                 </div>
               ) : (
-                // Future lessons: Placeholder
-                <div className="w-56 h-56 bg-slate-800/30 rounded-full flex items-center justify-center">
-                  <span className="text-7xl">🔬</span>
+                // Steps 2-5: Show the creature! Sleeping until step 5 is validated
+                <div className="relative">
+                  <img
+                    src={isValidated && currentStep === 4 ? "/creatures/first_awake.png" : "/creatures/first_sleeping.png"}
+                    alt={isValidated && currentStep === 4 ? "Awakened creature" : "Sleeping creature"}
+                    className="w-48 h-48 object-contain transition-all duration-1000 ease-in-out"
+                    style={{
+                      filter: isValidated && currentStep === 4
+                        ? "drop-shadow(0 0 30px rgba(168, 85, 247, 0.6))" 
+                        : "drop-shadow(0 0 20px rgba(71, 85, 105, 0.4))"
+                    }}
+                  />
+                  {isValidated && currentStep === 4 && (
+                    <div className="absolute inset-0 bg-purple-400/10 rounded-full animate-pulse" style={{ animationDuration: '1.5s' }} />
+                  )}
+                  {/* Gentle breathing animation for sleeping creature */}
+                  {!(isValidated && currentStep === 4) && (
+                    <div className="absolute inset-0 bg-blue-400/3 rounded-full animate-pulse" style={{ animationDuration: '4s' }} />
+                  )}
                 </div>
-              )}
-            </div>
+              )
+            ) : lesson.id === 2 ? (
+              // Lesson 2: Show creature with body
+              <div className="relative">
+                <img
+                  src="/creatures/second_body.png"
+                  alt="Creature with body"
+                  className="w-48 h-48 object-contain"
+                  style={{ filter: "drop-shadow(0 0 25px rgba(168, 85, 247, 0.5))" }}
+                />
+              </div>
+            ) : (
+              // Future lessons: Placeholder
+              <div className="w-32 h-32 bg-slate-800/30 rounded-full flex items-center justify-center">
+                <span className="text-4xl">🔬</span>
+              </div>
+            )}
+          </div>
 
-            {/* Text info - Below creature */}
-            <div className="text-center">
-              {/* Creature Name - Small and elegant */}
-              <h3 className="text-lg font-medium text-slate-300 mb-1">
-                {lesson.id === 1 ? (currentStep === 0 ? "Mysterious Egg" : "Bio-Specimen Alpha") : lesson.id === 2 ? "Enhanced Creature" : "Specimen"}
-              </h3>
-              
-              {/* Status - Very concise */}
-              <p className="text-xs text-slate-400 mb-3">
-                {lesson.id === 1 
-                  ? currentStep === 0
-                    ? "Waiting to hatch..."
-                    : currentStep < 4
-                      ? "Sleeping peacefully"
-                      : isValidated 
-                        ? "Fully conscious!"
-                        : "Ready to awaken"
-                  : lesson.id === 2 
-                    ? "Growing stronger"
-                    : "In development"
-                }
-              </p>
+          {/* Creature Info */}
+          <div className="text-center space-y-2">
+            {/* Creature Name */}
+            <h3 className="text-sm font-medium text-slate-300">
+              {lesson.id === 1 ? (currentStep === 0 ? "Mysterious Egg" : "Bio-Specimen Alpha") : lesson.id === 2 ? "Enhanced Creature" : "Specimen"}
+            </h3>
+            
+            {/* Status */}
+            <p className="text-xs text-slate-400">
+              {lesson.id === 1 
+                ? currentStep === 0
+                  ? "Waiting to hatch..."
+                  : currentStep < 4
+                    ? "Sleeping peacefully"
+                    : isValidated 
+                      ? "Fully conscious!"
+                      : "Ready to awaken"
+                : lesson.id === 2 
+                  ? "Growing stronger"
+                  : "In development"
+              }
+            </p>
 
-              {/* Minimal Progress Indicators */}
-              {lesson.id === 1 && currentStep > 0 && (
-                <div className="flex justify-center space-x-1 mb-2">
-                  <div className={`w-1.5 h-1.5 rounded-full transition-colors ${currentStep >= 1 ? 'bg-purple-400/80' : 'bg-slate-600/50'}`} />
-                  <div className={`w-1.5 h-1.5 rounded-full transition-colors ${currentStep >= 2 ? 'bg-purple-400/80' : 'bg-slate-600/50'}`} />
-                  <div className={`w-1.5 h-1.5 rounded-full transition-colors ${currentStep >= 3 ? 'bg-purple-400/80' : 'bg-slate-600/50'}`} />
-                  <div className={`w-1.5 h-1.5 rounded-full transition-colors ${isValidated && currentStep >= 4 ? 'bg-green-400/80' : currentStep >= 4 ? 'bg-amber-400/80' : 'bg-slate-600/50'}`} />
-                </div>
-              )}
+            {/* Progress Indicators */}
+            {lesson.id === 1 && currentStep > 0 && (
+              <div className="flex justify-center space-x-1">
+                <div className={`w-1.5 h-1.5 rounded-full transition-colors ${currentStep >= 1 ? 'bg-purple-400/80' : 'bg-slate-600/50'}`} />
+                <div className={`w-1.5 h-1.5 rounded-full transition-colors ${currentStep >= 2 ? 'bg-purple-400/80' : 'bg-slate-600/50'}`} />
+                <div className={`w-1.5 h-1.5 rounded-full transition-colors ${currentStep >= 3 ? 'bg-purple-400/80' : 'bg-slate-600/50'}`} />
+                <div className={`w-1.5 h-1.5 rounded-full transition-colors ${isValidated && currentStep >= 4 ? 'bg-green-400/80' : currentStep >= 4 ? 'bg-amber-400/80' : 'bg-slate-600/50'}`} />
+              </div>
+            )}
 
-              {/* Achievement - Only when earned */}
-              {isValidated && currentStep === 4 && lesson.id === 1 && (
-                <div className="text-center">
-                  <span className="text-xs text-green-400">✨ Awakened</span>
-                </div>
-              )}
-            </div>
+            {/* Achievement */}
+            {isValidated && currentStep === 4 && lesson.id === 1 && (
+              <div className="text-center">
+                <span className="text-xs text-green-400 font-semibold">✨ Awakened</span>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Right Column: Code Workspace */}
-        <div className="w-1/2 border-l border-slate-700">
+        <div className="w-2/5 border-l border-slate-700">
           <div className="h-full flex flex-col">
             {/* Editor Header */}
-            <div className="border-b border-slate-700 p-4">
+            <div className="border-b border-slate-700 p-3 flex-shrink-0">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Code Workspace</h3>
+                <h3 className="text-base font-semibold">Code Workspace</h3>
                 <div className="flex space-x-2">
                   <button
                     onClick={resetCode}
-                    className="px-3 py-1 text-sm bg-slate-700 hover:bg-slate-600 rounded transition-colors"
+                    className="px-2 py-1 text-xs bg-slate-700 hover:bg-slate-600 rounded transition-colors"
                   >
                     Reset
                   </button>
                   {currentStepData?.validation && (
                     <button
                       onClick={validateUserCode}
-                      className="px-4 py-2 text-sm bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 rounded-lg transition-all duration-200 font-semibold shadow-lg"
+                      className="px-3 py-1.5 text-xs bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 rounded-lg transition-all duration-200 font-semibold shadow-lg"
                     >
                       🧬 Check Code
                     </button>
@@ -513,7 +506,7 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
                   {currentStepData?.expectedCode && (
                     <button
                       onClick={showSolution}
-                      className="px-3 py-1 text-sm bg-amber-600 hover:bg-amber-700 rounded transition-colors"
+                      className="px-2 py-1 text-xs bg-amber-600 hover:bg-amber-700 rounded transition-colors"
                     >
                       Solution
                     </button>
