@@ -1,12 +1,9 @@
-import { getSimpleChapterById } from "@/lib/simplified-chapters";
-import SimpleLab from "@/components/SimpleLab";
+import LessonLayout from "@/components/LessonLayout";
+import { getLessonById } from "@/lib/lessons";
 
 export default function SimplePage() {
-  const chapter = getSimpleChapterById(1);
+  // Use the first lesson as the simple page content
+  const lesson = getLessonById(1);
   
-  if (!chapter) {
-    return <div>Chapter not found</div>;
-  }
-
-  return <SimpleLab chapter={chapter} />;
+  return <LessonLayout lesson={lesson} />;
 } 

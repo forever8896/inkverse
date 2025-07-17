@@ -1,81 +1,9 @@
 import Link from "next/link";
-
-const lessons = [
-  {
-    id: 1,
-    title: "Your First Contract",
-    description: "Build a simple Flipper contract and learn the basics of ink! syntax",
-    difficulty: "Beginner",
-    duration: "15 min",
-    completed: false,
-    locked: false,
-  },
-  {
-    id: 2,
-    title: "Storage & State",
-    description: "Learn about different data types and how to manage contract state",
-    difficulty: "Beginner", 
-    duration: "20 min",
-    completed: false,
-    locked: true,
-  },
-  {
-    id: 3,
-    title: "Functions & Messages",
-    description: "Understand public and private functions, and message handling",
-    difficulty: "Intermediate",
-    duration: "25 min",
-    completed: false,
-    locked: true,
-  },
-  {
-    id: 4,
-    title: "Events & Logging",
-    description: "Emit and listen to events in your smart contracts",
-    difficulty: "Intermediate",
-    duration: "20 min", 
-    completed: false,
-    locked: true,
-  },
-  {
-    id: 5,
-    title: "Error Handling",
-    description: "Robust error management with Result types and custom errors",
-    difficulty: "Intermediate",
-    duration: "30 min",
-    completed: false,
-    locked: true,
-  },
-  {
-    id: 6,
-    title: "Testing Contracts",
-    description: "Write comprehensive unit and integration tests",
-    difficulty: "Advanced",
-    duration: "35 min",
-    completed: false,
-    locked: true,
-  },
-  {
-    id: 7,
-    title: "ERC-20 Token",
-    description: "Build a complete fungible token contract",
-    difficulty: "Advanced",
-    duration: "40 min",
-    completed: false,
-    locked: true,
-  },
-  {
-    id: 8,
-    title: "Advanced Patterns",
-    description: "Upgradeable contracts, access control, and design patterns",
-    difficulty: "Expert",
-    duration: "45 min",
-    completed: false,
-    locked: true,
-  },
-];
+import { getAllLessons } from "@/lib/lessons";
 
 export default function LessonsPage() {
+  const lessons = getAllLessons();
+
   return (
     <div className="min-h-screen">
       {/* Navigation */}
@@ -90,7 +18,7 @@ export default function LessonsPage() {
         </Link>
         <div className="flex items-center space-x-4">
           <div className="text-sm text-slate-400">
-            Progress: <span className="text-purple-400 font-semibold">0/8</span>
+            Progress: <span className="text-purple-400 font-semibold">0/{lessons.length}</span>
           </div>
         </div>
       </nav>
@@ -99,13 +27,13 @@ export default function LessonsPage() {
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold mb-4">
-            ink! Smart Contract{" "}
+            Bio-Engineering{" "}
             <span className="bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
-              Lessons
+              Creature
             </span>
           </h1>
           <p className="text-xl text-slate-300 max-w-2xl mx-auto">
-            Master ink! development through hands-on, interactive lessons that build upon each other
+            Create and evolve your own blockchain creature through interactive ink! smart contract lessons
           </p>
         </div>
 
@@ -118,7 +46,7 @@ export default function LessonsPage() {
         </div>
 
         {/* Lessons Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
           {lessons.map((lesson) => (
             <div
               key={lesson.id}
@@ -168,7 +96,7 @@ export default function LessonsPage() {
                   href={`/lessons/${lesson.id}`}
                   className="w-full bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-200 text-center block"
                 >
-                  {lesson.completed ? "Review Lesson" : "Start Lesson"}
+                  {lesson.completed ? "Review Lesson" : "Start Journey"}
                 </Link>
               ) : (
                 <div className="w-full bg-slate-700 text-slate-400 font-semibold py-3 px-4 rounded-lg text-center">
@@ -179,18 +107,49 @@ export default function LessonsPage() {
           ))}
         </div>
 
-        {/* Getting Started */}
-        <div className="mt-16 bg-slate-800/30 border border-slate-700 rounded-xl p-8">
-          <h2 className="text-2xl font-bold mb-4">Ready to Start?</h2>
+        {/* Creature Journey Info */}
+        <div className="bg-slate-800/30 border border-slate-700 rounded-xl p-8">
+          <h2 className="text-2xl font-bold mb-4">🧬 Your Creature Journey</h2>
           <p className="text-slate-300 mb-6">
-            Begin your journey into ink! smart contract development. No prior Rust knowledge required!
+            Embark on an epic bio-engineering adventure! Start with a simple creature and evolve it through 
+            each lesson until it becomes a fully conscious being living on the blockchain.
           </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div className="flex items-start space-x-3">
+              <div className="text-2xl">👁️</div>
+              <div>
+                <h3 className="font-semibold text-purple-400">Awakening</h3>
+                <p className="text-sm text-slate-400">Watch your creature open its eyes as you master ink! basics</p>
+              </div>
+            </div>
+            <div className="flex items-start space-x-3">
+              <div className="text-2xl">🦵</div>
+              <div>
+                <h3 className="font-semibold text-purple-400">Growth</h3>
+                <p className="text-sm text-slate-400">Add limbs and movement with functions and events</p>
+              </div>
+            </div>
+            <div className="flex items-start space-x-3">
+              <div className="text-2xl">🧪</div>
+              <div>
+                <h3 className="font-semibold text-purple-400">Consciousness</h3>
+                <p className="text-sm text-slate-400">Feed the elixir of life through contract testing</p>
+              </div>
+            </div>
+            <div className="flex items-start space-x-3">
+              <div className="text-2xl">🌍</div>
+              <div>
+                <h3 className="font-semibold text-purple-400">Freedom</h3>
+                <p className="text-sm text-slate-400">Deploy your creature to live on the blockchain forever</p>
+              </div>
+            </div>
+          </div>
           <div className="flex flex-col sm:flex-row gap-4">
             <Link
               href="/lessons/1"
               className="px-6 py-3 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 rounded-lg font-semibold transition-all duration-200 text-center"
             >
-              Start with Lesson 1 →
+              Begin Bio-Engineering →
             </Link>
             <a
               href="https://use.ink"
@@ -198,7 +157,7 @@ export default function LessonsPage() {
               rel="noopener noreferrer"
               className="px-6 py-3 border border-purple-400 hover:bg-purple-400/10 rounded-lg font-semibold transition-colors duration-200 text-center"
             >
-              View ink! Docs
+              Learn ink! Docs
             </a>
           </div>
         </div>

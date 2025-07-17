@@ -20,8 +20,10 @@ export default function CodeEditor({
   useEffect(() => {
     if (textareaRef.current) {
       // Auto-resize textarea based on content
+      const minHeight = 400;
       textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+      const newHeight = Math.max(minHeight, textareaRef.current.scrollHeight);
+      textareaRef.current.style.height = `${newHeight}px`;
     }
   }, [value]);
 
@@ -47,31 +49,33 @@ export default function CodeEditor({
     }
   };
 
-  return (
-    <div className="h-full code-editor">
-      <div className="h-full relative">
-        {/* Line numbers */}
-        <div className="absolute left-0 top-0 w-12 h-full bg-slate-800 border-r border-slate-600 flex flex-col text-slate-500 text-sm font-mono leading-6 p-2">
-          {value.split('\n').map((_, index) => (
-            <span key={index} className="block">
-              {index + 1}
-            </span>
-          ))}
-        </div>
+  const lineNumbers = value.split('\n').map((_, index) => index + 1);
 
-        {/* Code textarea */}
+  return (
+    <div className="h-full flex bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-lg overflow-hidden border border-slate-600 shadow-2xl">
+      {/* Line numbers */}
+      <div className="flex-shrink-0 w-14 bg-gradient-to-b from-slate-800 to-slate-700 border-r border-slate-600 text-slate-400 text-sm font-mono select-none py-4 px-3 overflow-hidden">
+        {lineNumbers.map((lineNum, index) => (
+          <div key={index} className="leading-6 text-right h-6 hover:text-purple-400 transition-colors">
+            {lineNum}
+          </div>
+        ))}
+      </div>
+
+      {/* Code textarea */}
+      <div className="flex-1 relative">
         <textarea
           ref={textareaRef}
           value={value}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
           readOnly={readOnly}
-          className="w-full h-full pl-16 pr-4 py-2 bg-transparent text-slate-100 font-mono text-sm leading-6 resize-none focus:outline-none focus:ring-0 border-0"
+          className="w-full h-full p-4 bg-transparent text-slate-100 font-mono text-sm leading-6 resize-none border-none outline-none caret-white selection:bg-purple-500/30 placeholder:text-slate-500"
           style={{
-            minHeight: '100%',
-            fontFamily: 'var(--font-mono), Consolas, Monaco, "Courier New", monospace',
+            fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
             lineHeight: '1.5',
             tabSize: 4,
+            minHeight: '400px',
           }}
           spellCheck={false}
           autoCapitalize="off"
@@ -79,39 +83,10 @@ export default function CodeEditor({
           autoCorrect="off"
           placeholder={readOnly ? "" : "// Start typing your ink! contract here..."}
         />
-
-        {/* Syntax highlighting overlay (simplified) */}
-        <div className="absolute inset-0 pl-16 pr-4 py-2 pointer-events-none font-mono text-sm leading-6 text-transparent">
-          <pre className="whitespace-pre-wrap break-words">
-            <code
-              dangerouslySetInnerHTML={{
-                __html: highlightRustCode(value)
-              }}
-            />
-          </pre>
-        </div>
+        
+        {/* Subtle gradient overlay for depth */}
+        <div className="absolute inset-0 pointer-events-none bg-gradient-to-r from-transparent via-transparent to-purple-500/5" />
       </div>
     </div>
   );
-}
-
-// Simple Rust syntax highlighting
-function highlightRustCode(code: string): string {
-  if (!code) return '';
-
-  return code
-    // Keywords
-    .replace(/\b(fn|pub|struct|impl|mod|use|let|mut|self|Self|const|static|if|else|match|for|while|loop|break|continue|return|true|false)\b/g, 
-      '<span style="color: #8b5cf6;">$1</span>')
-    // Attributes
-    .replace(/#\[([^\]]+)\]/g, '<span style="color: #06b6d4;">#[$1]</span>')
-    // Strings
-    .replace(/"([^"\\]|\\.)*"/g, '<span style="color: #10b981;">"$1"</span>')
-    // Comments
-    .replace(/(\/\/.*$)/gm, '<span style="color: #64748b;">$1</span>')
-    // Numbers
-    .replace(/\b\d+(\.\d+)?\b/g, '<span style="color: #f59e0b;">$&</span>')
-    // Types
-    .replace(/\b(bool|u8|u16|u32|u64|u128|i8|i16|i32|i64|i128|f32|f64|usize|isize|String|str|Vec|Option|Result)\b/g, 
-      '<span style="color: #ef4444;">$1</span>');
 } 
