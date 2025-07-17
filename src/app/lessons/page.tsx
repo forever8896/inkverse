@@ -9,12 +9,7 @@ export default function LessonsPage() {
       {/* Navigation */}
       <nav className="relative z-10 flex items-center justify-between p-6 border-b border-slate-800">
         <Link href="/" className="flex items-center space-x-2">
-          <div className="w-8 h-8 bg-gradient-to-br from-purple-400 to-cyan-400 rounded-lg flex items-center justify-center">
-            <span className="text-slate-900 font-bold text-xl">I</span>
-          </div>
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
-            Monsters ink!
-          </h1>
+          <img src="/logo.png" alt="Monsters ink!" className="h-24" />
         </Link>
         <div className="flex items-center space-x-4">
           <div className="text-sm text-slate-400">

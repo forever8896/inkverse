@@ -54,7 +54,7 @@ const lessons: Lesson[] = [
 <ul>
 <li><code>#![cfg_attr...]</code> - Rust configuration for blockchain deployment</li>
 <li><code>#[ink::contract]</code> - This tells Rust "this is an ink! smart contract"</li>
-<li><code>mod flipper</code> - Creates a module called "flipper" for our contract</li>
+<li><code>mod creature</code> - Creates a module called "creature" for our contract</li>
 </ul>
 
 <div style="background: #059669; border: 1px solid #10b981; border-radius: 8px; padding: 16px; margin: 16px 0; color: white;">
@@ -66,286 +66,265 @@ const lessons: Lesson[] = [
         code: `#![cfg_attr(not(feature = "std"), no_std, no_main)]
 
 #[ink::contract]
-mod flipper {
+mod creature {
     // Your creature will live here!
 }`,
         expectedCode: `#![cfg_attr(not(feature = "std"), no_std, no_main)]
 
 #[ink::contract]
-mod flipper {
+mod creature {
     // Your creature will live here!
 }`,
-        hint: "No code changes needed for this step - just familiarize yourself with the template!"
+        hint: "This is your foundation! Every ink! contract starts with '#![cfg_attr(not(feature = \"std\"), no_std, no_main)]' (this prepares it for blockchain) and '#[ink::contract]' (this tells Rust it's a smart contract). The 'mod creature' creates a module - think of it as a container for your creature's code. No changes needed here, just get familiar with the structure!"
       },
       {
         id: 2,
-        title: "🧠 Add a Brain (Storage)",
+        title: "🧠 Give Your Creature Memory",
         content: `
 <h1>Give Your Creature a Brain! 🧠</h1>
 
 <p>Every creature needs memory to remember if it's awake or asleep. In ink!, we call this <strong>storage</strong>.</p>
 
-<h2>What to do:</h2>
+<h2>Your Task:</h2>
+<p>Replace the comment <code>// Your creature will live here!</code> with a storage structure.</p>
+
+<h3>Step by step:</h3>
 <ol>
-<li>Look at the code on the right</li>
-<li>Find the comment <code>// Your creature will live here!</code></li>
-<li>Replace that comment with this storage structure:</li>
+<li>First, add the storage attribute: <code>#[ink(storage)]</code></li>
+<li>Then create a public struct called <code>Creature</code></li>
+<li>Inside the struct, add a field called <code>is_conscious</code> of type <code>bool</code></li>
+<li>Add a comment above the field explaining what it stores</li>
 </ol>
 
-<div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 16px; margin: 16px 0; font-family: monospace;">
-#[ink(storage)]<br>
-pub struct Flipper {<br>
-    /// Stores a single \`bool\` value on the storage.<br>
-    value: bool,<br>
-}
-</div>
-
 <div style="background: #1e293b; border: 1px solid #475569; border-radius: 8px; padding: 16px; margin: 16px 0;">
-<strong>📝 Your task:</strong> Copy the code above and paste it to replace the comment! Then click <strong>Check Code</strong> to validate.
+<strong>💡 Hint:</strong> Remember to use proper Rust syntax - struct fields need commas, and don't forget the curly braces!
 </div>
 
-<p>This creates your creature's brain that can remember one thing: whether it's awake (true) or asleep (false).</p>
+<div style="background: #451a03; border: 1px solid #92400e; border-radius: 8px; padding: 16px; margin: 16px 0; color: #fef3c7;">
+<strong>🎯 Goal:</strong> Create storage that tracks whether your creature is awake (conscious) or asleep!
+</div>
         `,
         code: `#![cfg_attr(not(feature = "std"), no_std, no_main)]
 
 #[ink::contract]
-mod flipper {
+mod creature {
     // Your creature will live here!
 }`,
         expectedCode: `#![cfg_attr(not(feature = "std"), no_std, no_main)]
 
 #[ink::contract]
-mod flipper {
-    /// Defines the storage of your contract.
-    /// Add new fields to the below struct in order
-    /// to add new static storage fields to your contract.
+mod creature {
+    /// The creature's memory - tracks its consciousness state
     #[ink(storage)]
-    pub struct Flipper {
-        /// Stores a single \`bool\` value on the storage.
-        value: bool,
+    pub struct Creature {
+        /// Whether the creature is currently conscious/awake
+        is_conscious: bool,
     }
 }`,
-        hint: "Replace the comment '// Your creature will live here!' with the storage struct code",
+        hint: "Think of this as giving your creature a brain! First, add #[ink(storage)] above your struct to tell ink! this will be stored on the blockchain. Then create 'pub struct Creature { is_conscious: bool, }' - the 'pub' makes it public, and don't forget the comma after the field!",
         validation: [
           { type: "includes", patterns: ["#[ink(storage)]"] },
-          { type: "includes", patterns: ["struct Flipper"] },
-          { type: "includes", patterns: ["value: bool"] },
+          { type: "includes", patterns: ["struct Creature"] },
+          { type: "includes", patterns: ["is_conscious"] },
+          { type: "includes", patterns: ["bool"] },
         ],
       },
       {
         id: 3,
-        title: "🐣 Birth Your Creature (Constructor)",
+        title: "🐣 Birth Your Creature",
         content: `
 <h1>Bring Your Creature to Life! 🐣</h1>
 
 <p>Now your creature needs a "birth ceremony" - a constructor that brings it to life when deployed to the blockchain.</p>
 
-<h2>What to do:</h2>
-<p>After the storage struct (after the closing <code>}</code>), add this constructor:</p>
+<h2>Your Task:</h2>
+<p>After the storage struct, create an implementation block with two constructors.</p>
 
-<div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 16px; margin: 16px 0; font-family: monospace;">
-<br>
-    impl Flipper {<br>
-        /// Constructor that initializes the \`bool\` value to the given \`init_value\`.<br>
-        #[ink(constructor)]<br>
-        pub fn new(init_value: bool) -> Self {<br>
-            Self { value: init_value }<br>
-        }<br>
-<br>
-        /// Constructor that initializes the \`bool\` value to \`false\`.<br>
-        #[ink(constructor)]<br>
-        pub fn default() -> Self {<br>
-            Self::new(Default::default())<br>
-        }<br>
-    }
-</div>
+<h3>Step by step:</h3>
+<ol>
+<li>Start with <code>impl Creature {</code></li>
+<li>Create a constructor called <code>birth_awake</code> that takes a <code>conscious</code> parameter</li>
+<li>Add the <code>#[ink(constructor)]</code> attribute above it</li>
+<li>Make it return <code>Self { is_conscious: conscious }</code></li>
+<li>Create another constructor called <code>birth_sleeping</code> with no parameters</li>
+<li>Make it call <code>Self::birth_awake(false)</code></li>
+<li>Don't forget to close the impl block with <code>}</code></li>
+</ol>
 
 <div style="background: #1e293b; border: 1px solid #475569; border-radius: 8px; padding: 16px; margin: 16px 0;">
-<strong>📝 Your task:</strong> Copy and paste this code after the storage struct! Then click <strong>Check Code</strong>.
+<strong>💡 Hint:</strong> Both functions need <code>pub fn</code> and the constructor attribute. The first one needs <code>-> Self</code> return type.
 </div>
 
-<p>This creates two ways to birth your creature: with a specific starting state, or asleep by default.</p>
+<div style="background: #451a03; border: 1px solid #92400e; border-radius: 8px; padding: 16px; margin: 16px 0; color: #fef3c7;">
+<strong>🎯 Goal:</strong> Create two ways to birth your creature - awake or sleeping!
+</div>
         `,
         code: `#![cfg_attr(not(feature = "std"), no_std, no_main)]
 
 #[ink::contract]
-mod flipper {
-    /// Defines the storage of your contract.
-    /// Add new fields to the below struct in order
-    /// to add new static storage fields to your contract.
+mod creature {
+    /// The creature's memory - tracks its consciousness state
     #[ink(storage)]
-    pub struct Flipper {
-        /// Stores a single \`bool\` value on the storage.
-        value: bool,
+    pub struct Creature {
+        /// Whether the creature is currently conscious/awake
+        is_conscious: bool,
     }
 }`,
         expectedCode: `#![cfg_attr(not(feature = "std"), no_std, no_main)]
 
 #[ink::contract]
-mod flipper {
-    /// Defines the storage of your contract.
-    /// Add new fields to the below struct in order
-    /// to add new static storage fields to your contract.
+mod creature {
+    /// The creature's memory - tracks its consciousness state
     #[ink(storage)]
-    pub struct Flipper {
-        /// Stores a single \`bool\` value on the storage.
-        value: bool,
+    pub struct Creature {
+        /// Whether the creature is currently conscious/awake
+        is_conscious: bool,
     }
 
-    impl Flipper {
-        /// Constructor that initializes the \`bool\` value to the given \`init_value\`.
+    impl Creature {
+        /// Birth a creature with a specific consciousness state
         #[ink(constructor)]
-        pub fn new(init_value: bool) -> Self {
-            Self { value: init_value }
+        pub fn birth_awake(conscious: bool) -> Self {
+            Self { is_conscious: conscious }
         }
 
-        /// Constructor that initializes the \`bool\` value to \`false\`.
-        ///
-        /// Constructors can delegate to other constructors.
+        /// Birth a creature that starts sleeping
         #[ink(constructor)]
-        pub fn default() -> Self {
-            Self::new(Default::default())
+        pub fn birth_sleeping() -> Self {
+            Self::birth_awake(false)
         }
     }
 }`,
-        hint: "Add the impl block with both constructors after the storage struct",
+        hint: "Constructors are like birth ceremonies! Create 'impl Creature {' first. Then add '#[ink(constructor)]' before each function. For 'birth_awake', it should be 'pub fn birth_awake(conscious: bool) -> Self { Self { is_conscious: conscious } }'. For 'birth_sleeping', just call the first one: 'Self::birth_awake(false)'. Don't forget the closing '}' for the impl block!",
         validation: [
-          { type: "includes", patterns: ["impl Flipper"] },
+          { type: "includes", patterns: ["impl Creature"] },
           { type: "includes", patterns: ["#[ink(constructor)]"] },
-          { type: "includes", patterns: ["pub fn new"] },
-          { type: "includes", patterns: ["pub fn default"] },
+          { type: "includes", patterns: ["birth_awake"] },
+          { type: "includes", patterns: ["birth_sleeping"] },
         ],
       },
       {
         id: 4,
-        title: "👁️ Teach Your Creature to Speak",
+        title: "👁️ Teach Your Creature to Respond",
         content: `
-<h1>Your Creature's First Words! 👁️‍🗨️</h1>
+<h1>Your Creature's First Communication! 👁️‍🗨️</h1>
 
-<p>Your creature can think, but it can't talk yet! Let's teach it to answer when someone asks "Are you awake?"</p>
+<p>Your creature can think, but it can't communicate yet! Let's teach it to respond when someone asks about its consciousness.</p>
 
-<h2>What to do:</h2>
-<p>Inside the <code>impl Flipper</code> block, after the constructors, add this getter function:</p>
+<h2>Your Task:</h2>
+<p>Add a message function that allows others to check if your creature is awake.</p>
 
-<div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 16px; margin: 16px 0; font-family: monospace;">
-<br>
-        /// Simply returns the current value of our \`bool\`.<br>
-        #[ink(message)]<br>
-        pub fn get(&self) -> bool {<br>
-            self.value<br>
-        }
-</div>
+<h3>Step by step:</h3>
+<ol>
+<li>Inside the existing <code>impl Creature</code> block (after the constructors)</li>
+<li>Add the <code>#[ink(message)]</code> attribute</li>
+<li>Create a public function called <code>is_awake</code></li>
+<li>It should take <code>&self</code> as parameter and return <code>bool</code></li>
+<li>Make it return <code>self.is_conscious</code></li>
+</ol>
 
 <div style="background: #1e293b; border: 1px solid #475569; border-radius: 8px; padding: 16px; margin: 16px 0;">
-<strong>📝 Your task:</strong> Copy and paste this inside the impl block, after the constructors! Then click <strong>Check Code</strong>.
+<strong>💡 Hint:</strong> Message functions are like getter methods - they let external users read the creature's state without changing it.
 </div>
 
-<p>This lets your creature answer "true" if it's awake or "false" if it's asleep. The <code>#[ink(message)]</code> makes it a public function that can be called from outside the contract.</p>
+<div style="background: #451a03; border: 1px solid #92400e; border-radius: 8px; padding: 16px; margin: 16px 0; color: #fef3c7;">
+<strong>🎯 Goal:</strong> Let your creature answer "Am I awake?" when asked!
+</div>
         `,
         code: `#![cfg_attr(not(feature = "std"), no_std, no_main)]
 
 #[ink::contract]
-mod flipper {
-    /// Defines the storage of your contract.
-    /// Add new fields to the below struct in order
-    /// to add new static storage fields to your contract.
+mod creature {
+    /// The creature's memory - tracks its consciousness state
     #[ink(storage)]
-    pub struct Flipper {
-        /// Stores a single \`bool\` value on the storage.
-        value: bool,
+    pub struct Creature {
+        /// Whether the creature is currently conscious/awake
+        is_conscious: bool,
     }
 
-    impl Flipper {
-        /// Constructor that initializes the \`bool\` value to the given \`init_value\`.
+    impl Creature {
+        /// Birth a creature with a specific consciousness state
         #[ink(constructor)]
-        pub fn new(init_value: bool) -> Self {
-            Self { value: init_value }
+        pub fn birth_awake(conscious: bool) -> Self {
+            Self { is_conscious: conscious }
         }
 
-        /// Constructor that initializes the \`bool\` value to \`false\`.
-        ///
-        /// Constructors can delegate to other constructors.
+        /// Birth a creature that starts sleeping
         #[ink(constructor)]
-        pub fn default() -> Self {
-            Self::new(Default::default())
+        pub fn birth_sleeping() -> Self {
+            Self::birth_awake(false)
         }
     }
 }`,
         expectedCode: `#![cfg_attr(not(feature = "std"), no_std, no_main)]
 
 #[ink::contract]
-mod flipper {
-    /// Defines the storage of your contract.
-    /// Add new fields to the below struct in order
-    /// to add new static storage fields to your contract.
+mod creature {
+    /// The creature's memory - tracks its consciousness state
     #[ink(storage)]
-    pub struct Flipper {
-        /// Stores a single \`bool\` value on the storage.
-        value: bool,
+    pub struct Creature {
+        /// Whether the creature is currently conscious/awake
+        is_conscious: bool,
     }
 
-    impl Flipper {
-        /// Constructor that initializes the \`bool\` value to the given \`init_value\`.
+    impl Creature {
+        /// Birth a creature with a specific consciousness state
         #[ink(constructor)]
-        pub fn new(init_value: bool) -> Self {
-            Self { value: init_value }
+        pub fn birth_awake(conscious: bool) -> Self {
+            Self { is_conscious: conscious }
         }
 
-        /// Constructor that initializes the \`bool\` value to \`false\`.
-        ///
-        /// Constructors can delegate to other constructors.
+        /// Birth a creature that starts sleeping
         #[ink(constructor)]
-        pub fn default() -> Self {
-            Self::new(Default::default())
+        pub fn birth_sleeping() -> Self {
+            Self::birth_awake(false)
         }
 
-        /// Simply returns the current value of our \`bool\`.
+        /// Check if the creature is currently awake
         #[ink(message)]
-        pub fn get(&self) -> bool {
-            self.value
+        pub fn is_awake(&self) -> bool {
+            self.is_conscious
         }
     }
 }`,
-        hint: "Add the get message function inside the impl block, after the constructors",
+        hint: "Message functions let others talk to your creature! Add '#[ink(message)]' above the function. Use '&self' for read-only access (like asking a question). The full function: 'pub fn is_awake(&self) -> bool { self.is_conscious }'. The '&self' means 'borrow me temporarily' and '-> bool' means 'return a true/false answer'.",
         validation: [
           { type: "includes", patterns: ["#[ink(message)]"] },
-          { type: "includes", patterns: ["pub fn get"] },
-          { type: "includes", patterns: ["self.value"] },
+          { type: "includes", patterns: ["pub fn is_awake"] },
+          { type: "includes", patterns: ["&self"] },
+          { type: "includes", patterns: ["self.is_conscious"] },
         ],
       },
       {
         id: 5,
-        title: "🔄 The Power of Transformation",
+        title: "🔄 The Power of Consciousness Toggle",
         content: `
-<h1>Ultimate Power: Shape-Shifting! 🔄</h1>
+<h1>Ultimate Power: Consciousness Control! 🔄</h1>
 
-<p>Now for the final magical power - let your creature flip between awake and asleep at will!</p>
+<p>Now for the final magical ability - let your creature control its own consciousness, switching between awake and asleep at will!</p>
 
-<h2>What to do:</h2>
-<p>Add one more function inside the <code>impl</code> block:</p>
+<h2>Your Task:</h2>
+<p>Add the final function that gives your creature the power to toggle its consciousness.</p>
 
-<div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 16px; margin: 16px 0; font-family: monospace;">
-<br>
-        /// A message that can be called on instantiated contracts.<br>
-        /// This one flips the value of the stored \`bool\` from \`true\`<br>
-        /// to \`false\` and vice versa.<br>
-        #[ink(message)]<br>
-        pub fn flip(&mut self) {<br>
-            self.value = !self.value;<br>
-        }
-</div>
+<h3>Step by step:</h3>
+<ol>
+<li>Add the <code>#[ink(message)]</code> attribute</li>
+<li>Create a public function called <code>toggle_consciousness</code></li>
+<li>It should take <code>&mut self</code> (mutable reference) and return nothing</li>
+<li>Inside, flip the consciousness: <code>self.is_conscious = !self.is_conscious;</code></li>
+</ol>
 
 <div style="background: #1e293b; border: 1px solid #475569; border-radius: 8px; padding: 16px; margin: 16px 0;">
-<strong>📝 Your task:</strong> Copy and paste this as the last function in your impl block! Then click <strong>Check Code</strong>.
+<strong>💡 Hint:</strong> Use <code>&mut self</code> because we're changing the creature's state. The <code>!</code> operator flips a boolean value.
 </div>
 
 <h2>🎉 Congratulations!</h2>
 <p>Once you add this, your creature will be complete! It can:</p>
 <ul>
-<li>✅ Remember if it's awake or asleep (storage)</li>
-<li>✅ Be born with a chosen state (constructors)</li>
-<li>✅ Tell others its state (getter)</li>
-<li>✅ Transform between awake and asleep (flipper)</li>
+<li>✅ Remember its consciousness state (storage)</li>
+<li>✅ Be born awake or sleeping (constructors)</li>
+<li>✅ Tell others if it's awake (getter)</li>
+<li>✅ Control its own consciousness (toggle)</li>
 </ul>
 
 <div style="background: #059669; border: 1px solid #10b981; border-radius: 8px; padding: 16px; margin: 16px 0; color: white;">
@@ -357,86 +336,76 @@ mod flipper {
         code: `#![cfg_attr(not(feature = "std"), no_std, no_main)]
 
 #[ink::contract]
-mod flipper {
-    /// Defines the storage of your contract.
-    /// Add new fields to the below struct in order
-    /// to add new static storage fields to your contract.
+mod creature {
+    /// The creature's memory - tracks its consciousness state
     #[ink(storage)]
-    pub struct Flipper {
-        /// Stores a single \`bool\` value on the storage.
-        value: bool,
+    pub struct Creature {
+        /// Whether the creature is currently conscious/awake
+        is_conscious: bool,
     }
 
-    impl Flipper {
-        /// Constructor that initializes the \`bool\` value to the given \`init_value\`.
+    impl Creature {
+        /// Birth a creature with a specific consciousness state
         #[ink(constructor)]
-        pub fn new(init_value: bool) -> Self {
-            Self { value: init_value }
+        pub fn birth_awake(conscious: bool) -> Self {
+            Self { is_conscious: conscious }
         }
 
-        /// Constructor that initializes the \`bool\` value to \`false\`.
-        ///
-        /// Constructors can delegate to other constructors.
+        /// Birth a creature that starts sleeping
         #[ink(constructor)]
-        pub fn default() -> Self {
-            Self::new(Default::default())
+        pub fn birth_sleeping() -> Self {
+            Self::birth_awake(false)
         }
 
-        /// Simply returns the current value of our \`bool\`.
+        /// Check if the creature is currently awake
         #[ink(message)]
-        pub fn get(&self) -> bool {
-            self.value
+        pub fn is_awake(&self) -> bool {
+            self.is_conscious
         }
     }
 }`,
         expectedCode: `#![cfg_attr(not(feature = "std"), no_std, no_main)]
 
 #[ink::contract]
-mod flipper {
-    /// Defines the storage of your contract.
-    /// Add new fields to the below struct in order
-    /// to add new static storage fields to your contract.
+mod creature {
+    /// The creature's memory - tracks its consciousness state
     #[ink(storage)]
-    pub struct Flipper {
-        /// Stores a single \`bool\` value on the storage.
-        value: bool,
+    pub struct Creature {
+        /// Whether the creature is currently conscious/awake
+        is_conscious: bool,
     }
 
-    impl Flipper {
-        /// Constructor that initializes the \`bool\` value to the given \`init_value\`.
+    impl Creature {
+        /// Birth a creature with a specific consciousness state
         #[ink(constructor)]
-        pub fn new(init_value: bool) -> Self {
-            Self { value: init_value }
+        pub fn birth_awake(conscious: bool) -> Self {
+            Self { is_conscious: conscious }
         }
 
-        /// Constructor that initializes the \`bool\` value to \`false\`.
-        ///
-        /// Constructors can delegate to other constructors.
+        /// Birth a creature that starts sleeping
         #[ink(constructor)]
-        pub fn default() -> Self {
-            Self::new(Default::default())
+        pub fn birth_sleeping() -> Self {
+            Self::birth_awake(false)
         }
 
-        /// A message that can be called on instantiated contracts.
-        /// This one flips the value of the stored \`bool\` from \`true\`
-        /// to \`false\` and vice versa.
+        /// Check if the creature is currently awake
         #[ink(message)]
-        pub fn flip(&mut self) {
-            self.value = !self.value;
+        pub fn is_awake(&self) -> bool {
+            self.is_conscious
         }
 
-        /// Simply returns the current value of our \`bool\`.
+        /// Toggle the creature's consciousness between awake and sleeping
         #[ink(message)]
-        pub fn get(&self) -> bool {
-            self.value
+        pub fn toggle_consciousness(&mut self) {
+            self.is_conscious = !self.is_conscious;
         }
     }
 }`,
-        hint: "Add the flip function inside the impl block, after the get function",
+        hint: "This gives your creature the power to change itself! Use '&mut self' for mutable access (permission to change things). The function: 'pub fn toggle_consciousness(&mut self) { self.is_conscious = !self.is_conscious; }'. The '!' operator is like a magic switch - it flips true to false and false to true. Don't forget the semicolon at the end!",
         validation: [
-          { type: "includes", patterns: ["pub fn flip"] },
+          { type: "includes", patterns: ["pub fn toggle_consciousness"] },
           { type: "includes", patterns: ["&mut self"] },
-          { type: "includes", patterns: ["self.value = !self.value"] },
+          { type: "includes", patterns: ["self.is_conscious = !self.is_conscious"] },
         ],
       },
     ],
