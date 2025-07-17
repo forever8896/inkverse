@@ -27,7 +27,7 @@ const characters: Character[] = [
   {
     id: "video_character",
     name: "Animated Being",
-    src: "/video.mp4",
+    src: "/creatures/output.webm",
     type: "video",
   },
 ];
@@ -119,7 +119,6 @@ export default function CharacterViewer() {
                 className="object-contain"
                 style={{
                   filter: getImageFilter(),
-                  mixBlendMode: "screen",
                 }}
               />
             ) : (
@@ -241,7 +240,6 @@ export default function CharacterViewer() {
                       className="absolute inset-0 w-full h-full object-cover"
                       style={{
                         filter: getImageFilter(),
-                        mixBlendMode: "screen",
                       }}
                     />
                   ) : (
