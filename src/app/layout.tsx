@@ -13,12 +13,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Inkverse - Learn ink! Smart Contract Development",
+  title: "The ink!stitute - Learn ink! Smart Contract Development",
   description: "Interactive tutorial for learning ink! smart contract development on Polkadot and Substrate chains. Master Rust-based Web3 development with hands-on lessons.",
   keywords: "ink!, smart contracts, Polkadot, Substrate, Rust, Web3, blockchain development, tutorial",
-  authors: [{ name: "Inkverse Team" }],
+  authors: [{ name: "The ink!stitute Team" }],
   openGraph: {
-    title: "Inkverse - Learn ink! Smart Contract Development",
+    title: "The ink!stitute - Learn ink! Smart Contract Development",
     description: "Interactive tutorial for learning ink! smart contract development on Polkadot and Substrate chains.",
     type: "website",
   },
