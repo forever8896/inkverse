@@ -30,7 +30,8 @@ const lessons: Lesson[] = [
   {
     id: 1,
     title: "Your First Contract",
-    description: "Build a simple Flipper contract and learn the basics of ink! syntax",
+    description:
+      "Build a simple Flipper contract and learn the basics of ink! syntax",
     difficulty: "Beginner",
     duration: "15 min",
     completed: false,
@@ -39,7 +40,7 @@ const lessons: Lesson[] = [
       "Understand the basic structure of an ink! contract",
       "Learn about contract storage and state",
       "Write constructor and message functions",
-      "Compile your first contract"
+      "Compile your first contract",
     ],
     steps: [
       {
@@ -104,8 +105,8 @@ mod flipper {
         validation: [
           { type: "includes", patterns: ["#[ink(storage)]"] },
           { type: "includes", patterns: ["struct Flipper"] },
-          { type: "includes", patterns: ["value: bool"] }
-        ]
+          { type: "includes", patterns: ["value: bool"] },
+        ],
       },
       {
         id: 3,
@@ -155,8 +156,8 @@ mod flipper {
           { type: "includes", patterns: ["#[ink(constructor)]"] },
           { type: "includes", patterns: ["pub fn new"] },
           { type: "includes", patterns: ["init_value: bool"] },
-          { type: "includes", patterns: ["-> Self"] }
-        ]
+          { type: "includes", patterns: ["-> Self"] },
+        ],
       },
       {
         id: 4,
@@ -227,8 +228,8 @@ mod flipper {
           { type: "includes", patterns: ["#[ink(message)]"] },
           { type: "includes", patterns: ["pub fn get"] },
           { type: "includes", patterns: ["pub fn flip"] },
-          { type: "includes", patterns: ["&mut self"] }
-        ]
+          { type: "includes", patterns: ["&mut self"] },
+        ],
       },
       {
         id: 5,
@@ -261,14 +262,14 @@ In the next lesson, we'll explore different data types and more complex storage 
 
 Ready to continue your ink! journey?
         `,
-      }
-    ]
+      },
+    ],
   },
   // Additional lessons would be added here...
 ];
 
 export function getLessonById(id: number): Lesson | undefined {
-  return lessons.find(lesson => lesson.id === id);
+  return lessons.find((lesson) => lesson.id === id);
 }
 
 export function getAllLessons(): Lesson[] {
@@ -276,25 +277,25 @@ export function getAllLessons(): Lesson[] {
 }
 
 export function getNextLesson(currentId: number): Lesson | undefined {
-  return lessons.find(lesson => lesson.id === currentId + 1);
+  return lessons.find((lesson) => lesson.id === currentId + 1);
 }
 
 export function getPreviousLesson(currentId: number): Lesson | undefined {
-  return lessons.find(lesson => lesson.id === currentId - 1);
+  return lessons.find((lesson) => lesson.id === currentId - 1);
 }
 
 // Client-side validation function
 export function validateCode(code: string, rules: ValidationRule[]): boolean {
-  return rules.every(rule => {
+  return rules.every((rule) => {
     switch (rule.type) {
       case "includes":
-        return rule.patterns.every(pattern => code.includes(pattern));
+        return rule.patterns.every((pattern) => code.includes(pattern));
       case "excludes":
-        return rule.patterns.every(pattern => !code.includes(pattern));
+        return rule.patterns.every((pattern) => !code.includes(pattern));
       case "regex":
-        return rule.patterns.every(pattern => new RegExp(pattern).test(code));
+        return rule.patterns.every((pattern) => new RegExp(pattern).test(code));
       default:
         return true;
     }
   });
-} 
+}

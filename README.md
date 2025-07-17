@@ -1,36 +1,25 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Bio-Engineering Creature
 
-## Getting Started
+## Lesson Plan
 
-First, run the development server:
+### Lesson 1:
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+A simple creature with two closed eyes. Once they deploy the flipper contract on chain, its eyes open.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Teach: basics, syntax
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Lesson 2:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+What sort of body/legs do you want to add to creature, walking speed.
 
-## Learn More
+Teach: functions/events.
 
-To learn more about Next.js, take a look at the following resources:
+### Lesson 3:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Your creature is thirsty and needs a drink. Animate drinking. It drinks the elixir of life and becomes super conscious.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Teach: drink basic integration test, simulate calling contract
 
-## Deploy on Vercel
+### Lesson 4:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Deploy your creature into the wild with PopCLI.
