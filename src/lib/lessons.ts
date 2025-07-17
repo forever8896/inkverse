@@ -29,79 +29,103 @@ export interface Lesson {
 const lessons: Lesson[] = [
   {
     id: 1,
-    title: "Your First Contract",
-    description:
-      "Build a simple Flipper contract and learn the basics of ink! syntax",
+    title: "Awakening Eyes",
+    description: "Create a simple creature with closed eyes. Deploy your first flipper contract to bring it to life!",
     difficulty: "Beginner",
-    duration: "15 min",
-    completed: false,
-    locked: false,
+    duration: "20 min",
     objectives: [
-      "Understand the basic structure of an ink! contract",
-      "Learn about contract storage and state",
-      "Write constructor and message functions",
-      "Compile your first contract",
+      "Understand ink! contract basics and syntax",
+      "Create your first bio-engineered creature",
+      "Deploy a flipper contract on-chain",
+      "Watch your creature's eyes open for the first time"
     ],
     steps: [
       {
         id: 1,
-        title: "Welcome to ink!",
+        title: "🧬 Your First ink! Contract",
         content: `
-# Welcome to ink! Smart Contracts! 🎉
+<h1>Welcome to Bio-Engineering! 🧬</h1>
 
-**ink!** is Parity's smart contract language for the Polkadot ecosystem. It's built on top of Rust, which means you get all the safety and performance benefits of Rust, plus the ability to deploy on any Substrate-based blockchain.
+<p>You're about to create your first digital creature using ink! - Polkadot's smart contract language!</p>
 
-## What makes ink! special?
+<p>On the right, you'll see the basic template for an ink! smart contract. This is the foundation that every ink! contract needs.</p>
 
-- **Memory Safe**: Built on Rust, ink! prevents common vulnerabilities
-- **Fast Execution**: Compiles to WebAssembly for blazing performance  
-- **Interoperable**: Deploy on Polkadot, Kusama, and all Substrate chains
-- **Developer Friendly**: Use familiar Rust tooling and ecosystem
+<h2>What you see:</h2>
+<ul>
+<li><code>#![cfg_attr...]</code> - Rust configuration for blockchain deployment</li>
+<li><code>#[ink::contract]</code> - This tells Rust "this is an ink! smart contract"</li>
+<li><code>mod flipper</code> - Creates a module called "flipper" for our contract</li>
+</ul>
 
-In this lesson, we'll build a simple "Flipper" contract - the "Hello World" of smart contracts. It stores a boolean value that can be flipped between true and false.
+<div style="background: #059669; border: 1px solid #10b981; border-radius: 8px; padding: 16px; margin: 16px 0; color: white;">
+<strong>✅ Perfect!</strong> This template is ready. Click <strong>Next →</strong> to start building your creature!
+</div>
 
-Let's start by looking at the basic structure of an ink! contract!
+<p>No code changes needed for this step - just get familiar with the structure! 🎉</p>
         `,
+        code: `#![cfg_attr(not(feature = "std"), no_std, no_main)]
+
+#[ink::contract]
+mod flipper {
+    // Your creature will live here!
+}`,
+        expectedCode: `#![cfg_attr(not(feature = "std"), no_std, no_main)]
+
+#[ink::contract]
+mod flipper {
+    // Your creature will live here!
+}`,
+        hint: "No code changes needed for this step - just familiarize yourself with the template!"
       },
       {
         id: 2,
-        title: "Contract Structure",
+        title: "🧠 Add a Brain (Storage)",
         content: `
-# Basic Contract Structure
+<h1>Give Your Creature a Brain! 🧠</h1>
 
-Every ink! contract follows a similar pattern. Let's break down the key components:
+<p>Every creature needs memory to remember if it's awake or asleep. In ink!, we call this <strong>storage</strong>.</p>
 
-## 1. Contract Module
-The contract is defined inside a module with the \`#[ink::contract]\` attribute.
+<h2>What to do:</h2>
+<ol>
+<li>Look at the code on the right</li>
+<li>Find the comment <code>// Your creature will live here!</code></li>
+<li>Replace that comment with this storage structure:</li>
+</ol>
 
-## 2. Storage Struct  
-This defines what data your contract stores on the blockchain.
+<div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 16px; margin: 16px 0; font-family: monospace;">
+#[ink(storage)]<br>
+pub struct Flipper {<br>
+    /// Stores a single \`bool\` value on the storage.<br>
+    value: bool,<br>
+}
+</div>
 
-## 3. Implementation Block
-Contains your constructor and message functions.
+<div style="background: #1e293b; border: 1px solid #475569; border-radius: 8px; padding: 16px; margin: 16px 0;">
+<strong>📝 Your task:</strong> Copy the code above and paste it to replace the comment! Then click <strong>Check Code</strong> to validate.
+</div>
 
-Let's build our Flipper contract step by step. Start by creating the contract module and storage:
+<p>This creates your creature's brain that can remember one thing: whether it's awake (true) or asleep (false).</p>
         `,
-        code: `#![cfg_attr(not(feature = "std"), no_std)]
-
-use ink_lang as ink;
+        code: `#![cfg_attr(not(feature = "std"), no_std, no_main)]
 
 #[ink::contract]
 mod flipper {
-    // TODO: Add storage struct here
+    // Your creature will live here!
 }`,
-        expectedCode: `#![cfg_attr(not(feature = "std"), no_std)]
-
-use ink_lang as ink;
+        expectedCode: `#![cfg_attr(not(feature = "std"), no_std, no_main)]
 
 #[ink::contract]
 mod flipper {
+    /// Defines the storage of your contract.
+    /// Add new fields to the below struct in order
+    /// to add new static storage fields to your contract.
     #[ink(storage)]
     pub struct Flipper {
+        /// Stores a single \`bool\` value on the storage.
         value: bool,
     }
 }`,
-        hint: "Add a storage struct with the #[ink(storage)] attribute that contains a boolean field called 'value'",
+        hint: "Replace the comment '// Your creature will live here!' with the storage struct code",
         validation: [
           { type: "includes", patterns: ["#[ink(storage)]"] },
           { type: "includes", patterns: ["struct Flipper"] },
@@ -110,162 +134,363 @@ mod flipper {
       },
       {
         id: 3,
-        title: "Constructor Function",
+        title: "🐣 Birth Your Creature (Constructor)",
         content: `
-# Adding the Constructor
+<h1>Bring Your Creature to Life! 🐣</h1>
 
-Great! Now we need to add a constructor function. In ink!, constructors are marked with \`#[ink(constructor)]\` and are responsible for initializing the contract's storage.
+<p>Now your creature needs a "birth ceremony" - a constructor that brings it to life when deployed to the blockchain.</p>
 
-Our Flipper contract will have a constructor that takes an initial boolean value:
+<h2>What to do:</h2>
+<p>After the storage struct (after the closing <code>}</code>), add this constructor:</p>
+
+<div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 16px; margin: 16px 0; font-family: monospace;">
+<br>
+    impl Flipper {<br>
+        /// Constructor that initializes the \`bool\` value to the given \`init_value\`.<br>
+        #[ink(constructor)]<br>
+        pub fn new(init_value: bool) -> Self {<br>
+            Self { value: init_value }<br>
+        }<br>
+<br>
+        /// Constructor that initializes the \`bool\` value to \`false\`.<br>
+        #[ink(constructor)]<br>
+        pub fn default() -> Self {<br>
+            Self::new(Default::default())<br>
+        }<br>
+    }
+</div>
+
+<div style="background: #1e293b; border: 1px solid #475569; border-radius: 8px; padding: 16px; margin: 16px 0;">
+<strong>📝 Your task:</strong> Copy and paste this code after the storage struct! Then click <strong>Check Code</strong>.
+</div>
+
+<p>This creates two ways to birth your creature: with a specific starting state, or asleep by default.</p>
         `,
-        code: `#![cfg_attr(not(feature = "std"), no_std)]
-
-use ink_lang as ink;
+        code: `#![cfg_attr(not(feature = "std"), no_std, no_main)]
 
 #[ink::contract]
 mod flipper {
+    /// Defines the storage of your contract.
+    /// Add new fields to the below struct in order
+    /// to add new static storage fields to your contract.
     #[ink(storage)]
     pub struct Flipper {
+        /// Stores a single \`bool\` value on the storage.
         value: bool,
-    }
-
-    impl Flipper {
-        // TODO: Add constructor function here
     }
 }`,
-        expectedCode: `#![cfg_attr(not(feature = "std"), no_std)]
-
-use ink_lang as ink;
+        expectedCode: `#![cfg_attr(not(feature = "std"), no_std, no_main)]
 
 #[ink::contract]
 mod flipper {
+    /// Defines the storage of your contract.
+    /// Add new fields to the below struct in order
+    /// to add new static storage fields to your contract.
     #[ink(storage)]
     pub struct Flipper {
+        /// Stores a single \`bool\` value on the storage.
         value: bool,
     }
 
     impl Flipper {
+        /// Constructor that initializes the \`bool\` value to the given \`init_value\`.
         #[ink(constructor)]
         pub fn new(init_value: bool) -> Self {
             Self { value: init_value }
         }
+
+        /// Constructor that initializes the \`bool\` value to \`false\`.
+        ///
+        /// Constructors can delegate to other constructors.
+        #[ink(constructor)]
+        pub fn default() -> Self {
+            Self::new(Default::default())
+        }
     }
 }`,
-        hint: "Add a constructor function with #[ink(constructor)] that takes a bool parameter and returns Self",
+        hint: "Add the impl block with both constructors after the storage struct",
         validation: [
+          { type: "includes", patterns: ["impl Flipper"] },
           { type: "includes", patterns: ["#[ink(constructor)]"] },
           { type: "includes", patterns: ["pub fn new"] },
-          { type: "includes", patterns: ["init_value: bool"] },
-          { type: "includes", patterns: ["-> Self"] },
+          { type: "includes", patterns: ["pub fn default"] },
         ],
       },
       {
         id: 4,
-        title: "Message Functions",
+        title: "👁️ Teach Your Creature to Speak",
         content: `
-# Adding Message Functions
+<h1>Your Creature's First Words! 👁️‍🗨️</h1>
 
-Now let's add the core functionality! Message functions are public functions that can be called by users. They're marked with \`#[ink(message)]\`.
+<p>Your creature can think, but it can't talk yet! Let's teach it to answer when someone asks "Are you awake?"</p>
 
-We need two functions:
-- \`get()\` - Returns the current value (read-only)
-- \`flip()\` - Toggles the boolean value (modifies state)
+<h2>What to do:</h2>
+<p>Inside the <code>impl Flipper</code> block, after the constructors, add this getter function:</p>
 
-Add these functions to complete your Flipper contract:
+<div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 16px; margin: 16px 0; font-family: monospace;">
+<br>
+        /// Simply returns the current value of our \`bool\`.<br>
+        #[ink(message)]<br>
+        pub fn get(&self) -> bool {<br>
+            self.value<br>
+        }
+</div>
+
+<div style="background: #1e293b; border: 1px solid #475569; border-radius: 8px; padding: 16px; margin: 16px 0;">
+<strong>📝 Your task:</strong> Copy and paste this inside the impl block, after the constructors! Then click <strong>Check Code</strong>.
+</div>
+
+<p>This lets your creature answer "true" if it's awake or "false" if it's asleep. The <code>#[ink(message)]</code> makes it a public function that can be called from outside the contract.</p>
         `,
-        code: `#![cfg_attr(not(feature = "std"), no_std)]
-
-use ink_lang as ink;
+        code: `#![cfg_attr(not(feature = "std"), no_std, no_main)]
 
 #[ink::contract]
 mod flipper {
+    /// Defines the storage of your contract.
+    /// Add new fields to the below struct in order
+    /// to add new static storage fields to your contract.
     #[ink(storage)]
     pub struct Flipper {
+        /// Stores a single \`bool\` value on the storage.
         value: bool,
     }
 
     impl Flipper {
+        /// Constructor that initializes the \`bool\` value to the given \`init_value\`.
         #[ink(constructor)]
         pub fn new(init_value: bool) -> Self {
             Self { value: init_value }
         }
 
-        // TODO: Add get() message function here
-
-        // TODO: Add flip() message function here
+        /// Constructor that initializes the \`bool\` value to \`false\`.
+        ///
+        /// Constructors can delegate to other constructors.
+        #[ink(constructor)]
+        pub fn default() -> Self {
+            Self::new(Default::default())
+        }
     }
 }`,
-        expectedCode: `#![cfg_attr(not(feature = "std"), no_std)]
-
-use ink_lang as ink;
+        expectedCode: `#![cfg_attr(not(feature = "std"), no_std, no_main)]
 
 #[ink::contract]
 mod flipper {
+    /// Defines the storage of your contract.
+    /// Add new fields to the below struct in order
+    /// to add new static storage fields to your contract.
     #[ink(storage)]
     pub struct Flipper {
+        /// Stores a single \`bool\` value on the storage.
         value: bool,
     }
 
     impl Flipper {
+        /// Constructor that initializes the \`bool\` value to the given \`init_value\`.
         #[ink(constructor)]
         pub fn new(init_value: bool) -> Self {
             Self { value: init_value }
         }
 
+        /// Constructor that initializes the \`bool\` value to \`false\`.
+        ///
+        /// Constructors can delegate to other constructors.
+        #[ink(constructor)]
+        pub fn default() -> Self {
+            Self::new(Default::default())
+        }
+
+        /// Simply returns the current value of our \`bool\`.
         #[ink(message)]
         pub fn get(&self) -> bool {
             self.value
         }
-
-        #[ink(message)]
-        pub fn flip(&mut self) {
-            self.value = !self.value;
-        }
     }
 }`,
-        hint: "Add two message functions: get(&self) -> bool and flip(&mut self). Use #[ink(message)] attribute.",
+        hint: "Add the get message function inside the impl block, after the constructors",
         validation: [
           { type: "includes", patterns: ["#[ink(message)]"] },
           { type: "includes", patterns: ["pub fn get"] },
-          { type: "includes", patterns: ["pub fn flip"] },
-          { type: "includes", patterns: ["&mut self"] },
+          { type: "includes", patterns: ["self.value"] },
         ],
       },
       {
         id: 5,
-        title: "Congratulations!",
+        title: "🔄 The Power of Transformation",
         content: `
-# 🎉 Congratulations! You've built your first ink! contract!
+<h1>Ultimate Power: Shape-Shifting! 🔄</h1>
 
-You've successfully created a complete Flipper contract that demonstrates the core concepts of ink! development:
+<p>Now for the final magical power - let your creature flip between awake and asleep at will!</p>
 
-## What you've learned:
-- ✅ Contract module structure with \`#[ink::contract]\`
-- ✅ Storage definition with \`#[ink(storage)]\`  
-- ✅ Constructor functions with \`#[ink(constructor)]\`
-- ✅ Message functions with \`#[ink(message)]\`
-- ✅ Mutable vs immutable references (\`&mut self\` vs \`&self\`)
+<h2>What to do:</h2>
+<p>Add one more function inside the <code>impl</code> block:</p>
 
-## Key concepts:
-- **Storage**: Where your contract's data lives on the blockchain
-- **Constructor**: Initializes your contract when it's deployed
-- **Messages**: Public functions that users can call
-- **Mutability**: Functions that modify state need \`&mut self\`
+<div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 16px; margin: 16px 0; font-family: monospace;">
+<br>
+        /// A message that can be called on instantiated contracts.<br>
+        /// This one flips the value of the stored \`bool\` from \`true\`<br>
+        /// to \`false\` and vice versa.<br>
+        #[ink(message)]<br>
+        pub fn flip(&mut self) {<br>
+            self.value = !self.value;<br>
+        }
+</div>
 
-Your Flipper contract can now:
-- Store a boolean value on the blockchain
-- Read the current value with \`get()\`
-- Toggle the value with \`flip()\`
+<div style="background: #1e293b; border: 1px solid #475569; border-radius: 8px; padding: 16px; margin: 16px 0;">
+<strong>📝 Your task:</strong> Copy and paste this as the last function in your impl block! Then click <strong>Check Code</strong>.
+</div>
 
-## Next Steps
-In the next lesson, we'll explore different data types and more complex storage patterns. You'll learn how to store numbers, strings, collections, and custom types.
+<h2>🎉 Congratulations!</h2>
+<p>Once you add this, your creature will be complete! It can:</p>
+<ul>
+<li>✅ Remember if it's awake or asleep (storage)</li>
+<li>✅ Be born with a chosen state (constructors)</li>
+<li>✅ Tell others its state (getter)</li>
+<li>✅ Transform between awake and asleep (flipper)</li>
+</ul>
 
-Ready to continue your ink! journey?
+<div style="background: #059669; border: 1px solid #10b981; border-radius: 8px; padding: 16px; margin: 16px 0; color: white;">
+<strong>🌟 Your creature will awaken when you complete this step!</strong> Watch its eyes open! 👁️‍🗨️
+</div>
+
+<p>You've just built your first complete ink! smart contract - a digital creature that lives on the blockchain! 🧬✨</p>
         `,
+        code: `#![cfg_attr(not(feature = "std"), no_std, no_main)]
+
+#[ink::contract]
+mod flipper {
+    /// Defines the storage of your contract.
+    /// Add new fields to the below struct in order
+    /// to add new static storage fields to your contract.
+    #[ink(storage)]
+    pub struct Flipper {
+        /// Stores a single \`bool\` value on the storage.
+        value: bool,
+    }
+
+    impl Flipper {
+        /// Constructor that initializes the \`bool\` value to the given \`init_value\`.
+        #[ink(constructor)]
+        pub fn new(init_value: bool) -> Self {
+            Self { value: init_value }
+        }
+
+        /// Constructor that initializes the \`bool\` value to \`false\`.
+        ///
+        /// Constructors can delegate to other constructors.
+        #[ink(constructor)]
+        pub fn default() -> Self {
+            Self::new(Default::default())
+        }
+
+        /// Simply returns the current value of our \`bool\`.
+        #[ink(message)]
+        pub fn get(&self) -> bool {
+            self.value
+        }
+    }
+}`,
+        expectedCode: `#![cfg_attr(not(feature = "std"), no_std, no_main)]
+
+#[ink::contract]
+mod flipper {
+    /// Defines the storage of your contract.
+    /// Add new fields to the below struct in order
+    /// to add new static storage fields to your contract.
+    #[ink(storage)]
+    pub struct Flipper {
+        /// Stores a single \`bool\` value on the storage.
+        value: bool,
+    }
+
+    impl Flipper {
+        /// Constructor that initializes the \`bool\` value to the given \`init_value\`.
+        #[ink(constructor)]
+        pub fn new(init_value: bool) -> Self {
+            Self { value: init_value }
+        }
+
+        /// Constructor that initializes the \`bool\` value to \`false\`.
+        ///
+        /// Constructors can delegate to other constructors.
+        #[ink(constructor)]
+        pub fn default() -> Self {
+            Self::new(Default::default())
+        }
+
+        /// A message that can be called on instantiated contracts.
+        /// This one flips the value of the stored \`bool\` from \`true\`
+        /// to \`false\` and vice versa.
+        #[ink(message)]
+        pub fn flip(&mut self) {
+            self.value = !self.value;
+        }
+
+        /// Simply returns the current value of our \`bool\`.
+        #[ink(message)]
+        pub fn get(&self) -> bool {
+            self.value
+        }
+    }
+}`,
+        hint: "Add the flip function inside the impl block, after the get function",
+        validation: [
+          { type: "includes", patterns: ["pub fn flip"] },
+          { type: "includes", patterns: ["&mut self"] },
+          { type: "includes", patterns: ["self.value = !self.value"] },
+        ],
       },
     ],
+    completed: false,
+    locked: false,
   },
-  // Additional lessons would be added here...
+  {
+    id: 2,
+    title: "Growing Limbs",
+    description: "Design your creature's body and legs. Control its walking speed and movement patterns.",
+    difficulty: "Beginner",
+    duration: "25 min",
+    objectives: [
+      "Learn about ink! functions and events",
+      "Add body parts to your creature",
+      "Implement walking mechanics",
+      "Control movement speed and patterns"
+    ],
+    steps: [],
+    completed: false,
+    locked: true,
+  },
+  {
+    id: 3,
+    title: "Elixir of Consciousness",
+    description: "Your creature grows thirsty! Feed it the elixir of life and watch it become super conscious.",
+    difficulty: "Intermediate",
+    duration: "30 min",
+    objectives: [
+      "Learn integration testing with ink!",
+      "Simulate contract interactions",
+      "Implement drinking mechanics",
+      "Unlock creature consciousness"
+    ],
+    steps: [],
+    completed: false,
+    locked: true,
+  },
+  {
+    id: 4,
+    title: "Into the Wild",
+    description: "Deploy your fully conscious creature into the wild using PopCLI. Set it free on the blockchain!",
+    difficulty: "Advanced",
+    duration: "35 min",
+    objectives: [
+      "Master PopCLI deployment",
+      "Deploy to live networks",
+      "Monitor your creature in the wild",
+      "Complete the bio-engineering journey"
+    ],
+    steps: [],
+    completed: false,
+    locked: true,
+  },
 ];
 
 export function getLessonById(id: number): Lesson | undefined {

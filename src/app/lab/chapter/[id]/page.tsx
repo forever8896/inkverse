@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
-import SimpleLab from "@/components/SimpleLab";
-import { getSimpleChapterById } from "@/lib/simplified-chapters";
+import LessonLayout from "@/components/LessonLayout";
+import { getLessonById } from "@/lib/lessons";
 
 interface ChapterPageProps {
   params: Promise<{ id: string }>;
@@ -10,15 +10,13 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
   const { id } = await params;
   const chapterId = parseInt(id);
   
-  if (isNaN(chapterId) || chapterId < 1 || chapterId > 6) {
+  if (isNaN(chapterId) || chapterId < 1) {
     notFound();
   }
 
-  const chapter = getSimpleChapterById(chapterId);
+  // Use the same lesson data for both lessons and lab chapters
+  const lesson = getLessonById(chapterId);
   
-  if (!chapter) {
-    notFound();
-  }
-
-  return <SimpleLab chapter={chapter} />;
+  // Always render LessonLayout, even with undefined lesson for empty state
+  return <LessonLayout lesson={lesson} />;
 } 
