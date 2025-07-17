@@ -219,3 +219,24 @@ body {
 .animate-float-fast {
   animation: float-fast 3s ease-in-out infinite;
 }
+
+/* Gentle egg bounce animation */
+@keyframes egg-bounce {
+  0%,
+  20%,
+  50%,
+  80%,
+  100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-20px);
+  }
+  60% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-egg-bounce {
+  animation: egg-bounce 2.5s ease-in-out infinite;
+}
