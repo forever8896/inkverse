@@ -7,6 +7,12 @@ import ShaderBackground from "@/components/ShaderBackground";
 // Character data based on public/creatures/ directory
 const characters: Character[] = [
   {
+    id: "egg",
+    name: "Inkception",
+    src: "/creatures/egg.png",
+    type: "image",
+  },
+  {
     id: "first_awake",
     name: "First Awake",
     src: "/creatures/first_awake.png",
