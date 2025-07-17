@@ -3,35 +3,14 @@ import { getAllLessons } from "@/lib/lessons";
 
 export default function LabPage() {
   const chapters = getAllLessons(); // Use lessons data instead of simplified chapters
-  const totalXP = chapters.filter(c => c.completed).reduce((sum, c) => sum + 100, 0); // Simplified XP calculation
-  const completedChapters = chapters.filter(c => c.completed).length;
+  const totalXP = chapters
+    .filter((c) => c.completed)
+    .reduce((sum, c) => sum + 100, 0); // Simplified XP calculation
+  const completedChapters = chapters.filter((c) => c.completed).length;
 
   return (
     <div className="min-h-screen">
       {/* Navigation */}
-      <nav className="relative z-10 flex items-center justify-between p-6 border-b border-slate-800">
-        <Link href="/" className="flex items-center space-x-2">
-          <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-cyan-400 rounded-xl flex items-center justify-center shadow-lg">
-            <span className="text-slate-900 font-bold text-2xl">🧬</span>
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
-              Bio-Engineering Lab
-            </h1>
-            <p className="text-xs text-slate-400">ink! Creatures Research Facility</p>
-          </div>
-        </Link>
-        <div className="flex items-center space-x-6">
-          <div className="text-right">
-            <div className="text-sm text-slate-400">Total XP</div>
-            <div className="text-xl font-bold text-cyan-400">{totalXP}</div>
-          </div>
-          <div className="text-right">
-            <div className="text-sm text-slate-400">Progress</div>
-            <div className="text-xl font-bold text-purple-400">{completedChapters}/{chapters.length}</div>
-          </div>
-        </div>
-      </nav>
 
       <div className="max-w-7xl mx-auto px-6 py-12">
         {/* Lab Header */}
@@ -44,20 +23,27 @@ export default function LabPage() {
             </span>
           </h1>
           <p className="text-xl text-slate-300 max-w-3xl mx-auto mb-8">
-            Create and evolve your own blockchain creature through interactive bio-engineering experiments. 
-            Each chapter will teach you new techniques to bring digital life to the blockchain!
+            Create and evolve your own blockchain creature through interactive
+            bio-engineering experiments. Each chapter will teach you new
+            techniques to bring digital life to the blockchain!
           </p>
 
           {/* Progress Overview */}
           <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-2xl p-6 max-w-2xl mx-auto">
-            <h3 className="text-lg font-semibold mb-4 text-purple-400">🏆 Your Bio-Engineering Progress</h3>
+            <h3 className="text-lg font-semibold mb-4 text-purple-400">
+              🏆 Your Bio-Engineering Progress
+            </h3>
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
-                <div className="text-2xl font-bold text-cyan-400">{totalXP}</div>
+                <div className="text-2xl font-bold text-cyan-400">
+                  {totalXP}
+                </div>
                 <div className="text-sm text-slate-400">Experience Points</div>
               </div>
               <div>
-                <div className="text-2xl font-bold text-purple-400">{completedChapters}</div>
+                <div className="text-2xl font-bold text-purple-400">
+                  {completedChapters}
+                </div>
                 <div className="text-sm text-slate-400">Chapters Complete</div>
               </div>
               <div>
@@ -76,7 +62,7 @@ export default function LabPage() {
             // Map lesson data to display format
             const creatureEmojis = ["👁️", "🦵", "🧪", "🌍"];
             const creature = creatureEmojis[chapter.id - 1] || "🧬";
-            
+
             return (
               <div
                 key={chapter.id}
@@ -105,13 +91,15 @@ export default function LabPage() {
                 <div className="mb-6">
                   {/* Chapter Icon & Title */}
                   <div className="flex items-center space-x-4 mb-4">
-                    <div className={`w-20 h-20 rounded-2xl flex items-center justify-center text-4xl ${
-                      chapter.completed 
-                        ? "bg-green-600/20 border-2 border-green-500/50" 
-                        : chapter.id === 1 || chapters[index - 1]?.completed
-                        ? "bg-gradient-to-br from-purple-500/20 to-cyan-500/20 border-2 border-purple-400/30"
-                        : "bg-slate-700/50 border-2 border-slate-600"
-                    }`}>
+                    <div
+                      className={`w-20 h-20 rounded-2xl flex items-center justify-center text-4xl ${
+                        chapter.completed
+                          ? "bg-green-600/20 border-2 border-green-500/50"
+                          : chapter.id === 1 || chapters[index - 1]?.completed
+                          ? "bg-gradient-to-br from-purple-500/20 to-cyan-500/20 border-2 border-purple-400/30"
+                          : "bg-slate-700/50 border-2 border-slate-600"
+                      }`}
+                    >
                       {creature}
                     </div>
                     <div className="flex-1">
@@ -123,14 +111,20 @@ export default function LabPage() {
                           Ready to Build
                         </span>
                       </div>
-                      <h3 className="text-2xl font-bold mb-2">{chapter.title}</h3>
-                      <p className="text-slate-400 text-sm mb-2">{chapter.description}</p>
+                      <h3 className="text-2xl font-bold mb-2">
+                        {chapter.title}
+                      </h3>
+                      <p className="text-slate-400 text-sm mb-2">
+                        {chapter.description}
+                      </p>
                     </div>
                   </div>
 
                   {/* Chapter Story */}
                   <div className="mb-6">
-                    <h4 className="text-sm font-semibold text-purple-400 mb-2">📖 Learning Goals:</h4>
+                    <h4 className="text-sm font-semibold text-purple-400 mb-2">
+                      📖 Learning Goals:
+                    </h4>
                     <div className="text-slate-300 text-sm">
                       {chapter.objectives.join(" • ")}
                     </div>
@@ -147,7 +141,9 @@ export default function LabPage() {
                         : "bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 text-white transform hover:scale-105"
                     }`}
                   >
-                    {chapter.completed ? "🔄 Review Chapter" : "🚀 Start Bio-Engineering"}
+                    {chapter.completed
+                      ? "🔄 Review Chapter"
+                      : "🚀 Start Bio-Engineering"}
                   </Link>
                 ) : (
                   <div className="w-full bg-slate-700 text-slate-400 font-semibold py-4 px-6 rounded-xl text-center">
@@ -166,26 +162,37 @@ export default function LabPage() {
               🤖
             </div>
             <div className="flex-1">
-              <h3 className="text-xl font-bold mb-2 text-purple-400">Meet Your Lab Assistant</h3>
+              <h3 className="text-xl font-bold mb-2 text-purple-400">
+                Meet Your Lab Assistant
+              </h3>
               <p className="text-slate-300 mb-4">
-                I'm here to guide you through every step of the bio-engineering process! Each chapter is ready to be built:
+                I'm here to guide you through every step of the bio-engineering
+                process! Each chapter is ready to be built:
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex items-center space-x-2">
                   <span className="text-green-400">👁️</span>
-                  <span className="text-slate-300">Chapter 1: Awakening Eyes</span>
+                  <span className="text-slate-300">
+                    Chapter 1: Awakening Eyes
+                  </span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <span className="text-green-400">🦵</span>
-                  <span className="text-slate-300">Chapter 2: Growing Limbs</span>
+                  <span className="text-slate-300">
+                    Chapter 2: Growing Limbs
+                  </span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <span className="text-green-400">🧪</span>
-                  <span className="text-slate-300">Chapter 3: Elixir of Consciousness</span>
+                  <span className="text-slate-300">
+                    Chapter 3: Elixir of Consciousness
+                  </span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <span className="text-green-400">🌍</span>
-                  <span className="text-slate-300">Chapter 4: Into the Wild</span>
+                  <span className="text-slate-300">
+                    Chapter 4: Into the Wild
+                  </span>
                 </div>
               </div>
             </div>
@@ -196,7 +203,8 @@ export default function LabPage() {
         <div className="text-center mt-16">
           <h2 className="text-3xl font-bold mb-4">Ready to Begin?</h2>
           <p className="text-xl text-slate-300 mb-8">
-            Start with Chapter 1 and begin your journey into bio-engineering a digital creature!
+            Start with Chapter 1 and begin your journey into bio-engineering a
+            digital creature!
           </p>
           <Link
             href="/lab/chapter/1"
@@ -208,4 +216,4 @@ export default function LabPage() {
       </div>
     </div>
   );
-} 
+}
