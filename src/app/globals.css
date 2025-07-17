@@ -36,7 +36,11 @@ body {
 
 /* Grid pattern */
 .bg-grid {
-  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+  background-image: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.1) 1px,
+    transparent 1px
+  );
   background-size: 50px 50px;
 }
 
@@ -60,17 +64,22 @@ body {
 
 /* Animations */
 @keyframes glow {
-  0%, 100% { box-shadow: 0 0 20px rgba(139, 92, 246, 0.3); }
-  50% { box-shadow: 0 0 30px rgba(139, 92, 246, 0.5); }
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(139, 92, 246, 0.5);
+  }
 }
 
 @keyframes fade-in {
-  0% { 
-    opacity: 0; 
+  0% {
+    opacity: 0;
     transform: translateY(10px);
   }
-  100% { 
-    opacity: 1; 
+  100% {
+    opacity: 1;
     transform: translateY(0);
   }
 }
@@ -93,4 +102,120 @@ body {
 .code-editor:focus-within {
   border-color: rgba(139, 92, 246, 0.6);
   box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+/* Glow effects for logo background */
+.glow-purple {
+  background: radial-gradient(
+    circle,
+    rgba(139, 92, 246, 0.2) 0%,
+    rgba(139, 92, 246, 0.1) 40%,
+    transparent 70%
+  );
+}
+
+.glow-cyan {
+  background: radial-gradient(
+    circle,
+    rgba(6, 182, 212, 0.15) 0%,
+    rgba(6, 182, 212, 0.08) 40%,
+    transparent 70%
+  );
+}
+
+.glow-pink {
+  background: radial-gradient(
+    circle,
+    rgba(236, 72, 153, 0.2) 0%,
+    rgba(236, 72, 153, 0.1) 40%,
+    transparent 70%
+  );
+}
+
+.glow-purple-light {
+  background: radial-gradient(
+    circle,
+    rgba(168, 85, 247, 0.3) 0%,
+    rgba(168, 85, 247, 0.15) 50%,
+    transparent 80%
+  );
+}
+
+.glow-cyan-light {
+  background: radial-gradient(
+    circle,
+    rgba(34, 211, 238, 0.25) 0%,
+    rgba(34, 211, 238, 0.12) 50%,
+    transparent 80%
+  );
+}
+
+.glow-pink-light {
+  background: radial-gradient(
+    circle,
+    rgba(244, 114, 182, 0.3) 0%,
+    rgba(244, 114, 182, 0.15) 50%,
+    transparent 80%
+  );
+}
+
+/* Floating animations for spotlights */
+@keyframes float-slow {
+  0%,
+  100% {
+    transform: translateY(0px) translateX(0px);
+  }
+  25% {
+    transform: translateY(-20px) translateX(15px);
+  }
+  50% {
+    transform: translateY(-10px) translateX(-10px);
+  }
+  75% {
+    transform: translateY(-30px) translateX(5px);
+  }
+}
+
+@keyframes float-medium {
+  0%,
+  100% {
+    transform: translateY(0px) translateX(0px);
+  }
+  33% {
+    transform: translateY(-15px) translateX(-20px);
+  }
+  66% {
+    transform: translateY(-25px) translateX(10px);
+  }
+}
+
+@keyframes float-fast {
+  0%,
+  100% {
+    transform: translateY(0px) translateX(0px);
+  }
+  20% {
+    transform: translateY(-10px) translateX(-15px);
+  }
+  40% {
+    transform: translateY(-20px) translateX(20px);
+  }
+  60% {
+    transform: translateY(-5px) translateX(-25px);
+  }
+  80% {
+    transform: translateY(-15px) translateX(10px);
+  }
+}
+
+.animate-float-slow {
+  animation: float-slow 6s ease-in-out infinite;
+}
+
+.animate-float-medium {
+  animation: float-medium 4s ease-in-out infinite;
+}
+
+.animate-float-fast {
+  animation: float-fast 3s ease-in-out infinite;
 }

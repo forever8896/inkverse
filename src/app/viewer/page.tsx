@@ -13,6 +13,12 @@ const characters: Character[] = [
     type: "image",
   },
   {
+    id: "egg_cracks",
+    name: "Crack in the matrix",
+    src: "/creatures/egg_cracks.png",
+    type: "image",
+  },
+  {
     id: "first_awake",
     name: "First Awake",
     src: "/creatures/first_awake.png",
