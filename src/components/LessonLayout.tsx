@@ -73,7 +73,7 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
                   <span className="text-slate-900 font-bold text-xl">I</span>
                 </div>
                 <span className="text-xl font-bold bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
-                  The ink!stitute
+                  Monsters ink!
                 </span>
               </Link>
               <span className="text-slate-400">•</span>
@@ -112,7 +112,7 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
                 <span className="text-slate-900 font-bold text-xl">I</span>
               </div>
               <span className="text-xl font-bold bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
-                The ink!stitute
+                Monsters ink!
               </span>
             </Link>
             <span className="text-slate-400">•</span>
