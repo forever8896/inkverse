@@ -1,25 +1,18 @@
-# Bio-Engineering Creature
+# MonstersInk!
 
-## Lesson Plan
+Create an adorable creature by learning Polkadot and Ink.
 
-### Lesson 1:
+Goal: Make Polkadot fun ~~again
 
-A simple creature with two closed eyes. Once they deploy the flipper contract on chain, its eyes open.
+### Already complete:
 
-Teach: basics, syntax
+- An adorable character 🥰
+- Basic Ink lessons
+- Creature progression
+- PopCLI Terminal integration woo!
 
-### Lesson 2:
+### Coming in Milestone 2:
 
-What sort of body/legs do you want to add to creature, walking speed.
-
-Teach: functions/events.
-
-### Lesson 3:
-
-Your creature is thirsty and needs a drink. Animate drinking. It drinks the elixir of life and becomes super conscious.
-
-Teach: drink basic integration test, simulate calling contract
-
-### Lesson 4:
-
-Deploy your creature into the wild with PopCLI.
+- Create a token for your creature using Assets Precompile
+- Create a unique gen-ai image of your finished creature
+- Then mint the image as an NFT because why not

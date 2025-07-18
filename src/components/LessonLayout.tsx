@@ -6,6 +6,7 @@ import { Lesson, validateCode, ValidationRule } from "@/lib/lessons";
 import CodeEditor from "@/components/CodeEditor";
 import ShaderBackground from "@/components/ShaderBackground";
 import dynamic from "next/dynamic";
+import { HSLValues } from "@/components/CreatureColorPicker";
 
 const ConsolePanel = dynamic(() => import("@/app/ConsolePanel"), {
   ssr: false,
@@ -28,6 +29,11 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
   const [isValidated, setIsValidated] = useState(false);
   const [showHint, setShowHint] = useState(false);
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const [creatureColor, setCreatureColor] = useState<HSLValues>({
+    hue: 0,
+    saturation: 0,
+    lightness: 0,
+  });
 
   const currentStepData = lesson?.steps[currentStep];
 
@@ -39,6 +45,19 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
     setIsValidated(false);
     setShowHint(false);
   }, [currentStep, currentStepData]);
+
+  // Load saved creature color from localStorage
+  useEffect(() => {
+    const savedColor = localStorage.getItem("creatureColor");
+    if (savedColor) {
+      try {
+        const parsedColor = JSON.parse(savedColor);
+        setCreatureColor(parsedColor);
+      } catch (error) {
+        console.error("Error parsing saved color:", error);
+      }
+    }
+  }, []);
 
   const addToast = (toast: Omit<Toast, "id">) => {
     const id = Math.random().toString(36).substr(2, 9);
@@ -196,6 +215,14 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
     }
   };
 
+  // Generate CSS filter string from HSL values
+  const getImageFilter = () => {
+    const { hue, saturation, lightness } = creatureColor;
+    return `hue-rotate(${hue}deg) saturate(${100 + saturation}%) brightness(${
+      100 + lightness
+    }%) drop-shadow(0 0 20px rgba(147, 51, 234, 0.5))`;
+  };
+
   if (!lesson) {
     return (
       <div className="h-screen bg-slate-900 flex flex-col overflow-hidden">
@@ -240,9 +267,9 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
       <div className="flex flex-1 overflow-hidden relative">
         {/* Left Panel: Creature Display */}
         <div className="w-1/2 relative overflow-hidden backdrop-blur-md">
-          <div className="absolute top-0 flex justify-between w-full">
+          <div className="absolute top-0 flex justify-between w-full z-20">
             <div className="p-5">
-              <Link href="/lessons" className="flex items-center space-x-2">
+              <Link href="/" className="flex items-center space-x-2">
                 <img src="/logo.png" alt="Monsters ink!" className="h-24" />
               </Link>
             </div>
@@ -260,8 +287,7 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
                     height={320}
                     className="w-80 h-80 object-contain"
                     style={{
-                      filter:
-                        "drop-shadow(0 0 18px rgba(168, 85, 247, 0.7)) drop-shadow(0 0 35px rgba(168, 85, 247, 0.5)) drop-shadow(0 0 70px rgba(168, 85, 247, 0.3)) drop-shadow(0 0 105px rgba(168, 85, 247, 0.1))",
+                      filter: getImageFilter(),
                     }}
                   />
                 ) : (
@@ -271,7 +297,14 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
                 )
               ) : (
                 <div className="w-64 h-64 bg-slate-800/30 rounded-full flex items-center justify-center backdrop-blur-sm">
-                  <span className="text-6xl">🔬</span>
+                  <span
+                    className="text-6xl"
+                    style={{
+                      filter: getImageFilter(),
+                    }}
+                  >
+                    🔬
+                  </span>
                 </div>
               )}
             </div>
