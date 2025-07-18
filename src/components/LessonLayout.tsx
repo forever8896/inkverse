@@ -447,9 +447,9 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
               <div className="flex-1 flex flex-col min-h-0">
                 <div
                   className="prose prose-invert prose-purple max-w-none text-slate-200 leading-relaxed flex-1 overflow-y-auto
-                  [&>h1]:text-lg [&>h1]:font-bold [&>h1]:text-white [&>h1]:mb-4 [&>h1]:leading-tight
-                  [&>h2]:text-base [&>h2]:font-semibold [&>h2]:text-purple-300 [&>h2]:mb-3 [&>h2]:mt-4
-                  [&>h3]:text-sm [&>h3]:font-medium [&>h3]:text-cyan-300 [&>h3]:mb-2 [&>h3]:mt-3
+                  [&>h1]:text-base [&>h1]:font-bold [&>h1]:text-white [&>h1]:mb-4 [&>h1]:leading-tight
+                  [&>h2]:text-sm [&>h2]:font-semibold [&>h2]:text-purple-300 [&>h2]:mb-3 [&>h2]:mt-4
+                  [&>h3]:text-xs [&>h3]:font-medium [&>h3]:text-cyan-300 [&>h3]:mb-2 [&>h3]:mt-3
                   [&>p]:mb-4 [&>p]:text-sm [&>p]:leading-6 [&>p]:text-slate-200
                   [&>ul]:mb-4 [&>ul]:space-y-1 [&>ol]:mb-4 [&>ol]:space-y-1
                   [&>li]:text-slate-200 [&>li]:leading-5 [&>li]:pl-1 [&>li]:text-sm
@@ -627,35 +627,6 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
             </button>
           </div>
         </div>
-      </div>
-
-      {/* Toast Container */}
-      <div className="fixed top-4 right-4 z-50 space-y-3">
-        {toasts.map((toast) => (
-          <div
-            key={toast.id}
-            className={`max-w-sm p-4 rounded-xl shadow-lg backdrop-blur-sm border transform transition-all duration-300 ease-in-out ${
-              toast.type === "success"
-                ? "bg-gradient-to-r from-green-900/90 to-emerald-900/80 border-green-600/50 text-green-100"
-                : toast.type === "error"
-                ? "bg-gradient-to-r from-red-900/90 to-rose-900/80 border-red-600/50 text-red-100"
-                : "bg-gradient-to-r from-blue-900/90 to-cyan-900/80 border-blue-600/50 text-blue-100"
-            }`}
-          >
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <h4 className="font-semibold mb-1">{toast.title}</h4>
-                <p className="text-sm opacity-90">{toast.message}</p>
-              </div>
-              <button
-                onClick={() => removeToast(toast.id)}
-                className="ml-3 text-white/60 hover:text-white/80 transition-colors"
-              >
-                ✕
-              </button>
-            </div>
-          </div>
-        ))}
       </div>
     </div>
   );
