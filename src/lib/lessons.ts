@@ -31,14 +31,15 @@ const lessons: Lesson[] = [
   {
     id: 1,
     title: "Awakening Eyes",
-    description: "Create a simple creature with closed eyes. Deploy your first flipper contract to bring it to life!",
+    description:
+      "Create a simple creature with closed eyes. Deploy your first flipper contract to bring it to life!",
     difficulty: "Beginner",
     duration: "20 min",
     objectives: [
       "Understand ink! contract basics and syntax",
       "Create your first bio-engineered creature",
       "Deploy a flipper contract on-chain",
-      "Watch your creature's eyes open for the first time"
+      "Watch your creature's eyes open for the first time",
     ],
     steps: [
       {
@@ -46,13 +47,13 @@ const lessons: Lesson[] = [
         title: "🥚 Meet Your Mysterious Egg",
         image: "/creatures/first_egg.png",
         content: `
-<h1>Welcome to Bio-Engineering! 🧬</h1>
+<h1>Welcome! 🧬</h1>
 
 <p>You're about to create your first digital creature using <strong>ink!</strong> - Polkadot's smart contract language!</p>
 
 <p>Every ink! contract starts with this basic template. Think of it as the DNA blueprint for your creature.</p>
 
-<div style="background: #059669; border: 1px solid #10b981; border-radius: 8px; padding: 16px; margin: 16px 0; color: white;">
+<div style="background: #059669; border: 1px solid #10b981; border-radius: 8px; padding: 5px 10px; margin: 16px 0; color: white;">
 <strong>✅ Task Complete!</strong> Just observe the code structure - no changes needed yet!
 </div>
         `,
@@ -68,7 +69,7 @@ mod creature {
 mod creature {
     // Your creature will live here!
 }`,
-        hint: "This is your foundation! Every ink! contract needs these lines to work on the blockchain. No changes needed - just get familiar with the structure!"
+        hint: "This is your foundation! Every ink! contract needs these lines to work on the blockchain. No changes needed - just get familiar with the structure!",
       },
       {
         id: 2,
@@ -154,9 +155,7 @@ mod creature {
     }
 }`,
         hint: "Add 'impl Creature { }' after the struct to create a place for your creature's functions!",
-        validation: [
-          { type: "includes", patterns: ["impl Creature"] },
-        ],
+        validation: [{ type: "includes", patterns: ["impl Creature"] }],
       },
       {
         id: 4,
@@ -688,7 +687,10 @@ mod creature {
         validation: [
           { type: "includes", patterns: ["pub fn toggle_consciousness"] },
           { type: "includes", patterns: ["&mut self"] },
-          { type: "includes", patterns: ["self.is_conscious = !self.is_conscious"] },
+          {
+            type: "includes",
+            patterns: ["self.is_conscious = !self.is_conscious"],
+          },
         ],
       },
     ],
@@ -698,14 +700,15 @@ mod creature {
   {
     id: 2,
     title: "Growing Limbs",
-    description: "Design your creature's body and legs. Control its walking speed and movement patterns.",
+    description:
+      "Design your creature's body and legs. Control its walking speed and movement patterns.",
     difficulty: "Beginner",
     duration: "25 min",
     objectives: [
       "Learn about ink! functions and events",
       "Add body parts to your creature",
       "Implement walking mechanics",
-      "Control movement speed and patterns"
+      "Control movement speed and patterns",
     ],
     steps: [],
     completed: false,
@@ -714,14 +717,15 @@ mod creature {
   {
     id: 3,
     title: "Elixir of Consciousness",
-    description: "Your creature grows thirsty! Feed it the elixir of life and watch it become super conscious.",
+    description:
+      "Your creature grows thirsty! Feed it the elixir of life and watch it become super conscious.",
     difficulty: "Intermediate",
     duration: "30 min",
     objectives: [
       "Learn integration testing with ink!",
       "Simulate contract interactions",
       "Implement drinking mechanics",
-      "Unlock creature consciousness"
+      "Unlock creature consciousness",
     ],
     steps: [],
     completed: false,
@@ -730,14 +734,15 @@ mod creature {
   {
     id: 4,
     title: "Into the Wild",
-    description: "Deploy your fully conscious creature into the wild using PopCLI. Set it free on the blockchain!",
+    description:
+      "Deploy your fully conscious creature into the wild using PopCLI. Set it free on the blockchain!",
     difficulty: "Advanced",
     duration: "35 min",
     objectives: [
       "Master PopCLI deployment",
       "Deploy to live networks",
       "Monitor your creature in the wild",
-      "Complete the bio-engineering journey"
+      "Complete the bio-engineering journey",
     ],
     steps: [],
     completed: false,

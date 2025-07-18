@@ -226,18 +226,8 @@ export default function CodeEditor({
   const [currentTrigger, setCurrentTrigger] = useState({ start: 0, text: "" });
 
   useEffect(() => {
-    if (textareaRef.current) {
-      // Auto-resize textarea based on content
-      const minHeight = 400;
-      textareaRef.current.style.height = "auto";
-      const newHeight = Math.max(minHeight, textareaRef.current.scrollHeight);
-      textareaRef.current.style.height = `${newHeight}px`;
-
-      // Sync overlay height
-      if (overlayRef.current) {
-        overlayRef.current.style.height = `${newHeight}px`;
-      }
-    }
+    // Remove auto-resize behavior to allow scrolling
+    // The textarea should have a fixed height and scroll when content exceeds it
   }, [value]);
 
   // Get cursor position in pixels for suggestion dropdown
@@ -441,25 +431,27 @@ export default function CodeEditor({
   };
 
   return (
-    <div className="h-full flex bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-xl overflow-hidden border border-slate-600/50 shadow-2xl backdrop-blur-sm relative">
+    <div className="h-full flex bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-xl border border-slate-600/50 shadow-2xl backdrop-blur-sm relative">
       {/* Line numbers */}
-      <div
-        className="flex-shrink-0 w-16 bg-gradient-to-b from-slate-800/80 to-slate-700/80 border-r border-slate-600/50 text-slate-400 text-sm font-mono select-none py-4 px-3 overflow-hidden backdrop-blur-sm"
-        style={{ transform: `translateY(-${scrollTop}px)` }}
-      >
-        {lineNumbers.map((lineNum, index) => (
-          <div
-            key={index}
-            style={{ lineHeight: "24px", height: "24px", fontSize: "14px" }}
-            className="text-right hover:text-purple-400 transition-colors duration-200"
-          >
-            {lineNum}
-          </div>
-        ))}
+      <div className="flex-shrink-0 w-16 bg-gradient-to-b from-slate-800/80 to-slate-700/80 border-r border-slate-600/50 text-slate-400 text-sm font-mono select-none overflow-hidden backdrop-blur-sm relative">
+        <div
+          className="py-4 px-3"
+          style={{ transform: `translateY(-${scrollTop}px)` }}
+        >
+          {lineNumbers.map((lineNum, index) => (
+            <div
+              key={index}
+              style={{ lineHeight: "24px", height: "24px", fontSize: "14px" }}
+              className="text-right hover:text-purple-400 transition-colors duration-200"
+            >
+              {lineNum}
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Code area */}
-      <div className="flex-1 relative overflow-hidden">
+      <div className="flex-1 relative">
         {/* Syntax highlighted overlay */}
         <div
           ref={overlayRef}
@@ -470,7 +462,6 @@ export default function CodeEditor({
             lineHeight: "24px",
             fontSize: "14px",
             tabSize: 4,
-            minHeight: "400px",
           }}
         >
           {highlightedCode}
@@ -491,7 +482,6 @@ export default function CodeEditor({
             lineHeight: "24px",
             fontSize: "14px",
             tabSize: 4,
-            minHeight: "400px",
           }}
           spellCheck={false}
           autoCapitalize="off"

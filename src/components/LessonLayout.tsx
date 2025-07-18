@@ -246,19 +246,6 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
                 <img src="/logo.png" alt="Monsters ink!" className="h-24" />
               </Link>
             </div>
-
-            <div className="p-5">
-              <div className="w-32 bg-slate-700 rounded-full h-2">
-                <div
-                  className="bg-gradient-to-r from-purple-400 to-cyan-400 h-2 rounded-full transition-all duration-300"
-                  style={{
-                    width: `${
-                      ((currentStep + 1) / lesson.steps.length) * 100
-                    }%`,
-                  }}
-                />
-              </div>
-            </div>
           </div>
 
           {/* Creature Display */}
@@ -319,36 +306,6 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
                   : "In development"}
               </p>
 
-              {/* Progress Indicators */}
-              {lesson.id === 1 && currentStep > 0 && (
-                <div className="flex justify-center space-x-2">
-                  <div
-                    className={`w-2 h-2 rounded-full transition-colors ${
-                      currentStep >= 1 ? "bg-purple-400/80" : "bg-slate-600/50"
-                    }`}
-                  />
-                  <div
-                    className={`w-2 h-2 rounded-full transition-colors ${
-                      currentStep >= 2 ? "bg-purple-400/80" : "bg-slate-600/50"
-                    }`}
-                  />
-                  <div
-                    className={`w-2 h-2 rounded-full transition-colors ${
-                      currentStep >= 3 ? "bg-purple-400/80" : "bg-slate-600/50"
-                    }`}
-                  />
-                  <div
-                    className={`w-2 h-2 rounded-full transition-colors ${
-                      isValidated && currentStep >= 4
-                        ? "bg-green-400/80"
-                        : currentStep >= 4
-                        ? "bg-amber-400/80"
-                        : "bg-slate-600/50"
-                    }`}
-                  />
-                </div>
-              )}
-
               {/* Achievement */}
               {isValidated && currentStep === 4 && lesson.id === 1 && (
                 <div className="text-center">
@@ -359,31 +316,12 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
               )}
             </div>
           </div>
-
-          {/* Navigation Overlay */}
-          <div className="absolute bottom-8 right-8">
-            <div className="flex space-x-3 backdrop-blur-md bg-slate-900/30 rounded-xl p-3 border border-slate-700/40">
-              {Array.from({ length: lesson.steps.length }, (_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setCurrentStep(i)}
-                  className={`w-3 h-3 rounded-full transition-all duration-200 hover:scale-110 ${
-                    i === currentStep
-                      ? "bg-gradient-to-r from-purple-400 to-cyan-400 shadow-lg shadow-purple-400/30"
-                      : i < currentStep
-                      ? "bg-gradient-to-r from-green-400 to-emerald-400 shadow-md shadow-green-400/20"
-                      : "bg-slate-600 hover:bg-slate-500"
-                  }`}
-                />
-              ))}
-            </div>
-          </div>
         </div>
 
         {/* Right Panel: Instructions + Code Editor */}
-        <div className="w-1/2 flex flex-col p-10 space-y-4">
+        <div className="w-1/2 flex flex-col p-10 min-h-0">
           {/* Instructions Section */}
-          <div className="h-1/2 p-6 flex flex-col overflow-hidden backdrop-blur-md bg-white/5 rounded">
+          <div className="flex-1 p-6 flex flex-col overflow-hidden backdrop-blur-md bg-white/5 rounded mb-4 min-h-0">
             {currentStepData && (
               <div className="flex-1 flex flex-col min-h-0">
                 <div
@@ -432,47 +370,12 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
                 )}
               </div>
             )}
-
-            {/* Toast Container */}
-            <div className="fixed top-4 right-4 z-50 space-y-3">
-              {toasts.map((toast, idx) => (
-                <div
-                  key={toast.id}
-                  className={`max-w-sm p-4 rounded-xl shadow-lg backdrop-blur-sm border transform transition-all duration-300 ease-in-out
-                      ${
-                        toast.type === "success"
-                          ? "bg-gradient-to-r from-green-900/90 to-emerald-900/80 border-green-600/50 text-green-100"
-                          : toast.type === "error"
-                          ? "bg-gradient-to-r from-red-900/90 to-rose-900/80 border-red-600/50 text-red-100"
-                          : "bg-gradient-to-r from-blue-900/90 to-cyan-900/80 border-blue-600/50 text-blue-100"
-                      }
-                      animate-toast-fly-in`}
-                  style={{
-                    animationDelay: `${idx * 0.1}s`,
-                    animationFillMode: "both",
-                  }}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h4 className="font-semibold mb-1">{toast.title}</h4>
-                      <p className="text-sm opacity-90">{toast.message}</p>
-                    </div>
-                    <button
-                      onClick={() => removeToast(toast.id)}
-                      className="ml-3 text-white/60 hover:text-white/80 transition-colors"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
           </div>
 
           {/* Code Editor Section */}
-          <div className="h-1/2 flex flex-col">
+          <div className="flex-1 flex flex-col min-h-0 mb-4">
             {/* Editor Header */}
-            <div className=" p-3 flex-shrink-0">
+            <div className="p-3 flex-shrink-0">
               <div className="flex items-center justify-between">
                 <h4 className="text-base font-semibold">Workspace</h4>
                 <div className="flex space-x-2">
@@ -503,7 +406,7 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
             </div>
 
             {/* Code Editor */}
-            <div className="flex-1">
+            <div className="flex-1 min-h-0">
               {currentStepData?.code !== undefined ? (
                 <CodeEditor
                   value={userCode}
@@ -527,7 +430,7 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
           </div>
 
           {/* Navigation */}
-          <div className="flex justify-between items-center pt-4 flex-shrink-0">
+          <div className="flex justify-between items-center flex-shrink-0">
             <button
               onClick={previousStep}
               disabled={currentStep === 0}
