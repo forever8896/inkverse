@@ -351,11 +351,11 @@ mod creature {
         }
     }
 }`,
-        hint: `This function is a <strong>write</strong> (setter) function. In ink!, using <code>&mut self</code> means you want to <strong>change</strong> the contract's state. 
+        hint: `This function is a write (setter) function. In ink!, using &mut self means you want to change the contract's state. 
 
-Add <code>#[ink(message)]</code> above your function to make it callable from outside. 
+Add #[ink(message)] above your function to make it callable from outside. 
 
-<code>pub fn wake_up(&mut self)</code> lets your creature switch its state—like flipping a light switch! The <code>!</code> operator flips the boolean: <code>true</code> becomes <code>false</code> and vice versa. This function <em>modifies</em> the blockchain storage!`,
+pub fn wake_up(&mut self) lets your creature switch its state—like flipping a light switch! The ! operator flips the boolean: true becomes false and vice versa. This function modifies the blockchain storage!`,
         validation: [
           { type: "includes", patterns: ["#[ink(message)]"] },
           { type: "includes", patterns: ["pub fn wake_up"] },
