@@ -63,7 +63,7 @@ export default function Home() {
 
                   {/* Bouncing egg */}
                   <img
-                    src="/creatures/first_egg.png"
+                    src="/creatures/egg_cracks.png"
                     alt="Click to enter the lab"
                     className="hover:scale-110 w-48 h-48 object-contain animate-egg-bounce relative z-10 group-hover:animate-pulse"
                   />
