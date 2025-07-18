@@ -228,13 +228,13 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
   }
 
   return (
-    <div className="h-screen w-screen bg-slate-900 flex flex-col overflow-hidden">
+    <div className="h-screen w-screen bg-slate-900 flex flex-col overflow-hidden bg-black">
       {/* Full-screen Shader Background */}
       <ShaderBackground />
 
       <div className="flex flex-1 overflow-hidden relative">
         {/* Left Panel: Creature Display */}
-        <div className="w-1/2 relative overflow-hidden backdrop-blur-md bg-slate-900/20 border-r border-slate-700/30">
+        <div className="w-1/2 relative overflow-hidden backdrop-blur-md">
           <div className="absolute top-0 flex justify-between w-full">
             <div className="p-5">
               <Link href="/lessons" className="flex items-center space-x-2">
@@ -440,16 +440,16 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
         </div>
 
         {/* Right Panel: Instructions + Code Editor */}
-        <div className="w-1/2 flex flex-col">
+        <div className="w-1/2 flex flex-col p-10 space-y-4">
           {/* Instructions Section */}
-          <div className="h-1/2 p-6 flex flex-col overflow-hidden backdrop-blur-md bg-slate-900/30 border-b border-slate-700/30">
+          <div className="h-1/2 p-6 flex flex-col overflow-hidden backdrop-blur-md bg-white/5 rounded">
             {currentStepData && (
               <div className="flex-1 flex flex-col min-h-0">
                 <div
                   className="prose prose-invert prose-purple max-w-none text-slate-200 leading-relaxed flex-1 overflow-y-auto
-                  [&>h1]:text-2xl [&>h1]:font-bold [&>h1]:text-white [&>h1]:mb-4 [&>h1]:leading-tight
-                  [&>h2]:text-lg [&>h2]:font-semibold [&>h2]:text-purple-300 [&>h2]:mb-3 [&>h2]:mt-4
-                  [&>h3]:text-base [&>h3]:font-medium [&>h3]:text-cyan-300 [&>h3]:mb-2 [&>h3]:mt-3
+                  [&>h1]:text-lg [&>h1]:font-bold [&>h1]:text-white [&>h1]:mb-4 [&>h1]:leading-tight
+                  [&>h2]:text-base [&>h2]:font-semibold [&>h2]:text-purple-300 [&>h2]:mb-3 [&>h2]:mt-4
+                  [&>h3]:text-sm [&>h3]:font-medium [&>h3]:text-cyan-300 [&>h3]:mb-2 [&>h3]:mt-3
                   [&>p]:mb-4 [&>p]:text-sm [&>p]:leading-6 [&>p]:text-slate-200
                   [&>ul]:mb-4 [&>ul]:space-y-1 [&>ol]:mb-4 [&>ol]:space-y-1
                   [&>li]:text-slate-200 [&>li]:leading-5 [&>li]:pl-1 [&>li]:text-sm
@@ -526,58 +526,14 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
                 </div>
               ))}
             </div>
-
-            {/* Navigation */}
-            <div className="flex justify-between items-center p-4 bg-slate-800/20 rounded-lg border border-slate-700/40 backdrop-blur-sm flex-shrink-0">
-              <button
-                onClick={previousStep}
-                disabled={currentStep === 0}
-                className="px-4 py-2 bg-slate-700 hover:bg-slate-600 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg transition-all duration-200 font-medium flex items-center space-x-1 border border-slate-600 hover:border-slate-500 text-sm"
-              >
-                <span>←</span>
-                <span>Previous</span>
-              </button>
-
-              <div className="flex space-x-2">
-                {Array.from({ length: lesson.steps.length }, (_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setCurrentStep(i)}
-                    className={`w-3 h-3 rounded-full transition-all duration-200 hover:scale-110 ${
-                      i === currentStep
-                        ? "bg-gradient-to-r from-purple-400 to-cyan-400 shadow-lg shadow-purple-400/30"
-                        : i < currentStep
-                        ? "bg-gradient-to-r from-green-400 to-emerald-400 shadow-md shadow-green-400/20"
-                        : "bg-slate-600 hover:bg-slate-500"
-                    }`}
-                  />
-                ))}
-              </div>
-
-              <button
-                onClick={nextStep}
-                disabled={
-                  currentStep === lesson.steps.length - 1 ||
-                  (currentStepData?.validation && !isValidated)
-                }
-                className="px-4 py-2 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg transition-all duration-200 font-medium flex items-center space-x-1 shadow-lg text-sm"
-              >
-                <span>
-                  {currentStep === lesson.steps.length - 1
-                    ? "Complete"
-                    : "Next"}
-                </span>
-                <span>→</span>
-              </button>
-            </div>
           </div>
 
           {/* Code Editor Section */}
-          <div className="h-1/2 flex flex-col backdrop-blur-md bg-slate-900/30">
+          <div className="h-1/2 flex flex-col">
             {/* Editor Header */}
-            <div className="border-b border-slate-700/30 p-3 flex-shrink-0">
+            <div className=" p-3 flex-shrink-0">
               <div className="flex items-center justify-between">
-                <h3 className="text-base font-semibold">Code Workspace</h3>
+                <h4 className="text-base font-semibold">Workspace</h4>
                 <div className="flex space-x-2">
                   <button
                     onClick={resetCode}
@@ -596,7 +552,7 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
                   {currentStepData?.expectedCode && (
                     <button
                       onClick={showSolution}
-                      className="px-2 py-1 text-xs bg-amber-600 hover:bg-amber-700 rounded transition-colors"
+                      className="px-2 py-1 text-xs bg-purple-600 hover:bg-purple-700 rounded transition-colors"
                     >
                       Solution
                     </button>
@@ -627,6 +583,48 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Navigation */}
+          <div className="flex justify-between items-center pt-4 flex-shrink-0">
+            <button
+              onClick={previousStep}
+              disabled={currentStep === 0}
+              className="px-4 py-2 bg-slate-700 hover:bg-slate-600 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg transition-all duration-200 font-medium flex items-center space-x-1 border border-slate-600 hover:border-slate-500 text-sm"
+            >
+              <span>←</span>
+              <span>Previous</span>
+            </button>
+
+            <div className="flex space-x-2">
+              {Array.from({ length: lesson.steps.length }, (_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setCurrentStep(i)}
+                  className={`w-3 h-3 rounded-full transition-all duration-200 hover:scale-110 ${
+                    i === currentStep
+                      ? "bg-gradient-to-r from-purple-400 to-cyan-400 shadow-lg shadow-purple-400/30"
+                      : i < currentStep
+                      ? "bg-gradient-to-r from-green-400 to-emerald-400 shadow-md shadow-green-400/20"
+                      : "bg-slate-600 hover:bg-slate-500"
+                  }`}
+                />
+              ))}
+            </div>
+
+            <button
+              onClick={nextStep}
+              disabled={
+                currentStep === lesson.steps.length - 1 ||
+                (currentStepData?.validation && !isValidated)
+              }
+              className="px-4 py-2 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg transition-all duration-200 font-medium flex items-center space-x-1 shadow-lg text-sm"
+            >
+              <span>
+                {currentStep === lesson.steps.length - 1 ? "Complete" : "Next"}
+              </span>
+              <span>→</span>
+            </button>
           </div>
         </div>
       </div>

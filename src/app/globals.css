@@ -18,6 +18,7 @@
   --color-muted: var(--muted);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-press-start: var(--font-press-start);
 }
 
 @media (prefers-color-scheme: light) {
@@ -42,6 +43,81 @@ body {
     transparent 1px
   );
   background-size: 50px 50px;
+}
+
+/* Header styles with Press Start 2P font */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-press-start), monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Responsive text sizes for pixelated font */
+h1 {
+  font-size: 1rem; /* 16px */
+  line-height: 1.6;
+}
+
+h2 {
+  font-size: 0.875rem; /* 14px */
+  line-height: 1.6;
+}
+
+h3 {
+  font-size: 0.75rem; /* 12px */
+  line-height: 1.6;
+}
+
+h4,
+h5,
+h6 {
+  font-size: 0.625rem; /* 10px */
+  line-height: 1.6;
+}
+
+@media (min-width: 768px) {
+  h1 {
+    font-size: 1.25rem; /* 20px */
+  }
+
+  h2 {
+    font-size: 1rem; /* 16px */
+  }
+
+  h3 {
+    font-size: 0.875rem; /* 14px */
+  }
+
+  h4,
+  h5,
+  h6 {
+    font-size: 0.75rem; /* 12px */
+  }
+}
+
+@media (min-width: 1024px) {
+  h1 {
+    font-size: 1.5rem; /* 24px */
+  }
+
+  h2 {
+    font-size: 1.25rem; /* 20px */
+  }
+
+  h3 {
+    font-size: 1rem; /* 16px */
+  }
+
+  h4,
+  h5,
+  h6 {
+    font-size: 0.875rem; /* 14px */
+  }
 }
 
 /* Custom scrollbar */
@@ -261,6 +337,46 @@ body {
   }
 }
 
+@keyframes wobble-bounce {
+  0% {
+    transform: translateX(0%) translateY(0px) rotate(0deg);
+  }
+  15% {
+    transform: translateX(-15px) translateY(-5px) rotate(-3deg);
+  }
+  30% {
+    transform: translateX(12px) translateY(-15px) rotate(2deg);
+  }
+  45% {
+    transform: translateX(-8px) translateY(-8px) rotate(-2deg);
+  }
+  60% {
+    transform: translateX(5px) translateY(-12px) rotate(1deg);
+  }
+  75% {
+    transform: translateX(-3px) translateY(-3px) rotate(-1deg);
+  }
+  100% {
+    transform: translateX(0%) translateY(0px) rotate(0deg);
+  }
+}
+
 .animate-egg-bounce {
   animation: egg-bounce 2.5s ease-in-out infinite;
+}
+
+.animate-wobble {
+  animation: wobble 0.8s ease-in-out;
+}
+
+/* Hover state that combines wobble with bounce */
+.egg-hover:hover {
+  animation: wobble-bounce 1s ease-in-out;
+}
+
+/* Utility classes */
+.font-pixel {
+  font-family: var(--font-press-start), monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
