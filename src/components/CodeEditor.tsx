@@ -2,11 +2,15 @@
 
 import { useRef, useEffect, useState } from "react";
 
+import React, { CSSProperties } from "react";
+
 interface CodeEditorProps {
   value: string;
   onChange: (value: string) => void;
   language?: string;
   readOnly?: boolean;
+  className?: string;
+  style?: CSSProperties;
 }
 
 interface Suggestion {

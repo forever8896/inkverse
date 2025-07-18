@@ -20,14 +20,7 @@ interface JobStatus {
 
 const SERVER_URL = "https://web3summit-hackaton-pop-server-production.up.railway.app";
 
-const COMMANDS = [
-  { endpoint: "/compile-job", method: "POST", desc: "Submit a Rust contract compilation job" },
-  { endpoint: "/compile-job/:jobId", method: "GET", desc: "Check job status/results" },
-  { endpoint: "/compile-job/:jobId/logs", method: "GET", desc: "Fetch job logs (add ?stream=true for real-time)" },
-  { endpoint: "/compile-jobs", method: "GET", desc: "List all jobs" },
-  { endpoint: "/warm-cache", method: "POST", desc: "Pre-compile dependencies for faster builds" },
-  { endpoint: "/contracts", method: "GET", desc: "List all contracts" },
-];
+
 
 const EXAMPLE_CODE = `#![cfg_attr(not(feature = \"std\"), no_std, no_main)]\n\n#[ink::contract]\nmod example {\n    #[ink(storage)]\n    pub struct Example { value: u32 }\n\n    impl Example {\n        #[ink(constructor)]\n        pub fn new() -> Self { Self { value: 0 } }\n        #[ink(message)]\n        pub fn get(&self) -> u32 { self.value }\n    }\n}`;
 
@@ -37,8 +30,12 @@ type TerminalLine = {
   timestamp?: string;
 };
 
-export default function ConsolePanel() {
-  const [visible, setVisible] = useState(false);
+interface ConsolePanelProps {
+  defaultVisible?: boolean;
+}
+
+export default function ConsolePanel({ defaultVisible = false }: ConsolePanelProps) {
+  const [visible, setVisible] = useState(defaultVisible);
   const [jobId, setJobId] = useState<string | null>(null);
   const [jobStatus, setJobStatus] = useState<JobStatus | null>(null);
   const [logs, setLogs] = useState<JobLog[]>([]);
@@ -254,18 +251,7 @@ export default function ConsolePanel() {
               Clear
             </button>
           </div>
-          <div style={{ padding: "12px 20px", borderBottom: "1px solid #23272f", fontSize: 15 }}>
-            <div style={{ marginBottom: 8, fontWeight: 600 }}>Available Commands:</div>
-            <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
-              {COMMANDS.map(cmd => (
-                <li key={cmd.endpoint} style={{ marginBottom: 3 }}>
-                  <span style={{ color: "#9cf" }}>{cmd.method}</span>
-                  <span style={{ color: "#ffb86c", marginLeft: 10 }}>{cmd.endpoint}</span>
-                  <span style={{ color: "#aaa", marginLeft: 12 }}>{cmd.desc}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
+          
           <div style={{
             background: "#101216",
             borderTop: "1px solid #23272f",
