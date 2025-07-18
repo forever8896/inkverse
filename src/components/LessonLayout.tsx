@@ -5,6 +5,11 @@ import Link from "next/link";
 import { Lesson, validateCode, ValidationRule } from "@/lib/lessons";
 import CodeEditor from "@/components/CodeEditor";
 import ShaderBackground from "@/components/ShaderBackground";
+import dynamic from "next/dynamic";
+
+const ConsolePanel = dynamic(() => import("@/app/ConsolePanel"), {
+  ssr: false,
+});
 
 interface LessonLayoutProps {
   lesson?: Lesson;
@@ -260,88 +265,24 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="relative">
               {lesson.id === 1 ? (
-                // Lesson 1: Show creature progression
-                currentStep === 0 ? (
-                  // Step 1 only: Egg waiting to hatch
-                  <div className="relative">
-                    <img
-                      src="/creatures/first_egg.png"
-                      alt="Creature egg"
-                      className="w-80 h-80 object-contain transition-all duration-1000 ease-in-out"
-                      style={{
-                        filter:
-                          "drop-shadow(0 0 15px rgba(139, 92, 246, 0.6)) drop-shadow(0 0 30px rgba(139, 92, 246, 0.4)) drop-shadow(0 0 60px rgba(139, 92, 246, 0.2)) drop-shadow(0 0 90px rgba(139, 92, 246, 0.1))",
-                      }}
-                    />
-                    <div
-                      className="absolute inset-0 rounded-full animate-pulse"
-                      style={{
-                        animationDuration: "2s",
-                        background:
-                          "radial-gradient(circle, rgba(168, 85, 247, 0.15) 0%, rgba(168, 85, 247, 0.08) 30%, rgba(168, 85, 247, 0.04) 60%, rgba(168, 85, 247, 0) 100%)",
-                      }}
-                    />
-                  </div>
-                ) : (
-                  // Steps 2-5: Show the creature! Sleeping until step 5 is validated
-                  <div className="relative">
-                    <img
-                      src={
-                        isValidated && currentStep === 4
-                          ? "/creatures/first_awake.png"
-                          : "/creatures/first_sleeping.png"
-                      }
-                      alt={
-                        isValidated && currentStep === 4
-                          ? "Awakened creature"
-                          : "Sleeping creature"
-                      }
-                      className="w-80 h-80 object-contain transition-all duration-1000 ease-in-out"
-                      style={{
-                        filter:
-                          isValidated && currentStep === 4
-                            ? "drop-shadow(0 0 20px rgba(168, 85, 247, 0.8)) drop-shadow(0 0 40px rgba(168, 85, 247, 0.5)) drop-shadow(0 0 80px rgba(168, 85, 247, 0.3)) drop-shadow(0 0 120px rgba(168, 85, 247, 0.1))"
-                            : "drop-shadow(0 0 12px rgba(71, 85, 105, 0.7)) drop-shadow(0 0 25px rgba(71, 85, 105, 0.4)) drop-shadow(0 0 50px rgba(71, 85, 105, 0.2)) drop-shadow(0 0 75px rgba(71, 85, 105, 0.1))",
-                      }}
-                    />
-                    {isValidated && currentStep === 4 && (
-                      <div
-                        className="absolute inset-0 rounded-full animate-pulse"
-                        style={{
-                          animationDuration: "1.5s",
-                          background:
-                            "radial-gradient(circle, rgba(168, 85, 247, 0.2) 0%, rgba(168, 85, 247, 0.12) 30%, rgba(168, 85, 247, 0.06) 60%, rgba(168, 85, 247, 0) 100%)",
-                        }}
-                      />
-                    )}
-                    {/* Gentle breathing animation for sleeping creature */}
-                    {!(isValidated && currentStep === 4) && (
-                      <div
-                        className="absolute inset-0 rounded-full animate-pulse"
-                        style={{
-                          animationDuration: "4s",
-                          background:
-                            "radial-gradient(circle, rgba(96, 165, 250, 0.08) 0%, rgba(96, 165, 250, 0.04) 30%, rgba(96, 165, 250, 0.02) 60%, rgba(96, 165, 250, 0) 100%)",
-                        }}
-                      />
-                    )}
-                  </div>
-                )
-              ) : lesson.id === 2 ? (
-                // Lesson 2: Show creature with body
-                <div className="relative">
+                currentStepData?.image ? (
                   <img
-                    src="/creatures/second_body.png"
-                    alt="Creature with body"
+                    src={currentStepData.image}
+                    alt="Creature"
+                    width={320}
+                    height={320}
                     className="w-80 h-80 object-contain"
                     style={{
                       filter:
                         "drop-shadow(0 0 18px rgba(168, 85, 247, 0.7)) drop-shadow(0 0 35px rgba(168, 85, 247, 0.5)) drop-shadow(0 0 70px rgba(168, 85, 247, 0.3)) drop-shadow(0 0 105px rgba(168, 85, 247, 0.1))",
                     }}
                   />
-                </div>
+                ) : (
+                  <div className="w-64 h-64 bg-slate-800/30 rounded-full flex items-center justify-center backdrop-blur-sm">
+                    <span className="text-6xl">🔬</span>
+                  </div>
+                )
               ) : (
-                // Future lessons: Placeholder
                 <div className="w-64 h-64 bg-slate-800/30 rounded-full flex items-center justify-center backdrop-blur-sm">
                   <span className="text-6xl">🔬</span>
                 </div>
