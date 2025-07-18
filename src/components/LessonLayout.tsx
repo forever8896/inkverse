@@ -33,8 +33,6 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
     }
     setIsValidated(false);
     setShowHint(false);
-    
-
   }, [currentStep, currentStepData]);
 
   const addToast = (toast: Omit<Toast, "id">) => {
@@ -231,40 +229,31 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
 
   return (
     <div className="h-screen bg-slate-900 flex flex-col overflow-hidden">
-      {/* Navigation */}
-      <nav className="border-b border-slate-800 px-6 py-4 flex-shrink-0">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <span className="text-slate-400">•</span>
-            <span className="text-slate-300">Lesson {lesson.id}</span>
-          </div>
-
-          <div className="flex items-center space-x-4">
-            <div className="text-sm text-slate-400">
-              Step {currentStep + 1} of {lesson.steps.length}
-            </div>
-            <div className="w-32 bg-slate-700 rounded-full h-2">
-              <div
-                className="bg-gradient-to-r from-purple-400 to-cyan-400 h-2 rounded-full transition-all duration-300"
-                style={{
-                  width: `${((currentStep + 1) / lesson.steps.length) * 100}%`,
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      </nav>
-
       <div className="flex flex-1 overflow-hidden">
         {/* Left Panel: Creature Display with Shader Background */}
         <div className="w-1/2 relative overflow-hidden">
           {/* Shader Background */}
           <ShaderBackground />
 
-          <div className="absolute top-2 left-2">
-            <Link href="/lessons" className="flex items-center space-x-2">
-              <img src="/logo.png" alt="Monsters ink!" className="h-24" />
-            </Link>
+          <div className="absolute top-0 flex justify-between w-full">
+            <div className="p-5">
+              <Link href="/lessons" className="flex items-center space-x-2">
+                <img src="/logo.png" alt="Monsters ink!" className="h-24" />
+              </Link>
+            </div>
+
+            <div className="p-5">
+              <div className="w-32 bg-slate-700 rounded-full h-2">
+                <div
+                  className="bg-gradient-to-r from-purple-400 to-cyan-400 h-2 rounded-full transition-all duration-300"
+                  style={{
+                    width: `${
+                      ((currentStep + 1) / lesson.steps.length) * 100
+                    }%`,
+                  }}
+                />
+              </div>
+            </div>
           </div>
 
           {/* Creature Display */}
@@ -503,66 +492,67 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
               </div>
             )}
 
-              {/* Toast Container */}
-              <div className="fixed top-4 right-4 z-50 space-y-3">
-                {toasts.map((toast, idx) => (
-                  <div
-                    key={toast.id}
-                    className={`max-w-sm p-4 rounded-xl shadow-lg backdrop-blur-sm border transform transition-all duration-300 ease-in-out
-                      ${toast.type === 'success'
-                        ? 'bg-gradient-to-r from-green-900/90 to-emerald-900/80 border-green-600/50 text-green-100'
-                        : toast.type === 'error'
-                        ? 'bg-gradient-to-r from-red-900/90 to-rose-900/80 border-red-600/50 text-red-100'
-                        : 'bg-gradient-to-r from-blue-900/90 to-cyan-900/80 border-blue-600/50 text-blue-100'}
-                      animate-toast-fly-in`
-                    }
-                    style={{
-                      animationDelay: `${idx * 0.1}s`,
-                      animationFillMode: 'both',
-                    }}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h4 className="font-semibold mb-1">{toast.title}</h4>
-                        <p className="text-sm opacity-90">{toast.message}</p>
-                      </div>
-                      <button
-                        onClick={() => removeToast(toast.id)}
-                        className="ml-3 text-white/60 hover:text-white/80 transition-colors"
-                      >
-                        ✕
-                      </button>
+            {/* Toast Container */}
+            <div className="fixed top-4 right-4 z-50 space-y-3">
+              {toasts.map((toast, idx) => (
+                <div
+                  key={toast.id}
+                  className={`max-w-sm p-4 rounded-xl shadow-lg backdrop-blur-sm border transform transition-all duration-300 ease-in-out
+                      ${
+                        toast.type === "success"
+                          ? "bg-gradient-to-r from-green-900/90 to-emerald-900/80 border-green-600/50 text-green-100"
+                          : toast.type === "error"
+                          ? "bg-gradient-to-r from-red-900/90 to-rose-900/80 border-red-600/50 text-red-100"
+                          : "bg-gradient-to-r from-blue-900/90 to-cyan-900/80 border-blue-600/50 text-blue-100"
+                      }
+                      animate-toast-fly-in`}
+                  style={{
+                    animationDelay: `${idx * 0.1}s`,
+                    animationFillMode: "both",
+                  }}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h4 className="font-semibold mb-1">{toast.title}</h4>
+                      <p className="text-sm opacity-90">{toast.message}</p>
                     </div>
+                    <button
+                      onClick={() => removeToast(toast.id)}
+                      className="ml-3 text-white/60 hover:text-white/80 transition-colors"
+                    >
+                      ✕
+                    </button>
                   </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Navigation */}
+            <div className="flex justify-between items-center p-4 bg-slate-800/30 rounded-lg border border-slate-700/50 backdrop-blur-sm flex-shrink-0">
+              <button
+                onClick={previousStep}
+                disabled={currentStep === 0}
+                className="px-4 py-2 bg-slate-700 hover:bg-slate-600 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg transition-all duration-200 font-medium flex items-center space-x-1 border border-slate-600 hover:border-slate-500 text-sm"
+              >
+                <span>←</span>
+                <span>Previous</span>
+              </button>
+
+              <div className="flex space-x-2">
+                {Array.from({ length: lesson.steps.length }, (_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setCurrentStep(i)}
+                    className={`w-3 h-3 rounded-full transition-all duration-200 hover:scale-110 ${
+                      i === currentStep
+                        ? "bg-gradient-to-r from-purple-400 to-cyan-400 shadow-lg shadow-purple-400/30"
+                        : i < currentStep
+                        ? "bg-gradient-to-r from-green-400 to-emerald-400 shadow-md shadow-green-400/20"
+                        : "bg-slate-600 hover:bg-slate-500"
+                    }`}
+                  />
                 ))}
               </div>
-
-              {/* Navigation */}
-              <div className="flex justify-between items-center p-4 bg-slate-800/30 rounded-lg border border-slate-700/50 backdrop-blur-sm flex-shrink-0">
-                <button
-                  onClick={previousStep}
-                  disabled={currentStep === 0}
-                  className="px-4 py-2 bg-slate-700 hover:bg-slate-600 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg transition-all duration-200 font-medium flex items-center space-x-1 border border-slate-600 hover:border-slate-500 text-sm"
-                >
-                  <span>←</span>
-                  <span>Previous</span>
-                </button>
-
-                <div className="flex space-x-2">
-                  {Array.from({ length: lesson.steps.length }, (_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setCurrentStep(i)}
-                      className={`w-3 h-3 rounded-full transition-all duration-200 hover:scale-110 ${
-                        i === currentStep
-                          ? "bg-gradient-to-r from-purple-400 to-cyan-400 shadow-lg shadow-purple-400/30"
-                          : i < currentStep
-                          ? "bg-gradient-to-r from-green-400 to-emerald-400 shadow-md shadow-green-400/20"
-                          : "bg-slate-600 hover:bg-slate-500"
-                      }`}
-                    />
-                  ))}
-                </div>
 
               <button
                 onClick={nextStep}
