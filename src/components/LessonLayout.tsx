@@ -28,6 +28,7 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
   const [isValidated, setIsValidated] = useState(false);
   const [showHint, setShowHint] = useState(false);
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
 
   const currentStepData = lesson?.steps[currentStep];
 
@@ -38,6 +39,7 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
     }
     setIsValidated(false);
     setShowHint(false);
+    setShowCompletionModal(false); // Reset modal when step changes
   }, [currentStep, currentStepData]);
 
   const addToast = (toast: Omit<Toast, "id">) => {
@@ -233,7 +235,40 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
   }
 
   return (
-    <div className="h-screen w-screen bg-slate-900 flex flex-col overflow-hidden bg-black">
+    <>
+      {/* Toast Notifications */}
+      <div className="fixed top-6 left-1/2 transform -translate-x-1/2 z-1000 flex flex-col items-center space-y-3 pointer-events-none">
+        {toasts.map((toast) => (
+          <div
+            key={toast.id}
+            className={`
+              px-6 py-4 rounded-lg shadow-lg border
+              ${toast.type === "success" ? "bg-green-700/90 border-green-400 text-white" : ""}
+              ${toast.type === "error" ? "bg-red-700/90 border-red-400 text-white" : ""}
+              ${toast.type === "info" ? "bg-blue-700/90 border-blue-400 text-white" : ""}
+              animate-fade-in-up pointer-events-auto
+            `}
+            style={{ minWidth: 280, maxWidth: 400 }}
+            role="alert"
+            aria-live="polite"
+          >
+            <div className="font-semibold mb-1">{toast.title}</div>
+            <div className="text-sm">{toast.message}</div>
+          </div>
+        ))}
+      </div>
+
+      <style>{`
+        @keyframes fade-in-up {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in-up {
+          animation: fade-in-up 0.4s cubic-bezier(.4,0,.2,1) both;
+        }
+      `}</style>
+
+      <div className="h-screen w-screen bg-slate-900 flex flex-col overflow-hidden bg-black">
       {/* Full-screen Shader Background */}
       <ShaderBackground />
 
@@ -350,24 +385,24 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
                 >
                   <span>💡</span>
                   <span className="font-medium">
-                    {showHint ? "Hide Hint" : "Show Hint"}
+                    Show Hint
                   </span>
                 </button>
-                {showHint && (
-                  <div className="mt-3 p-4 bg-gradient-to-r from-amber-900/30 to-yellow-900/20 border border-amber-600/40 rounded-lg backdrop-blur-sm">
-                    <div className="flex items-start space-x-3">
+                <div className="relative w-full flex justify-center">
+                  {/* Animated Toast-like Hint Overlay */}
+                  <div
+                    className={`absolute bottom-full mb-3 left-1/2 -translate-x-1/2 z-20 pointer-events-none transition-all duration-300 ${showHint ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'} w-[min(90vw,420px)]`}
+                    aria-live="polite"
+                  >
+                    <div className="p-4 bg-gradient-to-r from-amber-900/80 to-yellow-900/70 border border-amber-600/60 rounded-lg shadow-xl backdrop-blur-lg flex items-start space-x-3 pointer-events-auto">
                       <span className="text-lg mt-0.5">💡</span>
                       <div>
-                        <h4 className="text-amber-300 font-semibold mb-1 text-sm">
-                          Hint
-                        </h4>
-                        <p className="text-amber-100 leading-relaxed text-sm">
-                          {currentStepData.hint}
-                        </p>
+                        <h4 className="text-amber-300 font-semibold mb-1 text-sm">Hint</h4>
+                        <p className="text-amber-100 leading-relaxed text-sm">{currentStepData.hint}</p>
                       </div>
                     </div>
                   </div>
-                )}
+                </div>
               </div>
             )}
           </div>
@@ -456,22 +491,61 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
               ))}
             </div>
 
-            <button
-              onClick={nextStep}
-              disabled={
-                currentStep === lesson.steps.length - 1 ||
-                (currentStepData?.validation && !isValidated)
-              }
-              className="px-4 py-2 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg transition-all duration-200 font-medium flex items-center space-x-1 shadow-lg text-sm"
-            >
-              <span>
-                {currentStep === lesson.steps.length - 1 ? "Complete" : "Next"}
-              </span>
-              <span>→</span>
-            </button>
+            {currentStep === lesson.steps.length - 1 && lesson.id === 1 ? (
+              <button
+                onClick={() => setShowCompletionModal(true)}
+                disabled={currentStepData?.validation && !isValidated}
+                className="px-4 py-2 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg transition-all duration-200 font-medium flex items-center space-x-1 shadow-lg text-sm"
+              >
+                <span>Complete</span>
+                <span>→</span>
+              </button>
+            ) : (
+              <button
+                onClick={nextStep}
+                disabled={currentStep === lesson.steps.length - 1 || (currentStepData?.validation && !isValidated)}
+                className="px-4 py-2 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg transition-all duration-200 font-medium flex items-center space-x-1 shadow-lg text-sm"
+              >
+                <span>{currentStep === lesson.steps.length - 1 ? "Complete" : "Next"}</span>
+                <span>→</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
+    {/* Completion Modal */}
+    {showCompletionModal && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
+        <div className="bg-slate-900 rounded-lg shadow-2xl p-8 flex flex-col items-center max-w-[90vw] max-h-[90vh] relative">
+          <button
+            onClick={() => setShowCompletionModal(false)}
+            className="absolute top-4 right-4 text-slate-400 hover:text-white text-2xl font-bold focus:outline-none"
+            aria-label="Close"
+          >
+            ×
+          </button>
+          <video
+            src="/creatures/video.mp4"
+            autoPlay
+            loop
+            controls
+            className="w-[min(480px,70vw)] h-[min(270px,40vw)] mx-auto rounded-lg shadow-lg mb-6 bg-black"
+            style={{ objectFit: "contain" }}
+          />
+          <h2 className="text-3xl font-bold text-white mb-2 text-center">Congratulations!</h2>
+          <p className="text-lg text-slate-200 text-center mb-4">
+            You just wrote your first ever contract. Welcome to the world of ink! smart contracts!
+          </p>
+          <button
+            onClick={() => setShowCompletionModal(false)}
+            className="mt-2 px-6 py-2 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 rounded-lg text-white font-semibold shadow-md"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    )}
     </div>
+    </>
   );
 }
