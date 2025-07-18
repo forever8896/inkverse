@@ -245,9 +245,6 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
       <nav className="border-b border-slate-800 px-6 py-4 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <Link href="/lessons" className="flex items-center space-x-2">
-              <img src="/logo.png" alt="Monsters ink!" className="h-24" />
-            </Link>
             <span className="text-slate-400">•</span>
             <span className="text-slate-300">Lesson {lesson.id}</span>
           </div>
@@ -274,6 +271,12 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
           {/* Shader Background */}
           <ShaderBackground />
 
+          <div className="absolute top-2 left-2">
+            <Link href="/lessons" className="flex items-center space-x-2">
+              <img src="/logo.png" alt="Monsters ink!" className="h-24" />
+            </Link>
+          </div>
+
           {/* Creature Display */}
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="relative">
@@ -287,12 +290,17 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
                       alt="Creature egg"
                       className="w-80 h-80 object-contain transition-all duration-1000 ease-in-out"
                       style={{
-                        filter: "drop-shadow(0 0 30px rgba(139, 92, 246, 0.5))",
+                        filter:
+                          "drop-shadow(0 0 15px rgba(139, 92, 246, 0.6)) drop-shadow(0 0 30px rgba(139, 92, 246, 0.4)) drop-shadow(0 0 60px rgba(139, 92, 246, 0.2)) drop-shadow(0 0 90px rgba(139, 92, 246, 0.1))",
                       }}
                     />
                     <div
-                      className="absolute inset-0 bg-purple-400/10 rounded-full animate-pulse"
-                      style={{ animationDuration: "2s" }}
+                      className="absolute inset-0 rounded-full animate-pulse"
+                      style={{
+                        animationDuration: "2s",
+                        background:
+                          "radial-gradient(circle, rgba(168, 85, 247, 0.15) 0%, rgba(168, 85, 247, 0.08) 30%, rgba(168, 85, 247, 0.04) 60%, rgba(168, 85, 247, 0) 100%)",
+                      }}
                     />
                   </div>
                 ) : (
@@ -313,21 +321,29 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
                       style={{
                         filter:
                           isValidated && currentStep === 4
-                            ? "drop-shadow(0 0 40px rgba(168, 85, 247, 0.8))"
-                            : "drop-shadow(0 0 25px rgba(71, 85, 105, 0.6))",
+                            ? "drop-shadow(0 0 20px rgba(168, 85, 247, 0.8)) drop-shadow(0 0 40px rgba(168, 85, 247, 0.5)) drop-shadow(0 0 80px rgba(168, 85, 247, 0.3)) drop-shadow(0 0 120px rgba(168, 85, 247, 0.1))"
+                            : "drop-shadow(0 0 12px rgba(71, 85, 105, 0.7)) drop-shadow(0 0 25px rgba(71, 85, 105, 0.4)) drop-shadow(0 0 50px rgba(71, 85, 105, 0.2)) drop-shadow(0 0 75px rgba(71, 85, 105, 0.1))",
                       }}
                     />
                     {isValidated && currentStep === 4 && (
                       <div
-                        className="absolute inset-0 bg-purple-400/15 rounded-full animate-pulse"
-                        style={{ animationDuration: "1.5s" }}
+                        className="absolute inset-0 rounded-full animate-pulse"
+                        style={{
+                          animationDuration: "1.5s",
+                          background:
+                            "radial-gradient(circle, rgba(168, 85, 247, 0.2) 0%, rgba(168, 85, 247, 0.12) 30%, rgba(168, 85, 247, 0.06) 60%, rgba(168, 85, 247, 0) 100%)",
+                        }}
                       />
                     )}
                     {/* Gentle breathing animation for sleeping creature */}
                     {!(isValidated && currentStep === 4) && (
                       <div
-                        className="absolute inset-0 bg-blue-400/5 rounded-full animate-pulse"
-                        style={{ animationDuration: "4s" }}
+                        className="absolute inset-0 rounded-full animate-pulse"
+                        style={{
+                          animationDuration: "4s",
+                          background:
+                            "radial-gradient(circle, rgba(96, 165, 250, 0.08) 0%, rgba(96, 165, 250, 0.04) 30%, rgba(96, 165, 250, 0.02) 60%, rgba(96, 165, 250, 0) 100%)",
+                        }}
                       />
                     )}
                   </div>
@@ -340,7 +356,8 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
                     alt="Creature with body"
                     className="w-80 h-80 object-contain"
                     style={{
-                      filter: "drop-shadow(0 0 35px rgba(168, 85, 247, 0.7))",
+                      filter:
+                        "drop-shadow(0 0 18px rgba(168, 85, 247, 0.7)) drop-shadow(0 0 35px rgba(168, 85, 247, 0.5)) drop-shadow(0 0 70px rgba(168, 85, 247, 0.3)) drop-shadow(0 0 105px rgba(168, 85, 247, 0.1))",
                     }}
                   />
                 </div>
