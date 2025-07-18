@@ -7,6 +7,7 @@ import CodeEditor from "@/components/CodeEditor";
 import ShaderBackground from "@/components/ShaderBackground";
 import dynamic from "next/dynamic";
 import { HSLValues } from "@/components/CreatureColorPicker";
+import Confetti from "react-confetti";
 
 const ConsolePanel = dynamic(() => import("@/app/ConsolePanel"), {
   ssr: false,
@@ -35,6 +36,10 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
     saturation: 0,
     lightness: 0,
   });
+  const [windowDimensions, setWindowDimensions] = useState({
+    width: 0,
+    height: 0,
+  });
 
   const currentStepData = lesson?.steps[currentStep];
 
@@ -59,6 +64,25 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
         console.error("Error parsing saved color:", error);
       }
     }
+  }, []);
+
+  // Track window dimensions for confetti
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowDimensions({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    };
+
+    // Set initial dimensions
+    handleResize();
+
+    // Add event listener
+    window.addEventListener("resize", handleResize);
+
+    // Clean up
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   const addToast = (toast: Omit<Toast, "id">) => {
@@ -410,10 +434,10 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
                 <div className="flex-1 flex flex-col min-h-0">
                   <div
                     className="prose prose-invert prose-purple max-w-none text-slate-200 leading-relaxed flex-1 overflow-y-auto
-                  [&>h1]:!text-[20px] [&>h1]:!font-bold [&>h1]:!text-purple-200 [&>h1]:!mb-4 [&>h1]:!leading-tight [&>h1]:!font-sans [&>h1]:!normal-case [&>h1]:!tracking-normal
-                  [&>h2]:!text-sm [&>h2]:!font-semibold [&>h2]:!text-purple-300 [&>h2]:!mb-3 [&>h2]:!mt-4 [&>h2]:!font-sans [&>h2]:!normal-case [&>h2]:!tracking-normal
-                  [&>h3]:!text-xs [&>h3]:!font-medium [&>h3]:!text-cyan-300 [&>h3]:!mb-2 [&>h3]:!mt-3 [&>h3]:!font-sans [&>h3]:!normal-case [&>h3]:!tracking-normal
-                  [&>p]:mb-4 [&>p]:text-sm [&>p]:leading-6 [&>p]:text-slate-200
+                  [&>h1]:!text-[15px] [&>h1]:!font-bold [&>h1]:!uppercase [&>h1]:!text-purple-200 [&>h1]:!mb-4 [&>h1]:!leading-tight [&>h1]:!normal-case [&>h1]:!tracking-normal
+                  [&>h2]:!text-sm [&>h2]:!font-semibold [&>h2]:!text-purple-300 [&>h2]:!mb-3 [&>h2]:!mt-4  [&>h2]:!normal-case [&>h2]:!tracking-normal
+                  [&>h3]:!text-xs [&>h3]:!font-medium [&>h3]:!text-cyan-300 [&>h3]:!mb-2 [&>h3]:!mt-3  [&>h3]:!normal-case [&>h3]:!tracking-normal
+                  [&>p]:mb-4 [&>p]:text-base [&>p]:leading-6 [&>p]:text-slate-200
                   [&>ul]:mb-4 [&>ul]:space-y-1 [&>ol]:mb-4 [&>ol]:space-y-1
                   [&>li]:text-slate-200 [&>li]:leading-5 [&>li]:pl-1 [&>li]:text-sm
                   [&>code]:bg-slate-800 [&>code]:text-purple-300 [&>code]:px-1 [&>code]:py-0.5 [&>code]:rounded [&>code]:text-xs [&>code]:font-mono
@@ -599,18 +623,51 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
               <h2 className="text-3xl font-bold text-white mb-2 text-center">
                 Congratulations!
               </h2>
-              <p className="text-lg text-slate-200 text-center mb-4">
-                You just wrote your first ever contract. Welcome to the world of
-                ink! smart contracts!
+              <p className="text-lg text-slate-200 text-center mb-6">
+                You just wrote your first ever contract.
+                <br />
+                Welcome to the world of ink! smart contracts!
               </p>
-              <button
-                onClick={() => setShowCompletionModal(false)}
-                className="mt-2 px-6 py-2 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 rounded-lg text-white font-semibold shadow-md"
-              >
-                Close
-              </button>
+              <div className="flex space-x-4">
+                <a
+                  href="https://use.ink/docs/v6/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-6 py-2 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 rounded-lg text-white font-semibold shadow-md transition-all duration-200 flex items-center space-x-2"
+                >
+                  <span>📚</span>
+                  <span>View ink! Docs</span>
+                </a>
+                <Link
+                  href="/playground"
+                  className="px-6 py-2 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 rounded-lg text-white font-semibold shadow-md transition-all duration-200 flex items-center space-x-2"
+                >
+                  <span>🚀</span>
+                  <span>What&apos;s Next</span>
+                </Link>
+              </div>
             </div>
           </div>
+        )}
+
+        {/* Confetti */}
+        {showCompletionModal && (
+          <Confetti
+            width={windowDimensions.width}
+            height={windowDimensions.height}
+            recycle={false}
+            numberOfPieces={200}
+            gravity={0.1}
+            colors={[
+              "#9333ea",
+              "#06b6d4",
+              "#ec4899",
+              "#10b981",
+              "#f59e0b",
+              "#ef4444",
+            ]}
+            style={{ position: "fixed", top: 0, left: 0, zIndex: 60 }}
+          />
         )}
       </div>
     </>

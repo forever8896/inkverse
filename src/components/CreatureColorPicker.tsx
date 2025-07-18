@@ -216,17 +216,6 @@ export default function CreatureColorPicker({
         </div>
       </motion.div>
 
-      {/* Reset Button */}
-      <motion.button
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-        onClick={resetColors}
-        className="relative z-10 w-full px-4 py-3 bg-gradient-to-r from-slate-700/80 to-slate-600/80 hover:from-slate-600/80 hover:to-slate-500/80 text-white text-sm font-semibold rounded-lg transition-all duration-200 backdrop-blur-sm border border-slate-600/50 hover:border-slate-500/50 flex items-center justify-center space-x-2"
-      >
-        <span>🔄</span>
-        <span>Reset Colors</span>
-      </motion.button>
-
       <style jsx>{`
         /* Custom slider styling */
         input[type="range"] {

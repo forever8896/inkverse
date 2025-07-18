@@ -346,9 +346,6 @@ export default function LabPage() {
                   <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
                     Customize your Creature
                   </h1>
-                  <p className="text-xl text-slate-300">
-                    Engineer and awaken digital life forms through code
-                  </p>
                 </motion.div>
 
                 {/* Creature Display & Color Customization */}
@@ -486,7 +483,7 @@ export default function LabPage() {
                           >
                             {chapter.completed
                               ? "🔄 Review Chapter"
-                              : "🚀 Start Bio-Engineering"}
+                              : "🚀 Get Started"}
                           </Link>
                         ) : (
                           <div className="w-full bg-slate-700 text-slate-400 font-semibold py-4 px-6 rounded-xl text-center">

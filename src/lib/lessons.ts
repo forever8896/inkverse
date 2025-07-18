@@ -37,8 +37,8 @@ const lessons: Lesson[] = [
     duration: "20 min",
     objectives: [
       "Understand ink! contract basics and syntax",
-      "Create your first bio-engineered creature",
-      "Deploy a flipper contract on-chain",
+      "Understand storage",
+      "Create your first function",
       "Watch your creature's eyes open for the first time",
     ],
     steps: [
@@ -53,9 +53,7 @@ const lessons: Lesson[] = [
 
 <p>Every ink! contract starts with this basic template. Think of it as the DNA blueprint for your creature.</p>
 
-<div style="background: #059669; border: 1px solid #10b981; border-radius: 8px; padding: 5px 10px; margin: 16px 0; color: white;">
-<strong>✅ Task Complete!</strong> Just observe the code structure - no changes needed yet!
-</div>
+
         `,
         code: `#![cfg_attr(not(feature = "std"), no_std, no_main)]
 
@@ -363,7 +361,6 @@ pub fn wake_up(&mut self) lets your creature switch its state—like flipping a 
           { type: "includes", patterns: ["!self.is_conscious"] },
         ],
       },
-     
     ],
     completed: false,
     locked: false,
@@ -393,7 +390,7 @@ pub fn wake_up(&mut self) lets your creature switch its state—like flipping a 
     difficulty: "Intermediate",
     duration: "30 min",
     objectives: [
-      "Learn integration testing with ink!",
+      "Learn integration testing with drink!",
       "Simulate contract interactions",
       "Implement drinking mechanics",
       "Unlock creature consciousness",
