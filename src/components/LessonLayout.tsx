@@ -33,18 +33,8 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
     }
     setIsValidated(false);
     setShowHint(false);
+    
 
-    // Show encouraging message for new coding steps
-    if (currentStepData?.validation && currentStep > 0) {
-      setTimeout(() => {
-        addToast({
-          type: "info",
-          title: "💻 Time to Code!",
-          message:
-            'Read the instructions, then start coding. Click "Check Code" when ready!',
-        });
-      }, 500);
-    }
   }, [currentStep, currentStepData]);
 
   const addToast = (toast: Omit<Toast, "id">) => {
@@ -513,16 +503,66 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
               </div>
             )}
 
-            {/* Controls */}
-            <div className="flex justify-between items-center mt-4 pt-4 border-t border-slate-700/50 flex-shrink-0">
-              <button
-                onClick={previousStep}
-                disabled={currentStep === 0}
-                className="px-4 py-2 bg-slate-700 hover:bg-slate-600 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg transition-all duration-200 font-medium flex items-center space-x-1 border border-slate-600 hover:border-slate-500 text-sm"
-              >
-                <span>←</span>
-                <span>Previous</span>
-              </button>
+              {/* Toast Container */}
+              <div className="fixed top-4 right-4 z-50 space-y-3">
+                {toasts.map((toast, idx) => (
+                  <div
+                    key={toast.id}
+                    className={`max-w-sm p-4 rounded-xl shadow-lg backdrop-blur-sm border transform transition-all duration-300 ease-in-out
+                      ${toast.type === 'success'
+                        ? 'bg-gradient-to-r from-green-900/90 to-emerald-900/80 border-green-600/50 text-green-100'
+                        : toast.type === 'error'
+                        ? 'bg-gradient-to-r from-red-900/90 to-rose-900/80 border-red-600/50 text-red-100'
+                        : 'bg-gradient-to-r from-blue-900/90 to-cyan-900/80 border-blue-600/50 text-blue-100'}
+                      animate-toast-fly-in`
+                    }
+                    style={{
+                      animationDelay: `${idx * 0.1}s`,
+                      animationFillMode: 'both',
+                    }}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h4 className="font-semibold mb-1">{toast.title}</h4>
+                        <p className="text-sm opacity-90">{toast.message}</p>
+                      </div>
+                      <button
+                        onClick={() => removeToast(toast.id)}
+                        className="ml-3 text-white/60 hover:text-white/80 transition-colors"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Navigation */}
+              <div className="flex justify-between items-center p-4 bg-slate-800/30 rounded-lg border border-slate-700/50 backdrop-blur-sm flex-shrink-0">
+                <button
+                  onClick={previousStep}
+                  disabled={currentStep === 0}
+                  className="px-4 py-2 bg-slate-700 hover:bg-slate-600 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg transition-all duration-200 font-medium flex items-center space-x-1 border border-slate-600 hover:border-slate-500 text-sm"
+                >
+                  <span>←</span>
+                  <span>Previous</span>
+                </button>
+
+                <div className="flex space-x-2">
+                  {Array.from({ length: lesson.steps.length }, (_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setCurrentStep(i)}
+                      className={`w-3 h-3 rounded-full transition-all duration-200 hover:scale-110 ${
+                        i === currentStep
+                          ? "bg-gradient-to-r from-purple-400 to-cyan-400 shadow-lg shadow-purple-400/30"
+                          : i < currentStep
+                          ? "bg-gradient-to-r from-green-400 to-emerald-400 shadow-md shadow-green-400/20"
+                          : "bg-slate-600 hover:bg-slate-500"
+                      }`}
+                    />
+                  ))}
+                </div>
 
               <button
                 onClick={nextStep}

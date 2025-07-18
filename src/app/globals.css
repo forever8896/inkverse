@@ -221,6 +221,30 @@ body {
 }
 
 /* Gentle egg bounce animation */
+
+@keyframes toast-fly-in {
+  0% {
+    opacity: 0;
+    transform: translateX(64px) scale(0.95);
+  }
+  60% {
+    opacity: 1;
+    transform: translateX(-8px) scale(1.02);
+  }
+  80% {
+    opacity: 1;
+    transform: translateX(2px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+.animate-toast-fly-in {
+  animation: toast-fly-in 0.65s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
 @keyframes egg-bounce {
   0%,
   20%,
