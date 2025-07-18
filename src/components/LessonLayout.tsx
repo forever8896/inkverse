@@ -25,6 +25,7 @@ interface Toast {
 
 export default function LessonLayout({ lesson }: LessonLayoutProps) {
   const [currentStep, setCurrentStep] = useState(0);
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
   const [userCode, setUserCode] = useState("");
   const [isValidated, setIsValidated] = useState(false);
   const [showHint, setShowHint] = useState(false);
