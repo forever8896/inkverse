@@ -1,7 +1,25 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
+  const [isEggCracking, setIsEggCracking] = useState(false);
+  const router = useRouter();
+
+  const handleEggClick = () => {
+    if (isEggCracking) return; // Prevent multiple clicks
+
+    setIsEggCracking(true);
+
+    // After 1 second, navigate to /lab
+    setTimeout(() => {
+      router.push("/lab");
+    }, 1000);
+  };
+
   return (
     <div className="min-h-screen overflow-hidden">
       {/* Hero Section with animated background */}
@@ -53,9 +71,9 @@ export default function Home() {
 
             {/* Bouncing Egg CTA */}
             <div className="flex justify-center mb-16">
-              <Link
-                href="/lab"
-                className="relative group cursor-pointer transform transition-all duration-300 "
+              <div
+                onClick={handleEggClick}
+                className="relative group cursor-pointer transform transition-all duration-300"
               >
                 <div className="relative">
                   {/* Glow effect behind egg */}
@@ -63,17 +81,21 @@ export default function Home() {
 
                   {/* Bouncing egg */}
                   <img
-                    src="/creatures/egg_cracks.png"
+                    src={
+                      isEggCracking
+                        ? "/creatures/egg_cracks.png"
+                        : "/creatures/first_egg.png"
+                    }
                     alt="Click to enter the lab"
                     className="hover:scale-110 w-48 h-48 object-contain animate-egg-bounce relative z-10 group-hover:animate-pulse"
                   />
 
                   {/* Text superimposed on egg */}
                   <div className="absolute -bottom-[44px] left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-xl font-medium text-white text-center whitespace-nowrap z-20">
-                    Click the egg to start!
+                    {isEggCracking ? "" : "Crack the egg to start!"}
                   </div>
                 </div>
-              </Link>
+              </div>
             </div>
           </div>
         </div>

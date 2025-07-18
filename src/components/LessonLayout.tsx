@@ -228,13 +228,13 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
   }
 
   return (
-    <div className="h-screen bg-slate-900 flex flex-col overflow-hidden">
-      <div className="flex flex-1 overflow-hidden">
-        {/* Left Panel: Creature Display with Shader Background */}
-        <div className="w-1/2 relative overflow-hidden">
-          {/* Shader Background */}
-          <ShaderBackground />
+    <div className="h-screen w-screen bg-slate-900 flex flex-col overflow-hidden">
+      {/* Full-screen Shader Background */}
+      <ShaderBackground />
 
+      <div className="flex flex-1 overflow-hidden relative">
+        {/* Left Panel: Creature Display */}
+        <div className="w-1/2 relative overflow-hidden backdrop-blur-md bg-slate-900/20 border-r border-slate-700/30">
           <div className="absolute top-0 flex justify-between w-full">
             <div className="p-5">
               <Link href="/lessons" className="flex items-center space-x-2">
@@ -351,7 +351,7 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
 
           {/* Creature Info Overlay */}
           <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">
-            <div className="text-center space-y-3 backdrop-blur-md bg-slate-900/40 rounded-xl px-6 py-4 border border-slate-700/50">
+            <div className="text-center space-y-3 px-6 py-4 ">
               {/* Creature Name */}
               <h3 className="text-lg font-semibold text-white">
                 {lesson.id === 1
@@ -421,7 +421,7 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
 
           {/* Navigation Overlay */}
           <div className="absolute bottom-8 right-8">
-            <div className="flex space-x-3 backdrop-blur-md bg-slate-900/40 rounded-xl p-3 border border-slate-700/50">
+            <div className="flex space-x-3 backdrop-blur-md bg-slate-900/30 rounded-xl p-3 border border-slate-700/40">
               {Array.from({ length: lesson.steps.length }, (_, i) => (
                 <button
                   key={i}
@@ -440,9 +440,9 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
         </div>
 
         {/* Right Panel: Instructions + Code Editor */}
-        <div className="w-1/2 flex flex-col border-l border-slate-700">
+        <div className="w-1/2 flex flex-col">
           {/* Instructions Section */}
-          <div className="h-1/2 p-6 flex flex-col overflow-hidden">
+          <div className="h-1/2 p-6 flex flex-col overflow-hidden backdrop-blur-md bg-slate-900/30 border-b border-slate-700/30">
             {currentStepData && (
               <div className="flex-1 flex flex-col min-h-0">
                 <div
@@ -528,7 +528,7 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
             </div>
 
             {/* Navigation */}
-            <div className="flex justify-between items-center p-4 bg-slate-800/30 rounded-lg border border-slate-700/50 backdrop-blur-sm flex-shrink-0">
+            <div className="flex justify-between items-center p-4 bg-slate-800/20 rounded-lg border border-slate-700/40 backdrop-blur-sm flex-shrink-0">
               <button
                 onClick={previousStep}
                 disabled={currentStep === 0}
@@ -573,9 +573,9 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
           </div>
 
           {/* Code Editor Section */}
-          <div className="h-1/2 flex flex-col border-t border-slate-700">
+          <div className="h-1/2 flex flex-col backdrop-blur-md bg-slate-900/30">
             {/* Editor Header */}
-            <div className="border-b border-slate-700 p-3 flex-shrink-0">
+            <div className="border-b border-slate-700/30 p-3 flex-shrink-0">
               <div className="flex items-center justify-between">
                 <h3 className="text-base font-semibold">Code Workspace</h3>
                 <div className="flex space-x-2">
@@ -614,7 +614,7 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
                   language="rust"
                 />
               ) : (
-                <div className="h-full flex items-center justify-center bg-slate-800/50">
+                <div className="h-full flex items-center justify-center bg-slate-800/20">
                   <div className="text-center">
                     <div className="text-4xl mb-4">💻</div>
                     <h3 className="text-xl font-semibold mb-2">
