@@ -272,7 +272,7 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
               px-6 py-4 rounded-lg shadow-lg border
               ${
                 toast.type === "success"
-                  ? "bg-green-700/90 border-green-400 text-white"
+                  ? "bg-pink-700/90 border-pink-400 text-white"
                   : ""
               }
               ${
@@ -317,7 +317,11 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
             <div className="absolute top-0 flex justify-between w-full z-20">
               <div className="p-5">
                 <Link href="/" className="flex items-center space-x-2">
-                  <img src="/logo.png" alt="Monsters ink!" className="h-24" />
+                  <img
+                    src="/logo.png"
+                    alt="Monsters ink!"
+                    className="h-[120px]"
+                  />
                 </Link>
               </div>
             </div>
@@ -389,7 +393,7 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
                 {/* Achievement */}
                 {isValidated && currentStep === 4 && lesson.id === 1 && (
                   <div className="text-center">
-                    <span className="text-sm text-green-400 font-semibold">
+                    <span className="text-sm text-pink-400 font-semibold">
                       ✨ Awakened
                     </span>
                   </div>
@@ -401,14 +405,14 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
           {/* Right Panel: Instructions + Code Editor */}
           <div className="w-1/2 flex flex-col p-10 min-h-0">
             {/* Instructions Section */}
-            <div className="flex-1 p-6 flex flex-col overflow-hidden backdrop-blur-md bg-white/5 rounded mb-4 min-h-0">
+            <div className="flex-1 p-6 flex flex-col overflow-hidden backdrop-blur-md bg-white/5 rounded-xl mb-4 min-h-0">
               {currentStepData && (
                 <div className="flex-1 flex flex-col min-h-0">
                   <div
                     className="prose prose-invert prose-purple max-w-none text-slate-200 leading-relaxed flex-1 overflow-y-auto
-                  [&>h1]:text-base [&>h1]:font-bold [&>h1]:text-white [&>h1]:mb-4 [&>h1]:leading-tight
-                  [&>h2]:text-sm [&>h2]:font-semibold [&>h2]:text-purple-300 [&>h2]:mb-3 [&>h2]:mt-4
-                  [&>h3]:text-xs [&>h3]:font-medium [&>h3]:text-cyan-300 [&>h3]:mb-2 [&>h3]:mt-3
+                  [&>h1]:!text-[20px] [&>h1]:!font-bold [&>h1]:!text-purple-200 [&>h1]:!mb-4 [&>h1]:!leading-tight [&>h1]:!font-sans [&>h1]:!normal-case [&>h1]:!tracking-normal
+                  [&>h2]:!text-sm [&>h2]:!font-semibold [&>h2]:!text-purple-300 [&>h2]:!mb-3 [&>h2]:!mt-4 [&>h2]:!font-sans [&>h2]:!normal-case [&>h2]:!tracking-normal
+                  [&>h3]:!text-xs [&>h3]:!font-medium [&>h3]:!text-cyan-300 [&>h3]:!mb-2 [&>h3]:!mt-3 [&>h3]:!font-sans [&>h3]:!normal-case [&>h3]:!tracking-normal
                   [&>p]:mb-4 [&>p]:text-sm [&>p]:leading-6 [&>p]:text-slate-200
                   [&>ul]:mb-4 [&>ul]:space-y-1 [&>ol]:mb-4 [&>ol]:space-y-1
                   [&>li]:text-slate-200 [&>li]:leading-5 [&>li]:pl-1 [&>li]:text-sm
@@ -537,7 +541,7 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
                       i === currentStep
                         ? "bg-gradient-to-r from-purple-400 to-cyan-400 shadow-lg shadow-purple-400/30"
                         : i < currentStep
-                        ? "bg-gradient-to-r from-green-400 to-emerald-400 shadow-md shadow-green-400/20"
+                        ? "bg-gradient-to-r from-pink-400 to-pink-400 shadow-md shadow-green-400/20"
                         : "bg-slate-600 hover:bg-slate-500"
                     }`}
                   />

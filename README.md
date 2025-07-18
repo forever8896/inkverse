@@ -13,6 +13,7 @@ Goal: Make Polkadot fun ~~again
 
 ### Coming in Milestone 2:
 
+- More creature designs, colors
 - Create a token for your creature using Assets Precompile
 - Create a unique gen-ai image of your finished creature
 - Then mint the image as an NFT because why not
