@@ -12,6 +12,7 @@ export interface LessonStep {
   expectedCode?: string;
   hint?: string;
   validation?: ValidationRule[];
+  image?: string; // Optional image URL or import for this step
 }
 
 export interface Lesson {
@@ -42,26 +43,18 @@ const lessons: Lesson[] = [
     steps: [
       {
         id: 1,
-        title: "🧬 Your First ink! Contract",
+        title: "🥚 Meet Your Mysterious Egg",
+        image: "/creatures/first_egg.png",
         content: `
 <h1>Welcome to Bio-Engineering! 🧬</h1>
 
-<p>You're about to create your first digital creature using ink! - Polkadot's smart contract language!</p>
+<p>You're about to create your first digital creature using <strong>ink!</strong> - Polkadot's smart contract language!</p>
 
-<p>On the right, you'll see the basic template for an ink! smart contract. This is the foundation that every ink! contract needs.</p>
-
-<h2>What you see:</h2>
-<ul>
-<li><code>#![cfg_attr...]</code> - Rust configuration for blockchain deployment</li>
-<li><code>#[ink::contract]</code> - This tells Rust "this is an ink! smart contract"</li>
-<li><code>mod creature</code> - Creates a module called "creature" for our contract</li>
-</ul>
+<p>Every ink! contract starts with this basic template. Think of it as the DNA blueprint for your creature.</p>
 
 <div style="background: #059669; border: 1px solid #10b981; border-radius: 8px; padding: 16px; margin: 16px 0; color: white;">
-<strong>✅ Perfect!</strong> This template is ready. Click <strong>Next →</strong> to start building your creature!
+<strong>✅ Task Complete!</strong> Just observe the code structure - no changes needed yet!
 </div>
-
-<p>No code changes needed for this step - just get familiar with the structure! 🎉</p>
         `,
         code: `#![cfg_attr(not(feature = "std"), no_std, no_main)]
 
@@ -75,11 +68,298 @@ mod creature {
 mod creature {
     // Your creature will live here!
 }`,
-        hint: "This is your foundation! Every ink! contract starts with '#![cfg_attr(not(feature = \"std\"), no_std, no_main)]' (this prepares it for blockchain) and '#[ink::contract]' (this tells Rust it's a smart contract). The 'mod creature' creates a module - think of it as a container for your creature's code. No changes needed here, just get familiar with the structure!"
+        hint: "This is your foundation! Every ink! contract needs these lines to work on the blockchain. No changes needed - just get familiar with the structure!"
+      },
+      {
+        id: 2,
+        title: "🧠 Add Storage Structure",
+        image: "/creatures/egg_cracks.png",
+        content: `
+<h1>Give Your Creature Memory! 🧠</h1>
+
+<p>Your creature needs memory to remember if it's awake or sleeping.</p>
+
+<h2>Your Task:</h2>
+<p>Replace the comment with a storage structure.</p>
+
+<div style="background: #1e293b; border: 1px solid #475569; border-radius: 8px; padding: 16px; margin: 16px 0;">
+<strong>💡 Add these 4 lines:</strong><br>
+1. <code>#[ink(storage)]</code><br>
+2. <code>pub struct Creature {</code><br>
+3. <code>&nbsp;&nbsp;&nbsp;&nbsp;is_conscious: bool,</code><br>
+4. <code>}</code>
+</div>
+        `,
+        code: `#![cfg_attr(not(feature = "std"), no_std, no_main)]
+
+#[ink::contract]
+mod creature {
+    // Your creature will live here!
+}`,
+        expectedCode: `#![cfg_attr(not(feature = "std"), no_std, no_main)]
+
+#[ink::contract]
+mod creature {
+    #[ink(storage)]
+    pub struct Creature {
+        is_conscious: bool,
+    }
+}`,
+        hint: "Replace the comment with the storage structure. Start with #[ink(storage)], then create the struct with one boolean field!",
+        validation: [
+          { type: "includes", patterns: ["#[ink(storage)]"] },
+          { type: "includes", patterns: ["struct Creature"] },
+          { type: "includes", patterns: ["is_conscious"] },
+          { type: "includes", patterns: ["bool"] },
+        ],
+      },
+      {
+        id: 3,
+        title: "🏗️ Add Implementation Block",
+        image: "/creatures/egg_cracks.png",
+        content: `
+<h1>Create the Implementation Block! 🏗️</h1>
+
+<p>Now we need to add functions to your creature. First, create the implementation block.</p>
+
+<h2>Your Task:</h2>
+<p>After the struct, add an empty implementation block.</p>
+
+<div style="background: #1e293b; border: 1px solid #475569; border-radius: 8px; padding: 16px; margin: 16px 0;">
+<strong>💡 Add these 3 lines after the struct:</strong><br>
+1. Empty line<br>
+2. <code>impl Creature {</code><br>
+3. <code>}</code>
+</div>
+        `,
+        code: `#![cfg_attr(not(feature = "std"), no_std, no_main)]
+
+#[ink::contract]
+mod creature {
+    #[ink(storage)]
+    pub struct Creature {
+        is_conscious: bool,
+    }
+}`,
+        expectedCode: `#![cfg_attr(not(feature = "std"), no_std, no_main)]
+
+#[ink::contract]
+mod creature {
+    #[ink(storage)]
+    pub struct Creature {
+        is_conscious: bool,
+    }
+
+    impl Creature {
+    }
+}`,
+        hint: "Add 'impl Creature { }' after the struct to create a place for your creature's functions!",
+        validation: [
+          { type: "includes", patterns: ["impl Creature"] },
+        ],
+      },
+      {
+        id: 4,
+        title: "🐣 Add Birth Constructor",
+        image: "/creatures/first_sleeping.png",
+        content: `
+<h1>Birth Your Creature! 🐣</h1>
+
+<p>Every creature needs a way to be born. Let's add a constructor!</p>
+
+<h2>Your Task:</h2>
+<p>Inside the impl block, add a constructor function.</p>
+
+<div style="background: #1e293b; border: 1px solid #475569; border-radius: 8px; padding: 16px; margin: 16px 0;">
+<strong>💡 Add inside the impl block:</strong><br>
+<code>#[ink(constructor)]</code><br>
+<code>pub fn new() -> Self {</code><br>
+<code>&nbsp;&nbsp;&nbsp;&nbsp;Self { is_conscious: false }</code><br>
+<code>}</code>
+</div>
+        `,
+        code: `#![cfg_attr(not(feature = "std"), no_std, no_main)]
+
+#[ink::contract]
+mod creature {
+    #[ink(storage)]
+    pub struct Creature {
+        is_conscious: bool,
+    }
+
+    impl Creature {
+    }
+}`,
+        expectedCode: `#![cfg_attr(not(feature = "std"), no_std, no_main)]
+
+#[ink::contract]
+mod creature {
+    #[ink(storage)]
+    pub struct Creature {
+        is_conscious: bool,
+    }
+
+    impl Creature {
+        #[ink(constructor)]
+        pub fn new() -> Self {
+            Self { is_conscious: false }
+        }
+    }
+}`,
+        hint: "Add the constructor inside the impl block. Don't forget the #[ink(constructor)] attribute!",
+        validation: [
+          { type: "includes", patterns: ["#[ink(constructor)]"] },
+          { type: "includes", patterns: ["pub fn new"] },
+          { type: "includes", patterns: ["Self { is_conscious: false }"] },
+        ],
+      },
+      {
+        id: 5,
+        title: "👁️ Add Status Check",
+        image: "/creatures/first_sleeping.png",
+        content: `
+<h1>Let Your Creature Speak! 👁️</h1>
+
+<p>Your creature needs to tell others if it's awake or sleeping.</p>
+
+<h2>Your Task:</h2>
+<p>Add a function to check if the creature is awake.</p>
+
+<div style="background: #1e293b; border: 1px solid #475569; border-radius: 8px; padding: 16px; margin: 16px 0;">
+<strong>💡 Add after the constructor:</strong><br>
+<code>#[ink(message)]</code><br>
+<code>pub fn is_awake(&self) -> bool {</code><br>
+<code>&nbsp;&nbsp;&nbsp;&nbsp;self.is_conscious</code><br>
+<code>}</code>
+</div>
+        `,
+        code: `#![cfg_attr(not(feature = "std"), no_std, no_main)]
+
+#[ink::contract]
+mod creature {
+    #[ink(storage)]
+    pub struct Creature {
+        is_conscious: bool,
+    }
+
+    impl Creature {
+        #[ink(constructor)]
+        pub fn new() -> Self {
+            Self { is_conscious: false }
+        }
+    }
+}`,
+        expectedCode: `#![cfg_attr(not(feature = "std"), no_std, no_main)]
+
+#[ink::contract]
+mod creature {
+    #[ink(storage)]
+    pub struct Creature {
+        is_conscious: bool,
+    }
+
+    impl Creature {
+        #[ink(constructor)]
+        pub fn new() -> Self {
+            Self { is_conscious: false }
+        }
+
+        #[ink(message)]
+        pub fn is_awake(&self) -> bool {
+            self.is_conscious
+        }
+    }
+}`,
+        hint: "Add the message function after the constructor. Use &self to read the creature's state!",
+        validation: [
+          { type: "includes", patterns: ["#[ink(message)]"] },
+          { type: "includes", patterns: ["pub fn is_awake"] },
+          { type: "includes", patterns: ["&self"] },
+        ],
+      },
+      {
+        id: 6,
+        title: "🔄 Add Wake Up Power",
+        image: "/creatures/first_awake.png",
+        content: `
+<h1>The Final Power: Wake Up! 🔄</h1>
+
+<p>Give your creature the ultimate ability - to control its own consciousness!</p>
+
+<h2>Your Task:</h2>
+<p>Add a function to toggle the creature's consciousness.</p>
+
+<div style="background: #1e293b; border: 1px solid #475569; border-radius: 8px; padding: 16px; margin: 16px 0;">
+<strong>💡 Add after the is_awake function:</strong><br>
+<code>#[ink(message)]</code><br>
+<code>pub fn wake_up(&mut self) {</code><br>
+<code>&nbsp;&nbsp;&nbsp;&nbsp;self.is_conscious = !self.is_conscious;</code><br>
+<code>}</code>
+</div>
+
+<div style="background: #059669; border: 1px solid #10b981; border-radius: 8px; padding: 16px; margin: 16px 0; color: white;">
+<strong>🌟 Your creature will awaken when you complete this!</strong> Watch its eyes open! 👁️
+</div>
+        `,
+        code: `#![cfg_attr(not(feature = "std"), no_std, no_main)]
+
+#[ink::contract]
+mod creature {
+    #[ink(storage)]
+    pub struct Creature {
+        is_conscious: bool,
+    }
+
+    impl Creature {
+        #[ink(constructor)]
+        pub fn new() -> Self {
+            Self { is_conscious: false }
+        }
+
+        #[ink(message)]
+        pub fn is_awake(&self) -> bool {
+            self.is_conscious
+        }
+    }
+}`,
+        expectedCode: `#![cfg_attr(not(feature = "std"), no_std, no_main)]
+
+#[ink::contract]
+mod creature {
+    #[ink(storage)]
+    pub struct Creature {
+        is_conscious: bool,
+    }
+
+    impl Creature {
+        #[ink(constructor)]
+        pub fn new() -> Self {
+            Self { is_conscious: false }
+        }
+
+        #[ink(message)]
+        pub fn is_awake(&self) -> bool {
+            self.is_conscious
+        }
+
+        #[ink(message)]
+        pub fn wake_up(&mut self) {
+            self.is_conscious = !self.is_conscious;
+        }
+    }
+}`,
+        hint: "Add the wake_up function with &mut self to change the creature's state. Use ! to flip the boolean!",
+        validation: [
+          { type: "includes", patterns: ["#[ink(message)]"] },
+          { type: "includes", patterns: ["pub fn wake_up"] },
+          { type: "includes", patterns: ["&mut self"] },
+          { type: "includes", patterns: ["!self.is_conscious"] },
+        ],
       },
       {
         id: 2,
         title: "🧠 Give Your Creature Memory",
+        image: "/creatures/egg_cracks.png",
         content: `
 <h1>Give Your Creature a Brain! 🧠</h1>
 
@@ -132,6 +412,7 @@ mod creature {
       {
         id: 3,
         title: "🐣 Birth Your Creature",
+        image: "/creatures/first_sleeping.png",
         content: `
 <h1>Bring Your Creature to Life! 🐣</h1>
 
@@ -206,6 +487,7 @@ mod creature {
       {
         id: 4,
         title: "👁️ Teach Your Creature to Respond",
+        image: "/creatures/first_sleeping.png",
         content: `
 <h1>Your Creature's First Communication! 👁️‍🗨️</h1>
 
@@ -298,6 +580,7 @@ mod creature {
       {
         id: 5,
         title: "🔄 The Power of Consciousness Toggle",
+        image: "/creatures/first_awake.png",
         content: `
 <h1>Ultimate Power: Consciousness Control! 🔄</h1>
 
