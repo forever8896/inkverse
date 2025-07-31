@@ -532,27 +532,59 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
                 <div className="flex items-center justify-between">
                   <h4 className="text-base font-semibold transition-all duration-300">Workspace</h4>
                   <div className="flex space-x-2">
-                    <button
-                      onClick={resetCode}
-                      className="px-2 py-1 text-xs bg-slate-700 hover:bg-slate-600 rounded transition-all duration-200"
-                    >
-                      Reset
-                    </button>
+                    {/* Reset Button */}
+                    <div className="relative group">
+                      <button
+                        onClick={resetCode}
+                        className="w-8 h-8 rounded-lg border border-slate-600/50 bg-slate-800/50 hover:bg-slate-700/70 hover:border-slate-500/70 transition-all duration-200 flex items-center justify-center backdrop-blur-sm hover:scale-105 active:scale-95"
+                        aria-label="Reset code"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-300 group-hover:text-white transition-colors duration-200">
+                          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                          <path d="M3 3v5h5"/>
+                        </svg>
+                      </button>
+                      <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-slate-900/90 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none border border-slate-700/50 backdrop-blur-sm">
+                        Reset Code
+                      </div>
+                    </div>
+
+                    {/* Check Code Button */}
                     {currentStepData?.validation && (
-                      <button
-                        onClick={validateUserCode}
-                        className="px-3 py-1.5 text-xs bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 rounded-lg transition-all duration-200 font-semibold shadow-lg"
-                      >
-                        🧬 Check Code
-                      </button>
+                      <div className="relative group">
+                        <button
+                          onClick={validateUserCode}
+                          className="w-8 h-8 rounded-lg border border-purple-500/50 bg-gradient-to-r from-purple-600/20 to-cyan-600/20 hover:from-purple-600/40 hover:to-cyan-600/40 hover:border-purple-400/70 transition-all duration-200 flex items-center justify-center backdrop-blur-sm hover:scale-105 active:scale-95 shadow-lg shadow-purple-500/20"
+                          aria-label="Check code"
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-purple-200 group-hover:text-white transition-colors duration-200">
+                            <polyline points="20,6 9,17 4,12"/>
+                          </svg>
+                        </button>
+                        <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-slate-900/90 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none border border-slate-700/50 backdrop-blur-sm">
+                          Check Code
+                        </div>
+                      </div>
                     )}
+
+                    {/* Solution Button */}
                     {currentStepData?.expectedCode && (
-                      <button
-                        onClick={showSolution}
-                        className="px-2 py-1 text-xs bg-purple-600 hover:bg-purple-700 rounded transition-all duration-200"
-                      >
-                        Solution
-                      </button>
+                      <div className="relative group">
+                        <button
+                          onClick={showSolution}
+                          className="w-8 h-8 rounded-lg border border-cyan-500/50 bg-cyan-600/20 hover:bg-cyan-600/40 hover:border-cyan-400/70 transition-all duration-200 flex items-center justify-center backdrop-blur-sm hover:scale-105 active:scale-95 shadow-lg shadow-cyan-500/20"
+                          aria-label="Show solution"
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-cyan-200 group-hover:text-white transition-colors duration-200">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                            <path d="M12 17h.01"/>
+                          </svg>
+                        </button>
+                        <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-slate-900/90 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none border border-slate-700/50 backdrop-blur-sm">
+                          Show Solution
+                        </div>
+                      </div>
                     )}
                   </div>
                 </div>
