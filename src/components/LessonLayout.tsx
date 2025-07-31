@@ -42,6 +42,7 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
     width: 0,
     height: 0,
   });
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   const currentStepData = lesson?.steps[currentStep];
 
@@ -219,13 +220,31 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
 
   const nextStep = () => {
     if (lesson && currentStep < lesson.steps.length - 1) {
-      setCurrentStep(currentStep + 1);
+      setIsTransitioning(true);
+      setTimeout(() => {
+        setCurrentStep(currentStep + 1);
+        setTimeout(() => setIsTransitioning(false), 50);
+      }, 200);
     }
   };
 
   const previousStep = () => {
     if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
+      setIsTransitioning(true);
+      setTimeout(() => {
+        setCurrentStep(currentStep - 1);
+        setTimeout(() => setIsTransitioning(false), 50);
+      }, 200);
+    }
+  };
+
+  const goToStep = (stepIndex: number) => {
+    if (stepIndex !== currentStep) {
+      setIsTransitioning(true);
+      setTimeout(() => {
+        setCurrentStep(stepIndex);
+        setTimeout(() => setIsTransitioning(false), 50);
+      }, 200);
     }
   };
 
@@ -354,7 +373,11 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
 
             {/* Creature Display */}
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="relative">
+              <div className={`relative transition-all duration-300 ease-out ${
+                isTransitioning 
+                  ? 'opacity-0 scale-95 translate-y-4' 
+                  : 'opacity-100 scale-100 translate-y-0'
+              }`}>
                 {lesson.id === 1 ? (
                   currentStepData?.image ? (
                     <img
@@ -362,20 +385,20 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
                       alt="Creature"
                       width={320}
                       height={320}
-                      className="w-80 h-80 object-contain"
+                      className="w-80 h-80 object-contain transition-all duration-300"
                       style={{
                         filter: getImageFilter(),
                       }}
                     />
                   ) : (
-                    <div className="w-64 h-64 bg-slate-800/30 rounded-full flex items-center justify-center backdrop-blur-sm">
-                      <span className="text-6xl">🔬</span>
+                    <div className="w-64 h-64 bg-slate-800/30 rounded-full flex items-center justify-center backdrop-blur-sm transition-all duration-300">
+                      <span className="text-6xl transition-all duration-300">🔬</span>
                     </div>
                   )
                 ) : (
-                  <div className="w-64 h-64 bg-slate-800/30 rounded-full flex items-center justify-center backdrop-blur-sm">
+                  <div className="w-64 h-64 bg-slate-800/30 rounded-full flex items-center justify-center backdrop-blur-sm transition-all duration-300">
                     <span
-                      className="text-6xl"
+                      className="text-6xl transition-all duration-300"
                       style={{
                         filter: getImageFilter(),
                       }}
@@ -389,9 +412,13 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
 
             {/* Creature Info Overlay */}
             <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">
-              <div className="text-center space-y-3 px-6 py-4 ">
+              <div className={`text-center space-y-3 px-6 py-4 transition-all duration-300 ease-out ${
+                isTransitioning 
+                  ? 'opacity-0 translate-y-4' 
+                  : 'opacity-100 translate-y-0'
+              }`}>
                 {/* Creature Name */}
-                <h3 className="text-lg font-semibold text-white">
+                <h3 className="text-lg font-semibold text-white transition-all duration-300">
                   {lesson.id === 1
                     ? currentStep === 0
                       ? 'Mysterious Egg'
@@ -402,7 +429,7 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
                 </h3>
 
                 {/* Status */}
-                <p className="text-sm text-slate-300">
+                <p className="text-sm text-slate-300 transition-all duration-300">
                   {lesson.id === 1
                     ? currentStep === 0
                       ? 'Waiting to hatch...'
@@ -419,7 +446,7 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
                 {/* Achievement */}
                 {isValidated && currentStep === 4 && lesson.id === 1 && (
                   <div className="text-center">
-                    <span className="text-sm text-pink-400 font-semibold">
+                    <span className="text-sm text-pink-400 font-semibold transition-all duration-300">
                       ✨ Awakened
                     </span>
                   </div>
@@ -431,11 +458,15 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
           {/* Right Panel: Instructions + Code Editor */}
           <div className="w-1/2 flex flex-col p-10 min-h-0">
             {/* Instructions Section */}
-            <div className="flex-1 p-6 flex flex-col overflow-hidden backdrop-blur-md bg-white/5 rounded-xl mb-4 min-h-0">
+            <div className={`flex-1 p-6 flex flex-col overflow-hidden backdrop-blur-md bg-white/5 rounded-xl mb-4 min-h-0 transition-all duration-300 ease-out ${
+              isTransitioning 
+                ? 'opacity-0 translate-x-4' 
+                : 'opacity-100 translate-x-0'
+            }`}>
               {currentStepData && (
                 <div className="flex-1 flex flex-col min-h-0">
                   <div
-                    className="prose prose-invert prose-purple max-w-none text-slate-200 leading-relaxed flex-1 overflow-y-auto
+                    className="prose prose-invert prose-purple max-w-none text-slate-200 leading-relaxed flex-1 overflow-y-auto transition-all duration-300
                   [&>h1]:!text-[15px] [&>h1]:!font-bold [&>h1]:!uppercase [&>h1]:!text-purple-200 [&>h1]:!mb-4 [&>h1]:!leading-tight [&>h1]:!normal-case [&>h1]:!tracking-normal
                   [&>h2]:!text-sm [&>h2]:!font-semibold [&>h2]:!text-purple-300 [&>h2]:!mb-3 [&>h2]:!mt-4  [&>h2]:!normal-case [&>h2]:!tracking-normal
                   [&>h3]:!text-xs [&>h3]:!font-medium [&>h3]:!text-cyan-300 [&>h3]:!mb-2 [&>h3]:!mt-3  [&>h3]:!normal-case [&>h3]:!tracking-normal
@@ -491,15 +522,19 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
             </div>
 
             {/* Code Editor Section */}
-            <div className="flex-1 flex flex-col min-h-0 mb-4">
+            <div className={`flex-1 flex flex-col min-h-0 mb-4 transition-all duration-300 ease-out ${
+              isTransitioning 
+                ? 'opacity-0 translate-x-4' 
+                : 'opacity-100 translate-x-0'
+            }`}>
               {/* Editor Header */}
               <div className="p-3 flex-shrink-0">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-base font-semibold">Workspace</h4>
+                  <h4 className="text-base font-semibold transition-all duration-300">Workspace</h4>
                   <div className="flex space-x-2">
                     <button
                       onClick={resetCode}
-                      className="px-2 py-1 text-xs bg-slate-700 hover:bg-slate-600 rounded transition-colors"
+                      className="px-2 py-1 text-xs bg-slate-700 hover:bg-slate-600 rounded transition-all duration-200"
                     >
                       Reset
                     </button>
@@ -514,7 +549,7 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
                     {currentStepData?.expectedCode && (
                       <button
                         onClick={showSolution}
-                        className="px-2 py-1 text-xs bg-purple-600 hover:bg-purple-700 rounded transition-colors"
+                        className="px-2 py-1 text-xs bg-purple-600 hover:bg-purple-700 rounded transition-all duration-200"
                       >
                         Solution
                       </button>
@@ -526,13 +561,19 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
               {/* Code Editor */}
               <div className="flex-1 min-h-0">
                 {currentStepData?.code !== undefined ? (
-                  <MonacoCodeEditor
-                    value={userCode}
-                    onChange={setUserCode}
-                    language="rust"
-                  />
+                  <div className={`h-full transition-all duration-300 ease-out ${
+                    isTransitioning 
+                      ? 'opacity-0 scale-98' 
+                      : 'opacity-100 scale-100'
+                  }`}>
+                    <MonacoCodeEditor
+                      value={userCode}
+                      onChange={setUserCode}
+                      language="rust"
+                    />
+                  </div>
                 ) : (
-                  <div className="h-full flex items-center justify-center bg-slate-800/20">
+                  <div className="h-full flex items-center justify-center bg-slate-800/20 transition-all duration-300">
                     <div className="text-center">
                       <div className="text-4xl mb-4">💻</div>
                       <h3 className="text-xl font-semibold mb-2">
@@ -562,7 +603,7 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
                 {Array.from({ length: lesson.steps.length }, (_, i) => (
                   <button
                     key={i}
-                    onClick={() => setCurrentStep(i)}
+                    onClick={() => goToStep(i)}
                     className={`w-3 h-3 rounded-full transition-all duration-200 hover:scale-110 ${
                       i === currentStep
                         ? 'bg-gradient-to-r from-purple-400 to-cyan-400 shadow-lg shadow-purple-400/30'

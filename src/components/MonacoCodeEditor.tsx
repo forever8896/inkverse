@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useRef, useEffect, useState } from "react";
-import Editor, { Monaco } from "@monaco-editor/react";
-import * as monaco from "monaco-editor";
+import React, { useRef, useEffect, useState, useMemo } from "react";
+import Editor, { Monaco, loader } from "@monaco-editor/react";
 
 interface MonacoCodeEditorProps {
   value: string;
@@ -20,37 +19,44 @@ interface InkSuggestion {
   type: "macro" | "keyword" | "function" | "type";
 }
 
+// Configure Monaco loader for better performance
+loader.config({
+  paths: {
+    vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs'
+  }
+});
+
 // Enhanced ink! and Rust suggestions with more detail
 const INK_SUGGESTIONS: InkSuggestion[] = [
   // ink! macros
   {
     text: "#[ink::contract]",
     description: "Marks a module as an ink! smart contract",
-    insertText: "#[ink::contract]",
+    insertText: "ink::contract",
     type: "macro",
   },
   {
     text: "#[ink(storage)]",
     description: "Marks a struct as contract storage - the contract's persistent data",
-    insertText: "#[ink(storage)]",
+    insertText: "ink(storage)",
     type: "macro",
   },
   {
     text: "#[ink(constructor)]",
     description: "Marks a function as a contract constructor - called when deploying",
-    insertText: "#[ink(constructor)]",
+    insertText: "ink(constructor)",
     type: "macro",
   },
   {
     text: "#[ink(message)]",
     description: "Marks a function as a contract message - callable from outside",
-    insertText: "#[ink(message)]",
+    insertText: "ink(message)",
     type: "macro",
   },
   {
     text: "#[ink(event)]",
     description: "Marks a struct as a contract event - emitted during execution",
-    insertText: "#[ink(event)]",
+    insertText: "ink(event)",
     type: "macro",
   },
 
@@ -205,8 +211,8 @@ const INK_SUGGESTIONS: InkSuggestion[] = [
   },
 ];
 
-// Convert our suggestions to Monaco completion items
-const createCompletionItems = (suggestions: InkSuggestion[], range: monaco.Range): monaco.languages.CompletionItem[] => {
+// Memoized completion items creation
+const createCompletionItems = (suggestions: InkSuggestion[], range: any, monaco: Monaco): any[] => {
   return suggestions.map((suggestion, index) => ({
     label: suggestion.text,
     kind: getMonacoKind(suggestion.type),
@@ -217,25 +223,29 @@ const createCompletionItems = (suggestions: InkSuggestion[], range: monaco.Range
     insertText: suggestion.insertText,
     insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
     range: range,
-    sortText: `${suggestion.type}_${index.toString().padStart(3, '0')}`, // Sort by type, then order
+    sortText: `${suggestion.type}_${index.toString().padStart(3, '0')}`,
   }));
 };
 
-// Map our types to Monaco completion kinds
-const getMonacoKind = (type: string): monaco.languages.CompletionItemKind => {
+// Map our types to Monaco completion kinds (using numbers for better performance)
+const getMonacoKind = (type: string): number => {
   switch (type) {
     case "macro":
-      return monaco.languages.CompletionItemKind.Snippet;
+      return 27; // Snippet
     case "keyword":
-      return monaco.languages.CompletionItemKind.Keyword;
+      return 17; // Keyword
     case "function":
-      return monaco.languages.CompletionItemKind.Function;
+      return 2; // Function
     case "type":
-      return monaco.languages.CompletionItemKind.TypeParameter;
+      return 25; // TypeParameter
     default:
-      return monaco.languages.CompletionItemKind.Text;
+      return 18; // Text
   }
 };
+
+// Global variables to prevent re-registration
+let isThemeDefined = false;
+let isCompletionProviderRegistered = false;
 
 export default function MonacoCodeEditor({
   value,
@@ -245,49 +255,63 @@ export default function MonacoCodeEditor({
   className,
   style,
 }: MonacoCodeEditorProps) {
-  const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
+  const editorRef = useRef<any>(null);
   const [isEditorReady, setIsEditorReady] = useState(false);
+  const [showEditor, setShowEditor] = useState(false);
 
-  const handleEditorDidMount = (editor: monaco.editor.IStandaloneCodeEditor, monaco: Monaco) => {
+  // Memoize filtered suggestions for better performance
+  const memoizedSuggestions = useMemo(() => {
+    const macroSuggestions = INK_SUGGESTIONS.filter(s => s.type === 'macro');
+    const functionSuggestions = INK_SUGGESTIONS.filter(s => s.type === 'function' || s.type === 'keyword');
+    return { macroSuggestions, functionSuggestions, allSuggestions: INK_SUGGESTIONS };
+  }, []);
+
+  const handleEditorDidMount = (editor: any, monaco: Monaco) => {
     editorRef.current = editor;
     setIsEditorReady(true);
+    
+    // Delay showing the editor slightly for a smooth transition
+    setTimeout(() => {
+      setShowEditor(true);
+    }, 100);
 
-    // Register custom completion provider for ink!
-    monaco.languages.registerCompletionItemProvider('rust', {
-      provideCompletionItems: (model, position) => {
-        const word = model.getWordUntilPosition(position);
-        const range = {
-          startLineNumber: position.lineNumber,
-          endLineNumber: position.lineNumber,
-          startColumn: word.startColumn,
-          endColumn: word.endColumn,
-        };
+    // Register custom completion provider only once
+    if (!isCompletionProviderRegistered) {
+      monaco.languages.registerCompletionItemProvider('rust', {
+        provideCompletionItems: (model, position) => {
+          const word = model.getWordUntilPosition(position);
+          const range = {
+            startLineNumber: position.lineNumber,
+            endLineNumber: position.lineNumber,
+            startColumn: word.startColumn,
+            endColumn: word.endColumn,
+          };
 
-        // Get text before cursor to provide context-aware suggestions
-        const textBeforePointer = model.getValueInRange({
-          startLineNumber: 1,
-          startColumn: 1,
-          endLineNumber: position.lineNumber,
-          endColumn: position.column,
-        });
+          // Get text before cursor to provide context-aware suggestions
+          const textBeforePointer = model.getValueInRange({
+            startLineNumber: 1,
+            startColumn: 1,
+            endLineNumber: position.lineNumber,
+            endColumn: position.column,
+          });
 
-        // Filter suggestions based on context
-        let filteredSuggestions = INK_SUGGESTIONS;
-        
-        // If we're typing after #[, prioritize ink! macros
-        if (textBeforePointer.endsWith('#[')) {
-          filteredSuggestions = INK_SUGGESTIONS.filter(s => s.type === 'macro');
-        }
-        // If we're in an impl block, prioritize functions
-        else if (textBeforePointer.includes('impl ') && textBeforePointer.includes('{')) {
-          filteredSuggestions = INK_SUGGESTIONS.filter(s => s.type === 'function' || s.type === 'keyword');
-        }
+          // Use memoized suggestions based on context
+          let filteredSuggestions;
+          if (textBeforePointer.endsWith('#[')) {
+            filteredSuggestions = memoizedSuggestions.macroSuggestions;
+          } else if (textBeforePointer.includes('impl ') && textBeforePointer.includes('{')) {
+            filteredSuggestions = memoizedSuggestions.functionSuggestions;
+          } else {
+            filteredSuggestions = memoizedSuggestions.allSuggestions;
+          }
 
-        return {
-          suggestions: createCompletionItems(filteredSuggestions, range),
-        };
-      },
-    });
+          return {
+            suggestions: createCompletionItems(filteredSuggestions, range, monaco),
+          };
+        },
+      });
+      isCompletionProviderRegistered = true;
+    }
 
     // Configure editor for better ink! experience
     editor.updateOptions({
@@ -327,84 +351,134 @@ export default function MonacoCodeEditor({
     }
   };
 
-  // Custom theme that matches the current design
+  // Custom theme with glass-morphism effect matching the lesson page
   const defineTheme = (monaco: Monaco) => {
-    monaco.editor.defineTheme('inkverse-theme', {
-      base: 'vs-dark',
-      inherit: true,
-      rules: [
-        { token: 'comment', foreground: '10b981', fontStyle: 'italic' }, // emerald-400
-        { token: 'keyword', foreground: 'a855f7' }, // purple-400
-        { token: 'string', foreground: '06b6d4' }, // cyan-500
-        { token: 'number', foreground: 'f59e0b' }, // amber-500
-        { token: 'type', foreground: 'ec4899' }, // pink-500
-        { token: 'function', foreground: '3b82f6' }, // blue-500
-        { token: 'attribute', foreground: 'f97316' }, // orange-500
-      ],
-      colors: {
-        'editor.background': '#0f172a', // slate-900
-        'editor.foreground': '#f1f5f9', // slate-100
-        'editor.lineHighlightBackground': '#1e293b40', // slate-800 with opacity
-        'editor.selectionBackground': '#a855f750', // purple-500 with opacity
-        'editor.inactiveSelectionBackground': '#a855f730',
-        'editorCursor.foreground': '#ffffff',
-        'editorWhitespace.foreground': '#475569',
-        'editorLineNumber.foreground': '#64748b', // slate-500
-        'editorLineNumber.activeForeground': '#a855f7', // purple-400
-        'editor.selectionHighlightBackground': '#a855f730',
-        'editorSuggestWidget.background': '#1e293b', // slate-800
-        'editorSuggestWidget.border': '#475569', // slate-600
-        'editorSuggestWidget.foreground': '#f1f5f9', // slate-100
-        'editorSuggestWidget.selectedBackground': '#a855f750', // purple-500 with opacity
-        'editorHoverWidget.background': '#1e293b',
-        'editorHoverWidget.border': '#475569',
-      },
-    });
+    if (!isThemeDefined) {
+      monaco.editor.defineTheme('inkverse-theme', {
+        base: 'vs-dark',
+        inherit: true,
+        rules: [
+          { token: 'comment', foreground: '10b981', fontStyle: 'italic' }, // green comments - visible and nice
+          { token: 'keyword', foreground: 'a855f7' }, // purple-500 - matches lesson accent
+          { token: 'string', foreground: '06b6d4' }, // cyan-500 - matches lesson accent
+          { token: 'number', foreground: 'f59e0b' }, // amber-500
+          { token: 'type', foreground: 'ec4899' }, // pink-500
+          { token: 'function', foreground: '3b82f6' }, // blue-500
+          { token: 'attribute', foreground: 'f97316' }, // orange for ink attributes
+        ],
+        colors: {
+          // Transparent background for glass effect
+          'editor.background': '#0f172a00', // completely transparent - let container handle the glass effect
+          'editor.foreground': '#f1f5f9',
+          
+          // Subtle line highlighting
+          'editor.lineHighlightBackground': '#1e293b20', // very subtle highlight
+          
+          // Selection colors using lesson accent colors
+          'editor.selectionBackground': '#a855f750',
+          'editor.inactiveSelectionBackground': '#a855f730',
+          'editor.selectionHighlightBackground': '#a855f730',
+          
+          // Cursor
+          'editorCursor.foreground': '#06b6d4', // cyan-500 - lesson accent
+          
+          // No gutter background - keep it transparent
+          'editorGutter.background': '#00000000', // transparent
+          'editorLineNumber.foreground': '#64748b',
+          'editorLineNumber.activeForeground': '#a855f7',
+          
+          // Whitespace
+          'editorWhitespace.foreground': '#475569',
+          
+          // Suggestion widget with glass effect
+          'editorSuggestWidget.background': '#1e293b90', // semi-transparent
+          'editorSuggestWidget.border': '#475569',
+          'editorSuggestWidget.foreground': '#f1f5f9',
+          'editorSuggestWidget.selectedBackground': '#a855f750',
+          
+          // Hover widget with glass effect  
+          'editorHoverWidget.background': '#1e293b90', // semi-transparent
+          'editorHoverWidget.border': '#475569',
+        },
+      });
+      isThemeDefined = true;
+    }
   };
 
   return (
     <div 
-      className={`h-full w-full rounded-xl border border-slate-600/50 shadow-2xl backdrop-blur-sm overflow-hidden ${className || ''}`}
+      className={`h-full w-full rounded-xl border border-slate-600/50 shadow-2xl backdrop-blur-sm bg-white/5 overflow-hidden relative ${className || ''}`}
       style={style}
     >
-      <Editor
-        height="100%"
-        language={language}
-        value={value}
-        onChange={handleEditorChange}
-        onMount={handleEditorDidMount}
-        beforeMount={defineTheme}
-        theme="inkverse-theme"
-        options={{
-          readOnly,
-          automaticLayout: true,
-          contextmenu: false, // Disable right-click menu for cleaner experience
-          quickSuggestions: {
-            other: true,
-            comments: false,
-            strings: false,
-          },
-          suggestOnTriggerCharacters: true,
-          acceptSuggestionOnCommitCharacter: true,
-          acceptSuggestionOnEnter: 'on',
-          wordBasedSuggestions: false, // Only show our custom suggestions
-          parameterHints: {
-            enabled: true,
-          },
-          hover: {
-            enabled: true,
-            delay: 300,
-          },
-        }}
-        loading={
-          <div className="h-full flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-            <div className="text-center">
-              <div className="text-4xl mb-4">🧬</div>
-              <div className="text-slate-300">Loading code editor...</div>
-            </div>
-          </div>
-        }
-      />
+      {/* Loading State */}
+      <div 
+        className={`absolute inset-0 flex items-center justify-center backdrop-blur-md bg-white/10 rounded-xl transition-all duration-500 ease-out ${
+          showEditor 
+            ? 'opacity-0 translate-y-[-20px] pointer-events-none' 
+            : 'opacity-100 translate-y-0'
+        }`}
+      >
+        <div className="text-center">
+          <div className="text-4xl mb-4">🧬</div>
+          <div className="text-slate-300">Loading code editor...</div>
+        </div>
+      </div>
+
+      {/* Editor */}
+      <div 
+        className={`h-full w-full transition-all duration-500 ease-out ${
+          showEditor 
+            ? 'opacity-100 translate-y-0' 
+            : 'opacity-0 translate-y-[20px]'
+        }`}
+      >
+        <Editor
+          height="100%"
+          language={language}
+          value={value}
+          onChange={handleEditorChange}
+          onMount={handleEditorDidMount}
+          beforeMount={defineTheme}
+          theme="inkverse-theme"
+          options={{
+            readOnly,
+            automaticLayout: true,
+            contextmenu: false,
+            // Disable all side panels
+            minimap: { enabled: false },
+            overviewRulerBorder: false,
+            overviewRulerLanes: 0,
+            hideCursorInOverviewRuler: true,
+            scrollbar: {
+              vertical: 'auto',
+              horizontal: 'auto',
+              verticalScrollbarSize: 8,
+              horizontalScrollbarSize: 8,
+            },
+            quickSuggestions: {
+              other: true,
+              comments: false,
+              strings: false,
+            },
+            suggestOnTriggerCharacters: true,
+            acceptSuggestionOnCommitCharacter: true,
+            acceptSuggestionOnEnter: 'on',
+            wordBasedSuggestions: 'off',
+            parameterHints: {
+              enabled: true,
+            },
+            hover: {
+              enabled: true,
+              delay: 300,
+            },
+            // Performance optimizations
+            renderValidationDecorations: 'off',
+            renderLineHighlight: 'line',
+            scrollBeyondLastLine: false,
+            smoothScrolling: true,
+          }}
+        />
+      </div>
     </div>
   );
 }
