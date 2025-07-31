@@ -12,6 +12,7 @@
     "format": "prettier --write ."
   },
   "dependencies": {
+    "@monaco-editor/react": "^4.7.0",
     "motion": "^12.23.6",
     "next": "15.4.1",
     "react": "19.1.0",

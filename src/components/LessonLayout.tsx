@@ -1,13 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { Lesson, validateCode, ValidationRule } from '@/lib/lessons';
-import CodeEditor from '@/components/CodeEditor';
-import ShaderBackground from '@/components/ShaderBackground';
-import dynamic from 'next/dynamic';
-import { HSLValues } from '@/components/CreatureColorPicker';
-import Confetti from 'react-confetti';
+
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { Lesson, validateCode, ValidationRule } from "@/lib/lessons";
+import MonacoCodeEditor from "@/components/MonacoCodeEditor";
+import ShaderBackground from "@/components/ShaderBackground";
+import dynamic from "next/dynamic";
+import { HSLValues } from "@/components/CreatureColorPicker";
+import Confetti from "react-confetti";
+
 
 const ConsolePanel = dynamic(() => import('@/app/ConsolePanel'), {
   ssr: false,
@@ -524,7 +526,7 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
               {/* Code Editor */}
               <div className="flex-1 min-h-0">
                 {currentStepData?.code !== undefined ? (
-                  <CodeEditor
+                  <MonacoCodeEditor
                     value={userCode}
                     onChange={setUserCode}
                     language="rust"
