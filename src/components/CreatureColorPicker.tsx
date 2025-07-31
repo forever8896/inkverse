@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { motion } from "motion/react";
+import { useState, useEffect } from 'react';
+import { motion } from 'motion/react';
 
 interface HSLValues {
   hue: number;
@@ -16,7 +16,7 @@ interface CreatureColorPickerProps {
 
 export default function CreatureColorPicker({
   onColorChange,
-  className = "",
+  className = '',
 }: CreatureColorPickerProps) {
   const [hslValues, setHslValues] = useState<HSLValues>({
     hue: 0,
@@ -27,14 +27,14 @@ export default function CreatureColorPicker({
 
   // Load saved color from localStorage on component mount
   useEffect(() => {
-    const savedColor = localStorage.getItem("creatureColor");
+    const savedColor = localStorage.getItem('creatureColor');
     if (savedColor) {
       try {
         const parsedColor = JSON.parse(savedColor);
         setHslValues(parsedColor);
         onColorChange?.(parsedColor);
       } catch (error) {
-        console.error("Error parsing saved color:", error);
+        console.error('Error parsing saved color:', error);
       }
     }
     setIsInitialized(true);
@@ -43,7 +43,7 @@ export default function CreatureColorPicker({
   // Save color to localStorage only after initialization and when user makes changes
   useEffect(() => {
     if (isInitialized) {
-      localStorage.setItem("creatureColor", JSON.stringify(hslValues));
+      localStorage.setItem('creatureColor', JSON.stringify(hslValues));
       onColorChange?.(hslValues);
     }
   }, [hslValues, isInitialized]); // Remove onColorChange dependency to prevent infinite loop
@@ -82,7 +82,7 @@ export default function CreatureColorPicker({
             transition={{
               duration: 2,
               repeat: Infinity,
-              ease: "easeInOut",
+              ease: 'easeInOut',
             }}
             className="text-2xl"
           >
@@ -120,7 +120,7 @@ export default function CreatureColorPicker({
             min="-180"
             max="180"
             value={hslValues.hue}
-            onChange={(e) => updateHslValue("hue", parseInt(e.target.value))}
+            onChange={(e) => updateHslValue('hue', parseInt(e.target.value))}
             className="w-full h-3 bg-slate-700 rounded-lg appearance-none cursor-pointer slider-hue relative z-10"
           />
           <motion.div
@@ -161,7 +161,7 @@ export default function CreatureColorPicker({
             max="100"
             value={hslValues.saturation}
             onChange={(e) =>
-              updateHslValue("saturation", parseInt(e.target.value))
+              updateHslValue('saturation', parseInt(e.target.value))
             }
             className="w-full h-3 bg-slate-700 rounded-lg appearance-none cursor-pointer slider-saturation relative z-10"
           />
@@ -203,7 +203,7 @@ export default function CreatureColorPicker({
             max="50"
             value={hslValues.lightness}
             onChange={(e) =>
-              updateHslValue("lightness", parseInt(e.target.value))
+              updateHslValue('lightness', parseInt(e.target.value))
             }
             className="w-full h-3 bg-slate-700 rounded-lg appearance-none cursor-pointer slider-lightness relative z-10"
           />
@@ -218,20 +218,20 @@ export default function CreatureColorPicker({
 
       <style jsx>{`
         /* Custom slider styling */
-        input[type="range"] {
+        input[type='range'] {
           -webkit-appearance: none;
           appearance: none;
           background: transparent;
           cursor: pointer;
         }
 
-        input[type="range"]::-webkit-slider-track {
+        input[type='range']::-webkit-slider-track {
           background: #475569;
           height: 12px;
           border-radius: 6px;
         }
 
-        input[type="range"]::-webkit-slider-thumb {
+        input[type='range']::-webkit-slider-thumb {
           -webkit-appearance: none;
           appearance: none;
           height: 24px;
@@ -243,13 +243,13 @@ export default function CreatureColorPicker({
           box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
         }
 
-        input[type="range"]::-moz-range-track {
+        input[type='range']::-moz-range-track {
           background: #475569;
           height: 12px;
           border-radius: 6px;
         }
 
-        input[type="range"]::-moz-range-thumb {
+        input[type='range']::-moz-range-thumb {
           height: 24px;
           width: 24px;
           border-radius: 50%;

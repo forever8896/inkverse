@@ -1,5 +1,5 @@
 export interface ValidationRule {
-  type: "includes" | "excludes" | "regex" | "custom";
+  type: 'includes' | 'excludes' | 'regex' | 'custom';
   patterns: string[];
   message?: string;
 }
@@ -19,7 +19,7 @@ export interface Lesson {
   id: number;
   title: string;
   description: string;
-  difficulty: "Beginner" | "Intermediate" | "Advanced" | "Expert";
+  difficulty: 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert';
   duration: string;
   objectives: string[];
   steps: LessonStep[];
@@ -30,22 +30,22 @@ export interface Lesson {
 const lessons: Lesson[] = [
   {
     id: 1,
-    title: "Awakening Eyes",
+    title: 'Awakening Eyes',
     description:
-      "Create a simple creature with closed eyes. Deploy your first flipper contract to bring it to life!",
-    difficulty: "Beginner",
-    duration: "20 min",
+      'Create a simple creature with closed eyes. Deploy your first flipper contract to bring it to life!',
+    difficulty: 'Beginner',
+    duration: '20 min',
     objectives: [
-      "Understand ink! contract basics and syntax",
-      "Understand storage",
-      "Create your first function",
+      'Understand ink! contract basics and syntax',
+      'Understand storage',
+      'Create your first function',
       "Watch your creature's eyes open for the first time",
     ],
     steps: [
       {
         id: 1,
-        title: "🥚 Meet Your Mysterious Egg",
-        image: "/creatures/first_egg.png",
+        title: '🥚 Meet Your Mysterious Egg',
+        image: '/creatures/first_egg.png',
         content: `
 <h1>Welcome! 🧬</h1>
 
@@ -67,12 +67,12 @@ mod creature {
 mod creature {
     // Your creature will live here!
 }`,
-        hint: "This is your foundation! Every ink! contract needs these lines to work on the blockchain. No changes needed - just get familiar with the structure!",
+        hint: 'This is your foundation! Every ink! contract needs these lines to work on the blockchain. No changes needed - just get familiar with the structure!',
       },
       {
         id: 2,
-        title: "🧠 Add Storage Structure",
-        image: "/creatures/egg_cracks.png",
+        title: '🧠 Add Storage Structure',
+        image: '/creatures/egg_cracks.png',
         content: `
 <h1>Give Your Creature Memory! 🧠</h1>
 
@@ -104,18 +104,18 @@ mod creature {
         is_conscious: bool,
     }
 }`,
-        hint: "Replace the comment with the storage structure. Start with #[ink(storage)], then create the struct with one boolean field!",
+        hint: 'Replace the comment with the storage structure. Start with #[ink(storage)], then create the struct with one boolean field!',
         validation: [
-          { type: "includes", patterns: ["#[ink(storage)]"] },
-          { type: "includes", patterns: ["struct Creature"] },
-          { type: "includes", patterns: ["is_conscious"] },
-          { type: "includes", patterns: ["bool"] },
+          { type: 'includes', patterns: ['#[ink(storage)]'] },
+          { type: 'includes', patterns: ['struct Creature'] },
+          { type: 'includes', patterns: ['is_conscious'] },
+          { type: 'includes', patterns: ['bool'] },
         ],
       },
       {
         id: 3,
-        title: "🏗️ Add Implementation Block",
-        image: "/creatures/egg_cracks.png",
+        title: '🏗️ Add Implementation Block',
+        image: '/creatures/egg_cracks.png',
         content: `
 <h1>Create the Implementation Block! 🏗️</h1>
 
@@ -153,12 +153,12 @@ mod creature {
     }
 }`,
         hint: "Add 'impl Creature { }' after the struct to create a place for your creature's functions!",
-        validation: [{ type: "includes", patterns: ["impl Creature"] }],
+        validation: [{ type: 'includes', patterns: ['impl Creature'] }],
       },
       {
         id: 4,
-        title: "🐣 Add Birth Constructor",
-        image: "/creatures/first_sleeping.png",
+        title: '🐣 Add Birth Constructor',
+        image: '/creatures/first_sleeping.png',
         content: `
 <h1>Birth Your Creature! 🐣</h1>
 
@@ -205,15 +205,15 @@ mod creature {
 }`,
         hint: "Add the constructor inside the impl block. Don't forget the #[ink(constructor)] attribute!",
         validation: [
-          { type: "includes", patterns: ["#[ink(constructor)]"] },
-          { type: "includes", patterns: ["pub fn new"] },
-          { type: "includes", patterns: ["Self { is_conscious: false }"] },
+          { type: 'includes', patterns: ['#[ink(constructor)]'] },
+          { type: 'includes', patterns: ['pub fn new'] },
+          { type: 'includes', patterns: ['Self { is_conscious: false }'] },
         ],
       },
       {
         id: 5,
-        title: "👁️ Add Status Check",
-        image: "/creatures/first_sleeping.png",
+        title: '👁️ Add Status Check',
+        image: '/creatures/first_sleeping.png',
         content: `
 <h1>Let Your Creature Speak! 👁️</h1>
 
@@ -273,15 +273,15 @@ Add #[ink(message)] above your function to make it callable from outside.
 
 pub fn is_awake(&self) -> bool simply checks the creature's state and returns it—like asking, "Are you awake?". This does not change the contract's storage, it just reports the answer!`,
         validation: [
-          { type: "includes", patterns: ["#[ink(message)]"] },
-          { type: "includes", patterns: ["pub fn is_awake"] },
-          { type: "includes", patterns: ["&self"] },
+          { type: 'includes', patterns: ['#[ink(message)]'] },
+          { type: 'includes', patterns: ['pub fn is_awake'] },
+          { type: 'includes', patterns: ['&self'] },
         ],
       },
       {
         id: 6,
-        title: "🔄 Add Wake Up Power",
-        image: "/creatures/first_awake.png",
+        title: '🔄 Add Wake Up Power',
+        image: '/creatures/first_awake.png',
         content: `
 <h1>The Final Power: Wake Up! 🔄</h1>
 
@@ -355,10 +355,10 @@ Add #[ink(message)] above your function to make it callable from outside.
 
 pub fn wake_up(&mut self) lets your creature switch its state—like flipping a light switch! The ! operator flips the boolean: true becomes false and vice versa. This function modifies the blockchain storage!`,
         validation: [
-          { type: "includes", patterns: ["#[ink(message)]"] },
-          { type: "includes", patterns: ["pub fn wake_up"] },
-          { type: "includes", patterns: ["&mut self"] },
-          { type: "includes", patterns: ["!self.is_conscious"] },
+          { type: 'includes', patterns: ['#[ink(message)]'] },
+          { type: 'includes', patterns: ['pub fn wake_up'] },
+          { type: 'includes', patterns: ['&mut self'] },
+          { type: 'includes', patterns: ['!self.is_conscious'] },
         ],
       },
     ],
@@ -367,16 +367,16 @@ pub fn wake_up(&mut self) lets your creature switch its state—like flipping a 
   },
   {
     id: 2,
-    title: "Growing Limbs",
+    title: 'Growing Limbs',
     description:
       "Design your creature's body and legs. Control its walking speed and movement patterns.",
-    difficulty: "Beginner",
-    duration: "25 min",
+    difficulty: 'Beginner',
+    duration: '25 min',
     objectives: [
-      "Learn about ink! functions and events",
-      "Add body parts to your creature",
-      "Implement walking mechanics",
-      "Control movement speed and patterns",
+      'Learn about ink! functions and events',
+      'Add body parts to your creature',
+      'Implement walking mechanics',
+      'Control movement speed and patterns',
     ],
     steps: [],
     completed: false,
@@ -384,16 +384,16 @@ pub fn wake_up(&mut self) lets your creature switch its state—like flipping a 
   },
   {
     id: 3,
-    title: "Elixir of Consciousness",
+    title: 'Elixir of Consciousness',
     description:
-      "Your creature grows thirsty! Feed it the elixir of life and watch it become super conscious.",
-    difficulty: "Intermediate",
-    duration: "30 min",
+      'Your creature grows thirsty! Feed it the elixir of life and watch it become super conscious.',
+    difficulty: 'Intermediate',
+    duration: '30 min',
     objectives: [
-      "Learn integration testing with drink!",
-      "Simulate contract interactions",
-      "Implement drinking mechanics",
-      "Unlock creature consciousness",
+      'Learn integration testing with drink!',
+      'Simulate contract interactions',
+      'Implement drinking mechanics',
+      'Unlock creature consciousness',
     ],
     steps: [],
     completed: false,
@@ -401,16 +401,16 @@ pub fn wake_up(&mut self) lets your creature switch its state—like flipping a 
   },
   {
     id: 4,
-    title: "Into the Wild",
+    title: 'Into the Wild',
     description:
-      "Deploy your fully conscious creature into the wild using PopCLI. Set it free on the blockchain!",
-    difficulty: "Advanced",
-    duration: "35 min",
+      'Deploy your fully conscious creature into the wild using PopCLI. Set it free on the blockchain!',
+    difficulty: 'Advanced',
+    duration: '35 min',
     objectives: [
-      "Master PopCLI deployment",
-      "Deploy to live networks",
-      "Monitor your creature in the wild",
-      "Complete the bio-engineering journey",
+      'Master PopCLI deployment',
+      'Deploy to live networks',
+      'Monitor your creature in the wild',
+      'Complete the bio-engineering journey',
     ],
     steps: [],
     completed: false,
@@ -438,11 +438,11 @@ export function getPreviousLesson(currentId: number): Lesson | undefined {
 export function validateCode(code: string, rules: ValidationRule[]): boolean {
   return rules.every((rule) => {
     switch (rule.type) {
-      case "includes":
+      case 'includes':
         return rule.patterns.every((pattern) => code.includes(pattern));
-      case "excludes":
+      case 'excludes':
         return rule.patterns.every((pattern) => !code.includes(pattern));
-      case "regex":
+      case 'regex':
         return rule.patterns.every((pattern) => new RegExp(pattern).test(code));
       default:
         return true;

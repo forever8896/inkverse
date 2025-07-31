@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState } from 'react';
 
-import React, { CSSProperties } from "react";
+import React, { CSSProperties } from 'react';
 
 interface CodeEditorProps {
   value: string;
@@ -17,170 +17,170 @@ interface Suggestion {
   text: string;
   description: string;
   insertText: string;
-  type: "macro" | "keyword" | "function" | "type";
+  type: 'macro' | 'keyword' | 'function' | 'type';
 }
 
 // Autocomplete suggestions for ink! and Rust
 const SUGGESTIONS: Suggestion[] = [
   // ink! macros
   {
-    text: "#[ink::contract]",
-    description: "Marks a module as an ink! smart contract",
-    insertText: "#[ink::contract]",
-    type: "macro",
+    text: '#[ink::contract]',
+    description: 'Marks a module as an ink! smart contract',
+    insertText: '#[ink::contract]',
+    type: 'macro',
   },
   {
-    text: "#[ink(storage)]",
-    description: "Marks a struct as contract storage",
-    insertText: "#[ink(storage)]",
-    type: "macro",
+    text: '#[ink(storage)]',
+    description: 'Marks a struct as contract storage',
+    insertText: '#[ink(storage)]',
+    type: 'macro',
   },
   {
-    text: "#[ink(constructor)]",
-    description: "Marks a function as a contract constructor",
-    insertText: "#[ink(constructor)]",
-    type: "macro",
+    text: '#[ink(constructor)]',
+    description: 'Marks a function as a contract constructor',
+    insertText: '#[ink(constructor)]',
+    type: 'macro',
   },
   {
-    text: "#[ink(message)]",
-    description: "Marks a function as a contract message",
-    insertText: "#[ink(message)]",
-    type: "macro",
+    text: '#[ink(message)]',
+    description: 'Marks a function as a contract message',
+    insertText: '#[ink(message)]',
+    type: 'macro',
   },
   {
-    text: "#[ink(event)]",
-    description: "Marks a struct as a contract event",
-    insertText: "#[ink(event)]",
-    type: "macro",
+    text: '#[ink(event)]',
+    description: 'Marks a struct as a contract event',
+    insertText: '#[ink(event)]',
+    type: 'macro',
   },
 
   // Rust keywords and patterns
   {
-    text: "pub struct",
-    description: "Public structure definition",
-    insertText: "pub struct ",
-    type: "keyword",
+    text: 'pub struct',
+    description: 'Public structure definition',
+    insertText: 'pub struct ',
+    type: 'keyword',
   },
   {
-    text: "impl",
-    description: "Implementation block",
-    insertText: "impl ",
-    type: "keyword",
+    text: 'impl',
+    description: 'Implementation block',
+    insertText: 'impl ',
+    type: 'keyword',
   },
   {
-    text: "pub fn",
-    description: "Public function",
-    insertText: "pub fn ",
-    type: "keyword",
+    text: 'pub fn',
+    description: 'Public function',
+    insertText: 'pub fn ',
+    type: 'keyword',
   },
   {
-    text: "fn",
-    description: "Function definition",
-    insertText: "fn ",
-    type: "keyword",
+    text: 'fn',
+    description: 'Function definition',
+    insertText: 'fn ',
+    type: 'keyword',
   },
   {
-    text: "Self",
-    description: "The implementing type",
-    insertText: "Self",
-    type: "type",
+    text: 'Self',
+    description: 'The implementing type',
+    insertText: 'Self',
+    type: 'type',
   },
   {
-    text: "&self",
-    description: "Immutable reference to self",
-    insertText: "&self",
-    type: "keyword",
+    text: '&self',
+    description: 'Immutable reference to self',
+    insertText: '&self',
+    type: 'keyword',
   },
   {
-    text: "&mut self",
-    description: "Mutable reference to self",
-    insertText: "&mut self",
-    type: "keyword",
+    text: '&mut self',
+    description: 'Mutable reference to self',
+    insertText: '&mut self',
+    type: 'keyword',
   },
   {
-    text: "-> Self",
-    description: "Returns Self type",
-    insertText: "-> Self",
-    type: "type",
+    text: '-> Self',
+    description: 'Returns Self type',
+    insertText: '-> Self',
+    type: 'type',
   },
   {
-    text: "-> bool",
-    description: "Returns boolean",
-    insertText: "-> bool",
-    type: "type",
+    text: '-> bool',
+    description: 'Returns boolean',
+    insertText: '-> bool',
+    type: 'type',
   },
 
   // Common ink! patterns
   {
-    text: "mod",
-    description: "Module definition",
-    insertText: "mod ",
-    type: "keyword",
+    text: 'mod',
+    description: 'Module definition',
+    insertText: 'mod ',
+    type: 'keyword',
   },
   {
-    text: "use",
-    description: "Import statement",
-    insertText: "use ",
-    type: "keyword",
+    text: 'use',
+    description: 'Import statement',
+    insertText: 'use ',
+    type: 'keyword',
   },
   {
-    text: "let",
-    description: "Variable binding",
-    insertText: "let ",
-    type: "keyword",
+    text: 'let',
+    description: 'Variable binding',
+    insertText: 'let ',
+    type: 'keyword',
   },
   {
-    text: "true",
-    description: "Boolean true",
-    insertText: "true",
-    type: "keyword",
+    text: 'true',
+    description: 'Boolean true',
+    insertText: 'true',
+    type: 'keyword',
   },
   {
-    text: "false",
-    description: "Boolean false",
-    insertText: "false",
-    type: "keyword",
+    text: 'false',
+    description: 'Boolean false',
+    insertText: 'false',
+    type: 'keyword',
   },
   {
-    text: "bool",
-    description: "Boolean type",
-    insertText: "bool",
-    type: "type",
+    text: 'bool',
+    description: 'Boolean type',
+    insertText: 'bool',
+    type: 'type',
   },
 ];
 
 // Function to highlight comments and basic syntax
 const highlightCode = (code: string, language: string) => {
-  if (language === "rust") {
-    return code.split("\n").map((line, lineIndex) => {
+  if (language === 'rust') {
+    return code.split('\n').map((line, lineIndex) => {
       // Handle single-line comments
-      if (line.includes("//")) {
-        const parts = line.split("//");
+      if (line.includes('//')) {
+        const parts = line.split('//');
         const codePart = parts[0];
-        const commentPart = parts.slice(1).join("//");
+        const commentPart = parts.slice(1).join('//');
 
         return (
           <div
             key={lineIndex}
-            style={{ lineHeight: "24px", height: "24px", fontSize: "14px" }}
+            style={{ lineHeight: '24px', height: '24px', fontSize: '14px' }}
           >
             <span className="text-slate-100">{codePart}</span>
             <span className="text-emerald-400/80">
-              {commentPart ? `//${commentPart}` : ""}
+              {commentPart ? `//${commentPart}` : ''}
             </span>
           </div>
         );
       }
 
       // Handle multi-line comments (basic)
-      if (line.includes("/*") || line.includes("*/")) {
+      if (line.includes('/*') || line.includes('*/')) {
         return (
           <div
             key={lineIndex}
             className="text-emerald-400/80"
-            style={{ lineHeight: "24px", height: "24px", fontSize: "14px" }}
+            style={{ lineHeight: '24px', height: '24px', fontSize: '14px' }}
           >
-            {line || "\u00A0"}
+            {line || '\u00A0'}
           </div>
         );
       }
@@ -189,22 +189,22 @@ const highlightCode = (code: string, language: string) => {
         <div
           key={lineIndex}
           className="text-slate-100"
-          style={{ lineHeight: "24px", height: "24px", fontSize: "14px" }}
+          style={{ lineHeight: '24px', height: '24px', fontSize: '14px' }}
         >
-          {line || "\u00A0"}
+          {line || '\u00A0'}
         </div>
       );
     });
   }
 
   // Default highlighting for other languages
-  return code.split("\n").map((line, lineIndex) => (
+  return code.split('\n').map((line, lineIndex) => (
     <div
       key={lineIndex}
       className="text-slate-100"
-      style={{ lineHeight: "24px", height: "24px", fontSize: "14px" }}
+      style={{ lineHeight: '24px', height: '24px', fontSize: '14px' }}
     >
-      {line || "\u00A0"}
+      {line || '\u00A0'}
     </div>
   ));
 };
@@ -212,7 +212,7 @@ const highlightCode = (code: string, language: string) => {
 export default function CodeEditor({
   value,
   onChange,
-  language = "rust",
+  language = 'rust',
   readOnly = false,
 }: CodeEditorProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -227,7 +227,7 @@ export default function CodeEditor({
     top: 0,
     left: 0,
   });
-  const [currentTrigger, setCurrentTrigger] = useState({ start: 0, text: "" });
+  const [currentTrigger, setCurrentTrigger] = useState({ start: 0, text: '' });
 
   useEffect(() => {
     // Remove auto-resize behavior to allow scrolling
@@ -240,7 +240,7 @@ export default function CodeEditor({
     caretPos: number
   ) => {
     const textBeforeCaret = textarea.value.substring(0, caretPos);
-    const lines = textBeforeCaret.split("\n");
+    const lines = textBeforeCaret.split('\n');
     const currentLine = lines.length - 1;
     const currentColumn = lines[lines.length - 1].length;
 
@@ -261,10 +261,10 @@ export default function CodeEditor({
     const currentWord = words[words.length - 1];
 
     // Check for ink! macro trigger
-    if (currentWord.startsWith("#[")) {
+    if (currentWord.startsWith('#[')) {
       const query = currentWord.substring(2).toLowerCase();
       const filteredSuggestions = SUGGESTIONS.filter(
-        (s) => s.type === "macro" && s.text.toLowerCase().includes(query)
+        (s) => s.type === 'macro' && s.text.toLowerCase().includes(query)
       );
 
       if (filteredSuggestions.length > 0) {
@@ -358,7 +358,7 @@ export default function CodeEditor({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     // Handle suggestion navigation
     if (showSuggestions) {
-      if (e.key === "ArrowDown") {
+      if (e.key === 'ArrowDown') {
         e.preventDefault();
         setSelectedSuggestion((prev) =>
           prev < suggestions.length - 1 ? prev + 1 : prev
@@ -366,19 +366,19 @@ export default function CodeEditor({
         return;
       }
 
-      if (e.key === "ArrowUp") {
+      if (e.key === 'ArrowUp') {
         e.preventDefault();
         setSelectedSuggestion((prev) => (prev > 0 ? prev - 1 : prev));
         return;
       }
 
-      if (e.key === "Enter") {
+      if (e.key === 'Enter') {
         e.preventDefault();
         acceptSuggestion(suggestions[selectedSuggestion]);
         return;
       }
 
-      if (e.key === "Escape") {
+      if (e.key === 'Escape') {
         e.preventDefault();
         setShowSuggestions(false);
         return;
@@ -386,12 +386,12 @@ export default function CodeEditor({
     }
 
     // Handle Tab key for indentation
-    if (e.key === "Tab") {
+    if (e.key === 'Tab') {
       e.preventDefault();
       const start = e.currentTarget.selectionStart;
       const end = e.currentTarget.selectionEnd;
       const newValue =
-        value.substring(0, start) + "    " + value.substring(end);
+        value.substring(0, start) + '    ' + value.substring(end);
       onChange(newValue);
 
       // Set cursor position after the inserted spaces
@@ -411,26 +411,26 @@ export default function CodeEditor({
     };
 
     if (showSuggestions) {
-      document.addEventListener("click", handleClickOutside);
-      return () => document.removeEventListener("click", handleClickOutside);
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
     }
   }, [showSuggestions]);
 
-  const lineNumbers = value.split("\n").map((_, index) => index + 1);
+  const lineNumbers = value.split('\n').map((_, index) => index + 1);
   const highlightedCode = highlightCode(value, language);
 
   const getSuggestionIcon = (type: string) => {
     switch (type) {
-      case "macro":
-        return "🏷️";
-      case "keyword":
-        return "🔤";
-      case "function":
-        return "⚡";
-      case "type":
-        return "📐";
+      case 'macro':
+        return '🏷️';
+      case 'keyword':
+        return '🔤';
+      case 'function':
+        return '⚡';
+      case 'type':
+        return '📐';
       default:
-        return "💡";
+        return '💡';
     }
   };
 
@@ -445,7 +445,7 @@ export default function CodeEditor({
           {lineNumbers.map((lineNum, index) => (
             <div
               key={index}
-              style={{ lineHeight: "24px", height: "24px", fontSize: "14px" }}
+              style={{ lineHeight: '24px', height: '24px', fontSize: '14px' }}
               className="text-right hover:text-purple-400 transition-colors duration-200"
             >
               {lineNum}
@@ -463,8 +463,8 @@ export default function CodeEditor({
           style={{
             fontFamily:
               'ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-            lineHeight: "24px",
-            fontSize: "14px",
+            lineHeight: '24px',
+            fontSize: '14px',
             tabSize: 4,
           }}
         >
@@ -483,8 +483,8 @@ export default function CodeEditor({
           style={{
             fontFamily:
               'ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-            lineHeight: "24px",
-            fontSize: "14px",
+            lineHeight: '24px',
+            fontSize: '14px',
             tabSize: 4,
           }}
           spellCheck={false}
@@ -492,7 +492,7 @@ export default function CodeEditor({
           autoComplete="off"
           autoCorrect="off"
           placeholder={
-            readOnly ? "" : "// Start typing your ink! contract here..."
+            readOnly ? '' : '// Start typing your ink! contract here...'
           }
         />
 
@@ -511,8 +511,8 @@ export default function CodeEditor({
           style={{
             top: suggestionPosition.top,
             left: suggestionPosition.left,
-            maxHeight: "200px",
-            overflowY: "auto",
+            maxHeight: '200px',
+            overflowY: 'auto',
           }}
         >
           {suggestions.map((suggestion, index) => (
@@ -520,8 +520,8 @@ export default function CodeEditor({
               key={index}
               className={`px-3 py-2 cursor-pointer text-sm border-b border-slate-700/50 last:border-b-0 transition-all duration-150 ${
                 index === selectedSuggestion
-                  ? "bg-gradient-to-r from-purple-600/30 to-cyan-600/30 text-white"
-                  : "text-slate-300 hover:bg-slate-700/50"
+                  ? 'bg-gradient-to-r from-purple-600/30 to-cyan-600/30 text-white'
+                  : 'text-slate-300 hover:bg-slate-700/50'
               }`}
               onClick={() => acceptSuggestion(suggestion)}
             >
@@ -533,8 +533,8 @@ export default function CodeEditor({
                   <div
                     className={`font-mono font-medium ${
                       index === selectedSuggestion
-                        ? "text-purple-200"
-                        : "text-slate-200"
+                        ? 'text-purple-200'
+                        : 'text-slate-200'
                     }`}
                   >
                     {suggestion.text}
@@ -542,8 +542,8 @@ export default function CodeEditor({
                   <div
                     className={`text-xs ${
                       index === selectedSuggestion
-                        ? "text-cyan-300"
-                        : "text-slate-400"
+                        ? 'text-cyan-300'
+                        : 'text-slate-400'
                     }`}
                   >
                     {suggestion.description}

@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { getAllLessons } from "@/lib/lessons";
-import { motion, AnimatePresence } from "motion/react";
-import { useState, useEffect, useCallback } from "react";
+import Link from 'next/link';
+import { getAllLessons } from '@/lib/lessons';
+import { motion, AnimatePresence } from 'motion/react';
+import { useState, useEffect, useCallback } from 'react';
 import CreatureColorPicker, {
   HSLValues,
-} from "@/components/CreatureColorPicker";
-import Image from "next/image";
+} from '@/components/CreatureColorPicker';
+import Image from 'next/image';
 
 // Bio-hacking lab loading screen component
 function LabLoadingScreen({ onComplete }: { onComplete: () => void }) {
@@ -16,31 +16,31 @@ function LabLoadingScreen({ onComplete }: { onComplete: () => void }) {
   const [isClient, setIsClient] = useState(false);
 
   const loadingStages = [
-    "🔬 Initializing Bio-Lab Systems...",
-    "🧬 Scanning DNA Sequences...",
-    "⚡ Charging Incubation Chambers...",
-    "🤖 Calibrating Neural Networks...",
-    "🌟 Awakening Creatures...",
-    "✨ Lab Ready!",
+    '🔬 Initializing Bio-Lab Systems...',
+    '🧬 Scanning DNA Sequences...',
+    '⚡ Charging Incubation Chambers...',
+    '🤖 Calibrating Neural Networks...',
+    '🌟 Awakening Creatures...',
+    '✨ Lab Ready!',
   ];
 
   const floatingEmojis = [
-    "🧪",
-    "🔬",
-    "🧬",
-    "⚗️",
-    "🦠",
-    "🧫",
-    "💉",
-    "🔬",
-    "⚡",
-    "🌟",
-    "✨",
-    "💫",
-    "🌈",
-    "🔮",
-    "🧪",
-    "🔬",
+    '🧪',
+    '🔬',
+    '🧬',
+    '⚗️',
+    '🦠',
+    '🧫',
+    '💉',
+    '🔬',
+    '⚡',
+    '🌟',
+    '✨',
+    '💫',
+    '🌈',
+    '🔮',
+    '🧪',
+    '🔬',
   ];
 
   // Set client-side flag to prevent SSR hydration mismatch
@@ -124,11 +124,11 @@ function LabLoadingScreen({ onComplete }: { onComplete: () => void }) {
               transition={{
                 duration: 8 + Math.random() * 4,
                 repeat: Infinity,
-                ease: "easeInOut",
+                ease: 'easeInOut',
                 delay: Math.random() * 2,
               }}
               style={{
-                filter: "drop-shadow(0 0 10px rgba(147, 51, 234, 0.5))",
+                filter: 'drop-shadow(0 0 10px rgba(147, 51, 234, 0.5))',
               }}
             >
               {emoji}
@@ -144,15 +144,15 @@ function LabLoadingScreen({ onComplete }: { onComplete: () => void }) {
           animate={{
             scale: [1, 1.1, 1],
             boxShadow: [
-              "0 0 20px rgba(147, 51, 234, 0.3)",
-              "0 0 40px rgba(147, 51, 234, 0.8)",
-              "0 0 20px rgba(147, 51, 234, 0.3)",
+              '0 0 20px rgba(147, 51, 234, 0.3)',
+              '0 0 40px rgba(147, 51, 234, 0.8)',
+              '0 0 20px rgba(147, 51, 234, 0.3)',
             ],
           }}
           transition={{
             duration: 2,
             repeat: Infinity,
-            ease: "easeInOut",
+            ease: 'easeInOut',
           }}
         >
           🔬
@@ -167,7 +167,7 @@ function LabLoadingScreen({ onComplete }: { onComplete: () => void }) {
           transition={{
             duration: 1.5,
             repeat: Infinity,
-            ease: "easeInOut",
+            ease: 'easeInOut',
           }}
         >
           Entering the lab...
@@ -192,7 +192,7 @@ function LabLoadingScreen({ onComplete }: { onComplete: () => void }) {
             animate={{ width: `${progress}%` }}
             transition={{ duration: 0.3 }}
             style={{
-              boxShadow: "0 0 20px rgba(147, 51, 234, 0.5)",
+              boxShadow: '0 0 20px rgba(147, 51, 234, 0.5)',
             }}
           />
         </div>
@@ -206,7 +206,7 @@ function LabLoadingScreen({ onComplete }: { onComplete: () => void }) {
           transition={{
             duration: 0.5,
             repeat: Infinity,
-            ease: "easeInOut",
+            ease: 'easeInOut',
           }}
         >
           {Math.round(progress)}%
@@ -220,14 +220,14 @@ function LabLoadingScreen({ onComplete }: { onComplete: () => void }) {
           transition={{
             duration: 2,
             repeat: Infinity,
-            ease: "easeInOut",
+            ease: 'easeInOut',
           }}
         >
           <div
             className="absolute inset-0 bg-gradient-to-b from-transparent via-cyan-400/10 to-transparent"
             style={{
-              height: "2px",
-              animation: "scan 3s linear infinite",
+              height: '2px',
+              animation: 'scan 3s linear infinite',
             }}
           />
         </motion.div>
@@ -325,7 +325,7 @@ export default function LabPage() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
+            transition={{ duration: 0.8, ease: 'easeOut' }}
             className="relative min-h-screen bg-gradient-to-br from-slate-900 via-purple-900/20 to-cyan-900/20"
           >
             {/* Animated Background Grid for Main Content */}
@@ -396,8 +396,8 @@ export default function LabPage() {
                   className="grid grid-cols-1 lg:grid-cols-2 gap-8"
                 >
                   {chapters.map((chapter, index) => {
-                    const creatureEmojis = ["👁️", "🦵", "🧪", "🌍"];
-                    const creature = creatureEmojis[chapter.id - 1] || "🧬";
+                    const creatureEmojis = ['👁️', '🦵', '🧪', '🌍'];
+                    const creature = creatureEmojis[chapter.id - 1] || '🧬';
 
                     return (
                       <motion.div
@@ -407,10 +407,10 @@ export default function LabPage() {
                         transition={{ duration: 0.6, delay: 0.1 * index }}
                         className={`relative bg-slate-800/50 backdrop-blur-sm border rounded-2xl p-8 transition-all duration-300 ${
                           chapter.id > 1 && !chapters[index - 1]?.completed
-                            ? "border-slate-700 opacity-50"
+                            ? 'border-slate-700 opacity-50'
                             : chapter.completed
-                            ? "border-green-500/50 bg-green-900/10"
-                            : "border-slate-700 hover:border-purple-400/50 hover:transform hover:scale-[1.02] cursor-pointer"
+                              ? 'border-green-500/50 bg-green-900/10'
+                              : 'border-slate-700 hover:border-purple-400/50 hover:transform hover:scale-[1.02] cursor-pointer'
                         }`}
                       >
                         {/* Lock/Completion Status */}
@@ -433,11 +433,11 @@ export default function LabPage() {
                             <div
                               className={`w-20 h-20 rounded-2xl flex items-center justify-center text-4xl ${
                                 chapter.completed
-                                  ? "bg-green-600/20 border-2 border-green-500/50"
+                                  ? 'bg-green-600/20 border-2 border-green-500/50'
                                   : chapter.id === 1 ||
-                                    chapters[index - 1]?.completed
-                                  ? "bg-gradient-to-br from-purple-500/20 to-cyan-500/20 border-2 border-purple-400/30"
-                                  : "bg-slate-700/50 border-2 border-slate-600"
+                                      chapters[index - 1]?.completed
+                                    ? 'bg-gradient-to-br from-purple-500/20 to-cyan-500/20 border-2 border-purple-400/30'
+                                    : 'bg-slate-700/50 border-2 border-slate-600'
                               }`}
                             >
                               {creature}
@@ -466,7 +466,7 @@ export default function LabPage() {
                               📖 Learning Goals:
                             </h4>
                             <div className="text-slate-300 text-sm">
-                              {chapter.objectives.join(" • ")}
+                              {chapter.objectives.join(' • ')}
                             </div>
                           </div>
                         </div>
@@ -477,13 +477,13 @@ export default function LabPage() {
                             href={`/lab/chapter/${chapter.id}`}
                             className={`w-full font-semibold py-4 px-6 rounded-xl transition-all duration-200 text-center block ${
                               chapter.completed
-                                ? "bg-green-600 hover:bg-green-700 text-white"
-                                : "bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 text-white transform hover:scale-105"
+                                ? 'bg-green-600 hover:bg-green-700 text-white'
+                                : 'bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 text-white transform hover:scale-105'
                             }`}
                           >
                             {chapter.completed
-                              ? "🔄 Review Chapter"
-                              : "🚀 Get Started"}
+                              ? '🔄 Review Chapter'
+                              : '🚀 Get Started'}
                           </Link>
                         ) : (
                           <div className="w-full bg-slate-700 text-slate-400 font-semibold py-4 px-6 rounded-xl text-center">

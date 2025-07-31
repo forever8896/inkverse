@@ -1,5 +1,5 @@
 export interface ValidationRule {
-  type: "includes" | "excludes" | "regex" | "custom";
+  type: 'includes' | 'excludes' | 'regex' | 'custom';
   patterns: string[];
   message?: string;
 }
@@ -22,7 +22,7 @@ export interface Chapter {
   creature: string;
   description: string;
   story: string;
-  difficulty: "Beginner" | "Intermediate" | "Advanced" | "Expert";
+  difficulty: 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert';
   duration: string;
   xp: number;
   objectives: string[];
@@ -35,27 +35,33 @@ export interface Chapter {
 const chapters: Chapter[] = [
   {
     id: 1,
-    title: "First Life",
-    creature: "🥚",
-    description: "Create your first digital creature from basic DNA",
-    story: "Every Bio-Engineer starts here. You'll learn to give life to digital beings using the fundamental building blocks of ink! contracts.",
-    difficulty: "Beginner",
-    duration: "20 min",
+    title: 'First Life',
+    creature: '🥚',
+    description: 'Create your first digital creature from basic DNA',
+    story:
+      "Every Bio-Engineer starts here. You'll learn to give life to digital beings using the fundamental building blocks of ink! contracts.",
+    difficulty: 'Beginner',
+    duration: '20 min',
     xp: 100,
     unlocked: true,
     completed: false,
     objectives: [
-      "Understand the DNA structure of digital creatures",
-      "Create your first living smart contract",
-      "Give your creature basic life functions",
-      "Issue a birth certificate on the blockchain"
+      'Understand the DNA structure of digital creatures',
+      'Create your first living smart contract',
+      'Give your creature basic life functions',
+      'Issue a birth certificate on the blockchain',
     ],
-    rewards: ["Basic DNA manipulation", "Creature birth certificate", "Lab access badge"],
+    rewards: [
+      'Basic DNA manipulation',
+      'Creature birth certificate',
+      'Lab access badge',
+    ],
     steps: [
       {
         id: 1,
-        title: "Welcome to the Bio-Engineering Lab! 🧬",
-        assistantDialogue: "Hey there, future Bio-Engineer! I'm your lab assistant. Ready to create your first digital creature? Think of it like giving life to code - we'll start with the basic DNA structure that makes every creature unique!",
+        title: 'Welcome to the Bio-Engineering Lab! 🧬',
+        assistantDialogue:
+          "Hey there, future Bio-Engineer! I'm your lab assistant. Ready to create your first digital creature? Think of it like giving life to code - we'll start with the basic DNA structure that makes every creature unique!",
         content: `# Welcome to Digital Creature Creation! 🧬
 
 You're about to perform the most amazing feat in bio-engineering: **creating life from code**!
@@ -73,12 +79,13 @@ Think of a digital creature as a living being that exists on the blockchain. Jus
 
 We'll start simple - creating a creature that can remember one thing and can flip between two states (like being awake or asleep). 
 
-Don't worry if you've never coded before! I'll guide you through every single step. Ready to give life to your first digital being?`
+Don't worry if you've never coded before! I'll guide you through every single step. Ready to give life to your first digital being?`,
       },
       {
         id: 2,
-        title: "Building the DNA Foundation",
-        assistantDialogue: "Perfect! Now let's build the basic DNA structure. Every creature needs a genetic blueprint - that's what the #[ink::contract] module does. Think of it as the creature's biological blueprint that tells the blockchain 'Hey, there's a new life form here!'",
+        title: 'Building the DNA Foundation',
+        assistantDialogue:
+          "Perfect! Now let's build the basic DNA structure. Every creature needs a genetic blueprint - that's what the #[ink::contract] module does. Think of it as the creature's biological blueprint that tells the blockchain 'Hey, there's a new life form here!'",
         content: `# Building Your Creature's DNA 🧬
 
 Every digital creature needs a **genetic blueprint** - this is like the DNA that makes your creature unique!
@@ -122,18 +129,19 @@ mod flipper_creature {
         is_awake: bool,
     }
 }`,
-        hint: "Your creature needs DNA! Add #[ink(storage)] above a struct called FlipperCreature with a field is_awake: bool",
+        hint: 'Your creature needs DNA! Add #[ink(storage)] above a struct called FlipperCreature with a field is_awake: bool',
         validation: [
-          { type: "includes", patterns: ["#[ink(storage)]"] },
-          { type: "includes", patterns: ["struct FlipperCreature"] },
-          { type: "includes", patterns: ["is_awake: bool"] }
+          { type: 'includes', patterns: ['#[ink(storage)]'] },
+          { type: 'includes', patterns: ['struct FlipperCreature'] },
+          { type: 'includes', patterns: ['is_awake: bool'] },
         ],
-        rewards: ["🧬 DNA Blueprint Mastery", "🏗️ Structure Creation"]
+        rewards: ['🧬 DNA Blueprint Mastery', '🏗️ Structure Creation'],
       },
       {
         id: 3,
-        title: "The Birth Process - Creating Life!",
-        assistantDialogue: "Excellent DNA work! Now comes the magical moment - the BIRTH of your creature! Every digital being needs a birth process (constructor) that brings it to life with initial characteristics. Think of this as the moment your creature opens its eyes for the first time!",
+        title: 'The Birth Process - Creating Life!',
+        assistantDialogue:
+          'Excellent DNA work! Now comes the magical moment - the BIRTH of your creature! Every digital being needs a birth process (constructor) that brings it to life with initial characteristics. Think of this as the moment your creature opens its eyes for the first time!',
         content: `# Bringing Your Creature to Life! ⚡
 
 Now for the most exciting part - **the birth process**! 
@@ -190,19 +198,20 @@ mod flipper_creature {
         }
     }
 }`,
-        hint: "Add a constructor function with #[ink(constructor)] that takes initial_awake_state: bool and returns Self",
+        hint: 'Add a constructor function with #[ink(constructor)] that takes initial_awake_state: bool and returns Self',
         validation: [
-          { type: "includes", patterns: ["#[ink(constructor)]"] },
-          { type: "includes", patterns: ["pub fn new"] },
-          { type: "includes", patterns: ["initial_awake_state: bool"] },
-          { type: "includes", patterns: ["-> Self"] }
+          { type: 'includes', patterns: ['#[ink(constructor)]'] },
+          { type: 'includes', patterns: ['pub fn new'] },
+          { type: 'includes', patterns: ['initial_awake_state: bool'] },
+          { type: 'includes', patterns: ['-> Self'] },
         ],
-        rewards: ["⚡ Life Creation Powers", "🎂 Birth Certificate Authority"]
+        rewards: ['⚡ Life Creation Powers', '🎂 Birth Certificate Authority'],
       },
       {
         id: 4,
-        title: "Teaching Your Creature to Communicate",
-        assistantDialogue: "Your creature is alive! 🎉 But right now it can't communicate with the outside world. Let's teach it to 'speak' by adding communication abilities. These are like teaching your pet to respond to commands!",
+        title: 'Teaching Your Creature to Communicate',
+        assistantDialogue:
+          "Your creature is alive! 🎉 But right now it can't communicate with the outside world. Let's teach it to 'speak' by adding communication abilities. These are like teaching your pet to respond to commands!",
         content: `# Teaching Communication Skills 📞
 
 Your creature is alive, but it's like a newborn - it can't communicate yet! 
@@ -282,17 +291,18 @@ mod flipper_creature {
 }`,
         hint: "Add two message functions: check_if_awake(&self) -> bool and flip_state(&mut self). Don't forget #[ink(message)]!",
         validation: [
-          { type: "includes", patterns: ["#[ink(message)]"] },
-          { type: "includes", patterns: ["pub fn check_if_awake"] },
-          { type: "includes", patterns: ["pub fn flip_state"] },
-          { type: "includes", patterns: ["&mut self"] }
+          { type: 'includes', patterns: ['#[ink(message)]'] },
+          { type: 'includes', patterns: ['pub fn check_if_awake'] },
+          { type: 'includes', patterns: ['pub fn flip_state'] },
+          { type: 'includes', patterns: ['&mut self'] },
         ],
-        rewards: ["📞 Communication Mastery", "🎯 Command Response"]
+        rewards: ['📞 Communication Mastery', '🎯 Command Response'],
       },
       {
         id: 5,
-        title: "Your Creature is ALIVE! 🎉",
-        assistantDialogue: "INCREDIBLE! You've just performed digital bio-engineering magic! Your FlipperCreature is now a living, breathing (well, digitally breathing) entity on the blockchain. Let's celebrate your achievement and see what you've accomplished!",
+        title: 'Your Creature is ALIVE! 🎉',
+        assistantDialogue:
+          "INCREDIBLE! You've just performed digital bio-engineering magic! Your FlipperCreature is now a living, breathing (well, digitally breathing) entity on the blockchain. Let's celebrate your achievement and see what you've accomplished!",
         content: `# 🎉 CONGRATULATIONS, Bio-Engineer! 
 
 You've just created your first **LIVING DIGITAL CREATURE**! 
@@ -333,15 +343,19 @@ Your creature isn't just code - it's a **persistent digital life form**:
 In the next chapter, you'll learn to give your creatures **memory implants** - the ability to remember complex information, traits, and experiences!
 
 Welcome to the amazing world of digital bio-engineering! 🧬⚡`,
-        rewards: ["🏆 First Life Achievement", "🧬 Bio-Engineer License", "⭐ 100 XP Earned"]
-      }
-    ]
+        rewards: [
+          '🏆 First Life Achievement',
+          '🧬 Bio-Engineer License',
+          '⭐ 100 XP Earned',
+        ],
+      },
+    ],
   },
   // Additional chapters would be added here...
 ];
 
 export function getChapterById(id: number): Chapter | undefined {
-  return chapters.find(chapter => chapter.id === id);
+  return chapters.find((chapter) => chapter.id === id);
 }
 
 export function getAllChapters(): Chapter[] {
@@ -349,25 +363,25 @@ export function getAllChapters(): Chapter[] {
 }
 
 export function getNextChapter(currentId: number): Chapter | undefined {
-  return chapters.find(chapter => chapter.id === currentId + 1);
+  return chapters.find((chapter) => chapter.id === currentId + 1);
 }
 
 export function getPreviousChapter(currentId: number): Chapter | undefined {
-  return chapters.find(chapter => chapter.id === currentId - 1);
+  return chapters.find((chapter) => chapter.id === currentId - 1);
 }
 
 // Client-side validation function
 export function validateCode(code: string, rules: ValidationRule[]): boolean {
-  return rules.every(rule => {
+  return rules.every((rule) => {
     switch (rule.type) {
-      case "includes":
-        return rule.patterns.every(pattern => code.includes(pattern));
-      case "excludes":
-        return rule.patterns.every(pattern => !code.includes(pattern));
-      case "regex":
-        return rule.patterns.every(pattern => new RegExp(pattern).test(code));
+      case 'includes':
+        return rule.patterns.every((pattern) => code.includes(pattern));
+      case 'excludes':
+        return rule.patterns.every((pattern) => !code.includes(pattern));
+      case 'regex':
+        return rule.patterns.every((pattern) => new RegExp(pattern).test(code));
       default:
         return true;
     }
   });
-} 
+}

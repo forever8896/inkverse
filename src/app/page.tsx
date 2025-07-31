@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import Image from "next/image";
-import Link from "next/link";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import Image from 'next/image';
+import Link from 'next/link';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
   const [isEggCracking, setIsEggCracking] = useState(false);
@@ -16,7 +16,7 @@ export default function Home() {
 
     // After 1 second, navigate to /lab
     setTimeout(() => {
-      router.push("/lab");
+      router.push('/lab');
     }, 1000);
   };
 
@@ -58,10 +58,10 @@ export default function Home() {
             </div>
 
             <h1 className="text-4xl font-bold leading-tight mb-2">
-              Create your own{" "}
+              Create your own{' '}
               <span className="bg-gradient-to-r from-red-400 via-yellow-400 via-green-400 via-blue-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">
                 adorable
-              </span>{" "}
+              </span>{' '}
               creature
             </h1>
 
@@ -83,8 +83,8 @@ export default function Home() {
                   <img
                     src={
                       isEggCracking
-                        ? "/creatures/egg_cracks.png"
-                        : "/creatures/first_egg.png"
+                        ? '/creatures/egg_cracks.png'
+                        : '/creatures/first_egg.png'
                     }
                     alt="Click to enter the lab"
                     className="hover:scale-110 w-48 h-48 object-contain animate-egg-bounce relative z-10 group-hover:animate-pulse egg-hover"
@@ -92,7 +92,7 @@ export default function Home() {
 
                   {/* Text superimposed on egg */}
                   <div className="absolute -bottom-[44px] left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-xl font-medium text-white text-center whitespace-nowrap z-20">
-                    {isEggCracking ? "" : "Crack the egg to start!"}
+                    {isEggCracking ? '' : 'Crack the egg to start!'}
                   </div>
                 </div>
               </div>

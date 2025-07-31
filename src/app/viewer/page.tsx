@@ -1,46 +1,46 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import Image from "next/image";
-import ShaderBackground from "@/components/ShaderBackground";
+import { useState, useEffect } from 'react';
+import Image from 'next/image';
+import ShaderBackground from '@/components/ShaderBackground';
 
 // Character data based on public/creatures/ directory
 const characters: Character[] = [
   {
-    id: "egg",
-    name: "Inkception",
-    src: "/creatures/egg.png",
-    type: "image",
+    id: 'egg',
+    name: 'Inkception',
+    src: '/creatures/egg.png',
+    type: 'image',
   },
   {
-    id: "egg_cracks",
-    name: "Crack in the matrix",
-    src: "/creatures/egg_cracks.png",
-    type: "image",
+    id: 'egg_cracks',
+    name: 'Crack in the matrix',
+    src: '/creatures/egg_cracks.png',
+    type: 'image',
   },
   {
-    id: "first_awake",
-    name: "First Awake",
-    src: "/creatures/first_awake.png",
-    type: "image",
+    id: 'first_awake',
+    name: 'First Awake',
+    src: '/creatures/first_awake.png',
+    type: 'image',
   },
   {
-    id: "first_sleeping",
-    name: "First Sleeping",
-    src: "/creatures/first_sleeping.png",
-    type: "image",
+    id: 'first_sleeping',
+    name: 'First Sleeping',
+    src: '/creatures/first_sleeping.png',
+    type: 'image',
   },
   {
-    id: "second_body",
-    name: "Second Body",
-    src: "/creatures/second_body.png",
-    type: "image",
+    id: 'second_body',
+    name: 'Second Body',
+    src: '/creatures/second_body.png',
+    type: 'image',
   },
   {
-    id: "video_character",
-    name: "Animated Being",
-    src: "/creatures/output.webm",
-    type: "video",
+    id: 'video_character',
+    name: 'Animated Being',
+    src: '/creatures/output.webm',
+    type: 'video',
   },
 ];
 
@@ -58,7 +58,7 @@ interface Character {
   id: string;
   name: string;
   src: string;
-  type: "image" | "video";
+  type: 'image' | 'video';
 }
 
 export default function CharacterViewer() {
@@ -106,12 +106,12 @@ export default function CharacterViewer() {
               key={star.id}
               className="absolute rounded-full bg-white opacity-30 animate-pulse"
               style={{
-                width: star.width + "px",
-                height: star.height + "px",
-                left: star.left + "%",
-                top: star.top + "%",
-                animationDelay: star.animationDelay + "s",
-                animationDuration: star.animationDuration + "s",
+                width: star.width + 'px',
+                height: star.height + 'px',
+                left: star.left + '%',
+                top: star.top + '%',
+                animationDelay: star.animationDelay + 's',
+                animationDuration: star.animationDuration + 's',
               }}
             />
           ))}
@@ -120,7 +120,7 @@ export default function CharacterViewer() {
         {/* Selected Character Display */}
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="animate-bounce-gentle">
-            {selectedCharacter.type === "video" ? (
+            {selectedCharacter.type === 'video' ? (
               <video
                 src={selectedCharacter.src}
                 autoPlay
@@ -236,14 +236,14 @@ export default function CharacterViewer() {
               key={character.id}
               className={`relative cursor-pointer rounded-lg border-2 transition-all duration-200 hover:scale-105 ${
                 selectedCharacter.id === character.id
-                  ? "border-blue-500 bg-blue-500/20 shadow-lg shadow-blue-500/50"
-                  : "border-gray-600 bg-gray-700/50 hover:border-gray-500"
+                  ? 'border-blue-500 bg-blue-500/20 shadow-lg shadow-blue-500/50'
+                  : 'border-gray-600 bg-gray-700/50 hover:border-gray-500'
               }`}
               onClick={() => setSelectedCharacter(character)}
             >
               <div className="p-4 flex items-center space-x-4">
                 <div className="relative w-20 h-20 rounded-lg overflow-hidden bg-gray-600">
-                  {character.type === "video" ? (
+                  {character.type === 'video' ? (
                     <video
                       src={character.src}
                       autoPlay
@@ -296,20 +296,20 @@ export default function CharacterViewer() {
         }
 
         /* Custom slider styling */
-        input[type="range"] {
+        input[type='range'] {
           -webkit-appearance: none;
           appearance: none;
           background: transparent;
           cursor: pointer;
         }
 
-        input[type="range"]::-webkit-slider-track {
+        input[type='range']::-webkit-slider-track {
           background: #4b5563;
           height: 8px;
           border-radius: 4px;
         }
 
-        input[type="range"]::-webkit-slider-thumb {
+        input[type='range']::-webkit-slider-thumb {
           -webkit-appearance: none;
           appearance: none;
           height: 20px;
@@ -320,13 +320,13 @@ export default function CharacterViewer() {
           cursor: pointer;
         }
 
-        input[type="range"]::-moz-range-track {
+        input[type='range']::-moz-range-track {
           background: #4b5563;
           height: 8px;
           border-radius: 4px;
         }
 
-        input[type="range"]::-moz-range-thumb {
+        input[type='range']::-moz-range-thumb {
           height: 20px;
           width: 20px;
           border-radius: 50%;

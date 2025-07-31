@@ -1,4 +1,4 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   /* Existing config options */
@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
   typescript: {
     // Allow production builds to succeed even if there are type errors.
     ignoreBuildErrors: true,
-  }
+  },
 };
 
 export default nextConfig;

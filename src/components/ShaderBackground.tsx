@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef } from 'react';
 
 const vertexShaderSource = `
   attribute vec2 a_position;
@@ -121,16 +121,16 @@ const fragmentShaderSource = `
 
 export default function ShaderBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationRef = useRef<number>();
+  const animationRef = useRef<number | undefined>(undefined);
   const mouseRef = useRef({ x: 0.5, y: 0.5 }); // Initialize to center
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const gl = canvas.getContext("webgl");
+    const gl = canvas.getContext('webgl');
     if (!gl) {
-      console.warn("WebGL not supported");
+      console.warn('WebGL not supported');
       return;
     }
 
@@ -147,7 +147,7 @@ export default function ShaderBackground() {
       gl.compileShader(shader);
 
       if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-        console.error("Shader compile error:", gl.getShaderInfoLog(shader));
+        console.error('Shader compile error:', gl.getShaderInfoLog(shader));
         gl.deleteShader(shader);
         return null;
       }
@@ -169,7 +169,7 @@ export default function ShaderBackground() {
       gl.linkProgram(program);
 
       if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-        console.error("Program link error:", gl.getProgramInfoLog(program));
+        console.error('Program link error:', gl.getProgramInfoLog(program));
         gl.deleteProgram(program);
         return null;
       }
@@ -194,14 +194,14 @@ export default function ShaderBackground() {
     // Get attribute and uniform locations
     const positionAttributeLocation = gl.getAttribLocation(
       program,
-      "a_position"
+      'a_position'
     );
     const resolutionUniformLocation = gl.getUniformLocation(
       program,
-      "u_resolution"
+      'u_resolution'
     );
-    const timeUniformLocation = gl.getUniformLocation(program, "u_time");
-    const mouseUniformLocation = gl.getUniformLocation(program, "u_mouse");
+    const timeUniformLocation = gl.getUniformLocation(program, 'u_time');
+    const mouseUniformLocation = gl.getUniformLocation(program, 'u_mouse');
 
     // Create buffer
     const positionBuffer = gl.createBuffer();
@@ -246,7 +246,7 @@ export default function ShaderBackground() {
         );
       } else {
         // Debug: log if mouse uniform is missing
-        console.warn("Mouse uniform location not found");
+        console.warn('Mouse uniform location not found');
       }
 
       // Set up attributes
@@ -275,20 +275,20 @@ export default function ShaderBackground() {
         y: 1.0 - (event.clientY - rect.top) / canvas.height, // Flip Y and normalize
       };
       // Debug: log mouse position
-      console.log("Mouse:", mouseRef.current);
+      console.log('Mouse:', mouseRef.current);
     };
 
-    canvas.addEventListener("mousemove", handleMouseMove);
+    canvas.addEventListener('mousemove', handleMouseMove);
 
     // Start animation
     animationRef.current = requestAnimationFrame(animate);
 
     // Cleanup
     return () => {
-      if (animationRef.current) {
+      if (animationRef.current !== undefined) {
         cancelAnimationFrame(animationRef.current);
       }
-      canvas.removeEventListener("mousemove", handleMouseMove);
+      canvas.removeEventListener('mousemove', handleMouseMove);
     };
   }, []);
 
@@ -296,7 +296,7 @@ export default function ShaderBackground() {
     <canvas
       ref={canvasRef}
       className="absolute inset-0 w-full h-full"
-      style={{ width: "100%", height: "100%" }}
+      style={{ width: '100%', height: '100%' }}
     />
   );
 }

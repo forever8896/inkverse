@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import { Lesson, validateCode, ValidationRule } from "@/lib/lessons";
-import CodeEditor from "@/components/CodeEditor";
-import ShaderBackground from "@/components/ShaderBackground";
-import dynamic from "next/dynamic";
-import { HSLValues } from "@/components/CreatureColorPicker";
-import Confetti from "react-confetti";
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { Lesson, validateCode, ValidationRule } from '@/lib/lessons';
+import CodeEditor from '@/components/CodeEditor';
+import ShaderBackground from '@/components/ShaderBackground';
+import dynamic from 'next/dynamic';
+import { HSLValues } from '@/components/CreatureColorPicker';
+import Confetti from 'react-confetti';
 
-const ConsolePanel = dynamic(() => import("@/app/ConsolePanel"), {
+const ConsolePanel = dynamic(() => import('@/app/ConsolePanel'), {
   ssr: false,
 });
 
@@ -19,7 +19,7 @@ interface LessonLayoutProps {
 
 interface Toast {
   id: string;
-  type: "success" | "error" | "info";
+  type: 'success' | 'error' | 'info';
   title: string;
   message: string;
 }
@@ -27,7 +27,7 @@ interface Toast {
 export default function LessonLayout({ lesson }: LessonLayoutProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [showCompletionModal, setShowCompletionModal] = useState(false);
-  const [userCode, setUserCode] = useState("");
+  const [userCode, setUserCode] = useState('');
   const [isValidated, setIsValidated] = useState(false);
   const [showHint, setShowHint] = useState(false);
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -55,13 +55,13 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
 
   // Load saved creature color from localStorage
   useEffect(() => {
-    const savedColor = localStorage.getItem("creatureColor");
+    const savedColor = localStorage.getItem('creatureColor');
     if (savedColor) {
       try {
         const parsedColor = JSON.parse(savedColor);
         setCreatureColor(parsedColor);
       } catch (error) {
-        console.error("Error parsing saved color:", error);
+        console.error('Error parsing saved color:', error);
       }
     }
   }, []);
@@ -79,13 +79,13 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
     handleResize();
 
     // Add event listener
-    window.addEventListener("resize", handleResize);
+    window.addEventListener('resize', handleResize);
 
     // Clean up
-    return () => window.removeEventListener("resize", handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const addToast = (toast: Omit<Toast, "id">) => {
+  const addToast = (toast: Omit<Toast, 'id'>) => {
     const id = Math.random().toString(36).substr(2, 9);
     const newToast = { ...toast, id };
     setToasts((prev) => [...prev, newToast]);
@@ -110,15 +110,15 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
       if (validationResult.isValid) {
         setIsValidated(true);
         addToast({
-          type: "success",
-          title: "🎉 Perfect!",
-          message: "Your creature responds beautifully to the code!",
+          type: 'success',
+          title: '🎉 Perfect!',
+          message: 'Your creature responds beautifully to the code!',
         });
       } else {
         setIsValidated(false);
         addToast({
-          type: "error",
-          title: "🔍 Not quite there yet",
+          type: 'error',
+          title: '🔍 Not quite there yet',
           message: validationResult.feedback,
         });
       }
@@ -126,9 +126,9 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
     } else {
       // No validation needed, just show success
       addToast({
-        type: "success",
-        title: "✅ Step Complete!",
-        message: "Ready to move on to the next step.",
+        type: 'success',
+        title: '✅ Step Complete!',
+        message: 'Ready to move on to the next step.',
       });
       return true;
     }
@@ -138,7 +138,7 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
   const validateCodeWithFeedback = (code: string, rules: ValidationRule[]) => {
     for (const rule of rules) {
       switch (rule.type) {
-        case "includes":
+        case 'includes':
           for (const pattern of rule.patterns) {
             if (!code.includes(pattern)) {
               return {
@@ -148,7 +148,7 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
             }
           }
           break;
-        case "excludes":
+        case 'excludes':
           for (const pattern of rule.patterns) {
             if (code.includes(pattern)) {
               return {
@@ -158,7 +158,7 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
             }
           }
           break;
-        case "regex":
+        case 'regex':
           for (const pattern of rule.patterns) {
             if (!new RegExp(pattern).test(code)) {
               return {
@@ -168,45 +168,45 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
             }
           }
           break;
-        case "custom":
+        case 'custom':
           // Handle custom validation rules if needed
           break;
       }
     }
-    return { isValid: true, feedback: "" };
+    return { isValid: true, feedback: '' };
   };
 
   // Specific feedback for different patterns
   const getPatternFeedback = (pattern: string, step: number): string => {
     const feedbackMap: Record<string, string> = {
-      "#[ink(storage)]":
-        "Add the #[ink(storage)] attribute above your struct. This tells ink! that this struct will store data on the blockchain.",
-      "struct Creature":
+      '#[ink(storage)]':
+        'Add the #[ink(storage)] attribute above your struct. This tells ink! that this struct will store data on the blockchain.',
+      'struct Creature':
         "Create a struct called 'Creature' - this will be your creature's blueprint. Use 'pub struct Creature {' syntax.",
       is_conscious:
         "Add an 'is_conscious' field inside your struct. This should be of type 'bool' to track if your creature is awake.",
       bool: "Make sure your is_conscious field is of type 'bool' (true/false values).",
-      "impl Creature":
+      'impl Creature':
         "Create an implementation block with 'impl Creature {' - this is where your creature's abilities will live.",
-      "#[ink(constructor)]":
-        "Add the #[ink(constructor)] attribute above your constructor function. This tells ink! this function creates new creatures.",
+      '#[ink(constructor)]':
+        'Add the #[ink(constructor)] attribute above your constructor function. This tells ink! this function creates new creatures.',
       birth_awake:
         "Create a constructor function called 'birth_awake' that takes a 'conscious: bool' parameter.",
       birth_sleeping:
         "Create a second constructor called 'birth_sleeping' with no parameters. It should call 'Self::birth_awake(false)'.",
-      "#[ink(message)]":
-        "Add the #[ink(message)] attribute above your function. This makes it callable from outside the contract.",
-      "pub fn is_awake":
+      '#[ink(message)]':
+        'Add the #[ink(message)] attribute above your function. This makes it callable from outside the contract.',
+      'pub fn is_awake':
         "Create a public function called 'is_awake' that takes '&self' and returns 'bool'.",
-      "&self":
+      '&self':
         "Your is_awake function should take '&self' as a parameter (read-only access to the creature).",
-      "self.is_conscious":
+      'self.is_conscious':
         "Return 'self.is_conscious' from your function to tell others if the creature is awake.",
-      "pub fn toggle_consciousness":
+      'pub fn toggle_consciousness':
         "Create a function called 'toggle_consciousness' that takes '&mut self' (mutable access).",
-      "&mut self":
+      '&mut self':
         "Use '&mut self' because you're changing the creature's state. The 'mut' means mutable/changeable.",
-      "self.is_conscious = !self.is_conscious":
+      'self.is_conscious = !self.is_conscious':
         "Flip the consciousness state using 'self.is_conscious = !self.is_conscious;' - the ! operator flips true to false and vice versa.",
     };
 
@@ -295,19 +295,19 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
             className={`
               px-6 py-4 rounded-lg shadow-lg border
               ${
-                toast.type === "success"
-                  ? "bg-pink-700/90 border-pink-400 text-white"
-                  : ""
+                toast.type === 'success'
+                  ? 'bg-pink-700/90 border-pink-400 text-white'
+                  : ''
               }
               ${
-                toast.type === "error"
-                  ? "bg-red-700/90 border-red-400 text-white"
-                  : ""
+                toast.type === 'error'
+                  ? 'bg-red-700/90 border-red-400 text-white'
+                  : ''
               }
               ${
-                toast.type === "info"
-                  ? "bg-blue-700/90 border-blue-400 text-white"
-                  : ""
+                toast.type === 'info'
+                  ? 'bg-blue-700/90 border-blue-400 text-white'
+                  : ''
               }
               animate-fade-in-up pointer-events-auto
             `}
@@ -392,26 +392,26 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
                 <h3 className="text-lg font-semibold text-white">
                   {lesson.id === 1
                     ? currentStep === 0
-                      ? "Mysterious Egg"
-                      : "Bio-Specimen Alpha"
+                      ? 'Mysterious Egg'
+                      : 'Bio-Specimen Alpha'
                     : lesson.id === 2
-                    ? "Enhanced Creature"
-                    : "Specimen"}
+                      ? 'Enhanced Creature'
+                      : 'Specimen'}
                 </h3>
 
                 {/* Status */}
                 <p className="text-sm text-slate-300">
                   {lesson.id === 1
                     ? currentStep === 0
-                      ? "Waiting to hatch..."
+                      ? 'Waiting to hatch...'
                       : currentStep < 4
-                      ? "Sleeping peacefully"
-                      : isValidated
-                      ? "Fully conscious!"
-                      : "Ready to awaken"
+                        ? 'Sleeping peacefully'
+                        : isValidated
+                          ? 'Fully conscious!'
+                          : 'Ready to awaken'
                     : lesson.id === 2
-                    ? "Growing stronger"
-                    : "In development"}
+                      ? 'Growing stronger'
+                      : 'In development'}
                 </p>
 
                 {/* Achievement */}
@@ -466,8 +466,8 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
                     <div
                       className={`absolute bottom-full mb-3 left-1/2 -translate-x-1/2 z-20 pointer-events-none transition-all duration-300 ${
                         showHint
-                          ? "opacity-100 translate-y-0"
-                          : "opacity-0 -translate-y-4"
+                          ? 'opacity-100 translate-y-0'
+                          : 'opacity-0 -translate-y-4'
                       } w-[min(90vw,420px)]`}
                       aria-live="polite"
                     >
@@ -563,10 +563,10 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
                     onClick={() => setCurrentStep(i)}
                     className={`w-3 h-3 rounded-full transition-all duration-200 hover:scale-110 ${
                       i === currentStep
-                        ? "bg-gradient-to-r from-purple-400 to-cyan-400 shadow-lg shadow-purple-400/30"
+                        ? 'bg-gradient-to-r from-purple-400 to-cyan-400 shadow-lg shadow-purple-400/30'
                         : i < currentStep
-                        ? "bg-gradient-to-r from-pink-400 to-pink-400 shadow-md shadow-green-400/20"
-                        : "bg-slate-600 hover:bg-slate-500"
+                          ? 'bg-gradient-to-r from-pink-400 to-pink-400 shadow-md shadow-green-400/20'
+                          : 'bg-slate-600 hover:bg-slate-500'
                     }`}
                   />
                 ))}
@@ -592,8 +592,8 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
                 >
                   <span>
                     {currentStep === lesson.steps.length - 1
-                      ? "Complete"
-                      : "Next"}
+                      ? 'Complete'
+                      : 'Next'}
                   </span>
                   <span>→</span>
                 </button>
@@ -618,7 +618,7 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
                 loop
                 controls
                 className="w-[min(480px,70vw)] h-[min(270px,40vw)] mx-auto rounded-lg shadow-lg mb-6 bg-black"
-                style={{ objectFit: "contain" }}
+                style={{ objectFit: 'contain' }}
               />
               <h2 className="text-3xl font-bold text-white mb-2 text-center">
                 Congratulations!
@@ -659,14 +659,14 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
             numberOfPieces={200}
             gravity={0.1}
             colors={[
-              "#9333ea",
-              "#06b6d4",
-              "#ec4899",
-              "#10b981",
-              "#f59e0b",
-              "#ef4444",
+              '#9333ea',
+              '#06b6d4',
+              '#ec4899',
+              '#10b981',
+              '#f59e0b',
+              '#ef4444',
             ]}
-            style={{ position: "fixed", top: 0, left: 0, zIndex: 60 }}
+            style={{ position: 'fixed', top: 0, left: 0, zIndex: 60 }}
           />
         )}
       </div>

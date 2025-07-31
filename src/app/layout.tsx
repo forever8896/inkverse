@@ -1,36 +1,36 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import { Press_Start_2P } from "next/font/google";
-import "./globals.css";
+import type { Metadata } from 'next';
+import { Geist, Geist_Mono } from 'next/font/google';
+import { Press_Start_2P } from 'next/font/google';
+import './globals.css';
 
 const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+  variable: '--font-geist-sans',
+  subsets: ['latin'],
 });
 
 const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  variable: '--font-geist-mono',
+  subsets: ['latin'],
 });
 
 const pressStart2P = Press_Start_2P({
-  weight: "400",
-  subsets: ["latin"],
-  variable: "--font-press-start",
+  weight: '400',
+  subsets: ['latin'],
+  variable: '--font-press-start',
 });
 
 export const metadata: Metadata = {
-  title: "Monsters ink! - Learn ink! Smart Contract Development",
+  title: 'Monsters ink! - Learn ink! Smart Contract Development',
   description:
-    "Interactive tutorial for learning ink! smart contract development on Polkadot and Substrate chains. Master Rust-based Web3 development with hands-on lessons.",
+    'Interactive tutorial for learning ink! smart contract development on Polkadot and Substrate chains. Master Rust-based Web3 development with hands-on lessons.',
   keywords:
-    "ink!, smart contracts, Polkadot, Substrate, Rust, Web3, blockchain development, tutorial",
-  authors: [{ name: "Monsters ink! Team" }],
+    'ink!, smart contracts, Polkadot, Substrate, Rust, Web3, blockchain development, tutorial',
+  authors: [{ name: 'Monsters ink! Team' }],
   openGraph: {
-    title: "Monsters ink! - Learn ink! Smart Contract Development",
+    title: 'Monsters ink! - Learn ink! Smart Contract Development',
     description:
-      "Interactive tutorial for learning ink! smart contract development on Polkadot and Substrate chains.",
-    type: "website",
+      'Interactive tutorial for learning ink! smart contract development on Polkadot and Substrate chains.',
+    type: 'website',
   },
 };
 

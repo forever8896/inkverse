@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from 'react';
 
 interface JobLog {
   timestamp: string;
@@ -19,13 +19,13 @@ interface JobStatus {
 }
 
 const SERVER_URL =
-  "https://web3summit-hackaton-pop-server-production.up.railway.app";
+  'https://web3summit-hackaton-pop-server-production.up.railway.app';
 
 const EXAMPLE_CODE = `#![cfg_attr(not(feature = \"std\"), no_std, no_main)]\n\n#[ink::contract]\nmod example {\n    #[ink(storage)]\n    pub struct Example { value: u32 }\n\n    impl Example {\n        #[ink(constructor)]\n        pub fn new() -> Self { Self { value: 0 } }\n        #[ink(message)]\n        pub fn get(&self) -> u32 { self.value }\n    }\n}`;
 
 type TerminalLine = {
   text: string;
-  type: "stdout" | "stderr" | "command" | "info" | "success" | "error";
+  type: 'stdout' | 'stderr' | 'command' | 'info' | 'success' | 'error';
   timestamp?: string;
 };
 
@@ -46,7 +46,7 @@ export default function ConsolePanel({
 
   // Terminal state
   const [terminalLines, setTerminalLines] = useState<TerminalLine[]>([]);
-  const [commandInput, setCommandInput] = useState("");
+  const [commandInput, setCommandInput] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Focus input when terminal opens
@@ -64,11 +64,11 @@ export default function ConsolePanel({
         const resp = await fetch(`${SERVER_URL}/compile-job/${jobId}`);
         const data = await resp.json();
         setJobStatus(data);
-        if (data.status === "completed" || data.status === "failed") {
+        if (data.status === 'completed' || data.status === 'failed') {
           setPolling(false);
         }
       } catch (e: any) {
-        setError("Failed to fetch job status");
+        setError('Failed to fetch job status');
         setPolling(false);
       }
     }, 1500);
@@ -84,7 +84,7 @@ export default function ConsolePanel({
         const data = await resp.json();
         setLogs(data.logs || []);
       } catch (e: any) {
-        setError("Failed to fetch job logs");
+        setError('Failed to fetch job logs');
         setPolling(false);
       }
     }, 1200);
@@ -102,23 +102,23 @@ export default function ConsolePanel({
     setTerminalLines((lines) => [
       ...lines,
       {
-        text: "$ pop build",
-        type: "command",
+        text: '$ pop build',
+        type: 'command',
         timestamp: new Date().toISOString(),
       },
       {
-        text: "Compiling...",
-        type: "info",
+        text: 'Compiling...',
+        type: 'info',
         timestamp: new Date().toISOString(),
       },
     ]);
     try {
       const resp = await fetch(`${SERVER_URL}/compile-job`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           code: EXAMPLE_CODE,
-          contractName: "lesson_contract",
+          contractName: 'lesson_contract',
         }),
       });
       let data;
@@ -129,11 +129,11 @@ export default function ConsolePanel({
           ...lines,
           {
             text: `Server returned invalid JSON: ${err}`,
-            type: "error",
+            type: 'error',
             timestamp: new Date().toISOString(),
           },
         ]);
-        setError("Server returned invalid JSON");
+        setError('Server returned invalid JSON');
         setSubmitting(false);
         return;
       }
@@ -142,7 +142,7 @@ export default function ConsolePanel({
           ...lines,
           {
             text: `HTTP ${resp.status}: ${data.error || JSON.stringify(data)}`,
-            type: "error",
+            type: 'error',
             timestamp: new Date().toISOString(),
           },
         ]);
@@ -157,19 +157,19 @@ export default function ConsolePanel({
         setTerminalLines((lines) => [
           ...lines,
           {
-            text: data.error || "Unknown error",
-            type: "error",
+            text: data.error || 'Unknown error',
+            type: 'error',
             timestamp: new Date().toISOString(),
           },
         ]);
-        setError(data.error || "Unknown error");
+        setError(data.error || 'Unknown error');
       }
     } catch (e: any) {
       setTerminalLines((lines) => [
         ...lines,
         {
           text: `Failed to submit job: ${e.message || e}`,
-          type: "error",
+          type: 'error',
           timestamp: new Date().toISOString(),
         },
       ]);
@@ -187,19 +187,19 @@ export default function ConsolePanel({
       ...lines,
       {
         text: `$ ${cmd}`,
-        type: "command",
+        type: 'command',
         timestamp: new Date().toISOString(),
       },
     ]);
-    setCommandInput("");
-    if (cmd === "pop build") {
+    setCommandInput('');
+    if (cmd === 'pop build') {
       submitJob();
     } else {
       setTerminalLines((lines) => [
         ...lines,
         {
           text: `Command not found: ${cmd}`,
-          type: "error",
+          type: 'error',
           timestamp: new Date().toISOString(),
         },
       ]);
@@ -220,7 +220,7 @@ export default function ConsolePanel({
         if (data.logs && data.logs.length > lastLogLength) {
           const newLogs = data.logs.slice(lastLogLength).map((log: JobLog) => ({
             text: log.message,
-            type: log.type as TerminalLine["type"],
+            type: log.type as TerminalLine['type'],
             timestamp: log.timestamp,
           }));
           setTerminalLines((lines) => [...lines, ...newLogs]);
@@ -245,29 +245,29 @@ export default function ConsolePanel({
   };
 
   return (
-    <div style={{ width: "100%", height: "100%", fontFamily: "monospace" }}>
+    <div style={{ width: '100%', height: '100%', fontFamily: 'monospace' }}>
       {visible && (
         <div
           style={{
-            background: "#181a20",
-            color: "#e6e6e6",
-            borderTop: "2px solid #23272f",
-            boxShadow: "0 -2px 12px #0006",
-            height: "100%",
-            display: "flex",
-            flexDirection: "column",
-            overflow: "hidden",
+            background: '#181a20',
+            color: '#e6e6e6',
+            borderTop: '2px solid #23272f',
+            boxShadow: '0 -2px 12px #0006',
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
             padding: 0,
-            position: "relative",
+            position: 'relative',
           }}
         >
           <div
             style={{
-              padding: "10px 20px 6px 20px",
-              borderBottom: "1px solid #23272f",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
+              padding: '10px 20px 6px 20px',
+              borderBottom: '1px solid #23272f',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
             }}
           >
             <span style={{ fontWeight: 700, fontSize: 18 }}>
@@ -276,14 +276,14 @@ export default function ConsolePanel({
             <button
               onClick={clearJob}
               style={{
-                background: "#31343a",
-                color: "#fff",
-                border: "none",
+                background: '#31343a',
+                color: '#fff',
+                border: 'none',
                 borderRadius: 4,
-                padding: "4px 12px",
+                padding: '4px 12px',
                 marginLeft: 16,
                 fontWeight: 600,
-                cursor: "pointer",
+                cursor: 'pointer',
               }}
               disabled={submitting || polling}
             >
@@ -293,23 +293,23 @@ export default function ConsolePanel({
 
           <div
             style={{
-              background: "#101216",
-              borderTop: "1px solid #23272f",
+              background: '#101216',
+              borderTop: '1px solid #23272f',
               padding: 0,
-              fontFamily: "Fira Mono, monospace",
+              fontFamily: 'Fira Mono, monospace',
               fontSize: 15,
               flex: 1,
-              display: "flex",
-              flexDirection: "column",
-              overflow: "hidden",
-              borderRadius: "0 0 8px 8px",
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
+              borderRadius: '0 0 8px 8px',
             }}
           >
             <div
               style={{
-                padding: "0 0 0 0",
+                padding: '0 0 0 0',
                 flex: 1,
-                overflowY: "auto",
+                overflowY: 'auto',
               }}
             >
               {terminalLines.map((line, idx) => (
@@ -317,29 +317,29 @@ export default function ConsolePanel({
                   key={idx}
                   style={{
                     color:
-                      line.type === "stderr"
-                        ? "#ff5555"
-                        : line.type === "stdout"
-                        ? "#aaffaa"
-                        : line.type === "command"
-                        ? "#7ec7ff"
-                        : line.type === "info"
-                        ? "#8ecfff"
-                        : line.type === "success"
-                        ? "#4caf50"
-                        : line.type === "error"
-                        ? "#ff5555"
-                        : "#cdd6f4",
-                    whiteSpace: "pre-wrap",
-                    fontWeight: line.type === "command" ? 700 : 400,
-                    letterSpacing: line.type === "command" ? 0.5 : 0,
+                      line.type === 'stderr'
+                        ? '#ff5555'
+                        : line.type === 'stdout'
+                          ? '#aaffaa'
+                          : line.type === 'command'
+                            ? '#7ec7ff'
+                            : line.type === 'info'
+                              ? '#8ecfff'
+                              : line.type === 'success'
+                                ? '#4caf50'
+                                : line.type === 'error'
+                                  ? '#ff5555'
+                                  : '#cdd6f4',
+                    whiteSpace: 'pre-wrap',
+                    fontWeight: line.type === 'command' ? 700 : 400,
+                    letterSpacing: line.type === 'command' ? 0.5 : 0,
                     fontSize: 15,
                     marginBottom: 2,
                   }}
                 >
                   {line.timestamp && (
                     <span
-                      style={{ color: "#444", fontSize: 11, marginRight: 8 }}
+                      style={{ color: '#444', fontSize: 11, marginRight: 8 }}
                     >
                       {line.timestamp.slice(11, 19)}
                     </span>
@@ -348,23 +348,23 @@ export default function ConsolePanel({
                 </div>
               ))}
               {error && (
-                <div style={{ color: "#ff5555", fontWeight: 600 }}>{error}</div>
+                <div style={{ color: '#ff5555', fontWeight: 600 }}>{error}</div>
               )}
             </div>
             <form
               style={{
-                display: "flex",
-                alignItems: "center",
-                padding: "10px 20px 10px 12px",
-                borderTop: "1px solid #23272f",
-                background: "#181a20",
-                borderRadius: "0 0 8px 8px",
+                display: 'flex',
+                alignItems: 'center',
+                padding: '10px 20px 10px 12px',
+                borderTop: '1px solid #23272f',
+                background: '#181a20',
+                borderRadius: '0 0 8px 8px',
               }}
               onSubmit={handleCommandSubmit}
               autoComplete="off"
             >
               <span
-                style={{ color: "#7ec7ff", fontWeight: 700, marginRight: 8 }}
+                style={{ color: '#7ec7ff', fontWeight: 700, marginRight: 8 }}
               >
                 $
               </span>
@@ -376,13 +376,13 @@ export default function ConsolePanel({
                 placeholder="Type a command (e.g. pop build)"
                 style={{
                   flex: 1,
-                  background: "#23272f",
-                  color: "#fff",
-                  border: "none",
-                  outline: "none",
-                  fontFamily: "Fira Mono, monospace",
+                  background: '#23272f',
+                  color: '#fff',
+                  border: 'none',
+                  outline: 'none',
+                  fontFamily: 'Fira Mono, monospace',
                   fontSize: 15,
-                  padding: "7px 8px",
+                  padding: '7px 8px',
                   borderRadius: 4,
                   marginRight: 8,
                 }}
@@ -391,13 +391,13 @@ export default function ConsolePanel({
               <button
                 type="submit"
                 style={{
-                  background: "#4caf50",
-                  color: "#fff",
-                  border: "none",
+                  background: '#4caf50',
+                  color: '#fff',
+                  border: 'none',
                   borderRadius: 4,
-                  padding: "7px 18px",
+                  padding: '7px 18px',
                   fontWeight: 700,
-                  cursor: submitting || polling ? "not-allowed" : "pointer",
+                  cursor: submitting || polling ? 'not-allowed' : 'pointer',
                 }}
                 disabled={submitting || polling || !commandInput.trim()}
               >
@@ -407,19 +407,19 @@ export default function ConsolePanel({
           </div>
           <div
             style={{
-              padding: "0 20px 12px 20px",
+              padding: '0 20px 12px 20px',
               flex: 1,
-              overflow: "auto",
-              background: "#111216",
+              overflow: 'auto',
+              background: '#111216',
               borderRadius: 4,
               margin: 12,
             }}
           >
-            <div style={{ fontWeight: 600, color: "#aaa", marginBottom: 4 }}>
+            <div style={{ fontWeight: 600, color: '#aaa', marginBottom: 4 }}>
               Job Output:
             </div>
             {logs.length === 0 && (
-              <div style={{ color: "#555", fontStyle: "italic" }}>
+              <div style={{ color: '#555', fontStyle: 'italic' }}>
                 No logs yet.
               </div>
             )}
@@ -428,22 +428,22 @@ export default function ConsolePanel({
                 key={i}
                 style={{
                   color:
-                    log.type === "stderr"
-                      ? "#ff5555"
-                      : log.type === "stdout"
-                      ? "#aaffaa"
-                      : log.type === "info"
-                      ? "#8ecfff"
-                      : log.type === "success"
-                      ? "#4caf50"
-                      : log.type === "error"
-                      ? "#ff5555"
-                      : "#ccc",
-                  whiteSpace: "pre-wrap",
+                    log.type === 'stderr'
+                      ? '#ff5555'
+                      : log.type === 'stdout'
+                        ? '#aaffaa'
+                        : log.type === 'info'
+                          ? '#8ecfff'
+                          : log.type === 'success'
+                            ? '#4caf50'
+                            : log.type === 'error'
+                              ? '#ff5555'
+                              : '#ccc',
+                  whiteSpace: 'pre-wrap',
                   fontSize: 13,
                 }}
               >
-                <span style={{ color: "#666", fontSize: 11, marginRight: 8 }}>
+                <span style={{ color: '#666', fontSize: 11, marginRight: 8 }}>
                   {log.timestamp.slice(11, 19)}
                 </span>
                 <span>{log.message}</span>
@@ -451,19 +451,19 @@ export default function ConsolePanel({
             ))}
           </div>
           <div
-            style={{ padding: "0 20px 12px 20px", fontSize: 14, color: "#aaa" }}
+            style={{ padding: '0 20px 12px 20px', fontSize: 14, color: '#aaa' }}
           >
             {jobStatus && (
               <div>
-                <b>Status:</b>{" "}
+                <b>Status:</b>{' '}
                 <span
                   style={{
                     color:
-                      jobStatus.status === "completed"
-                        ? "#4caf50"
-                        : jobStatus.status === "failed"
-                        ? "#ff5555"
-                        : "#ffb86c",
+                      jobStatus.status === 'completed'
+                        ? '#4caf50'
+                        : jobStatus.status === 'failed'
+                          ? '#ff5555'
+                          : '#ffb86c',
                   }}
                 >
                   {jobStatus.status}
@@ -475,7 +475,7 @@ export default function ConsolePanel({
                 )}
                 {jobStatus.completed_at && (
                   <span style={{ marginLeft: 12 }}>
-                    <b>Completed:</b>{" "}
+                    <b>Completed:</b>{' '}
                     {new Date(jobStatus.completed_at).toLocaleTimeString()}
                   </span>
                 )}
@@ -484,7 +484,7 @@ export default function ConsolePanel({
                   jobStatus.error.rust_errors.length > 0 && (
                     <div style={{ marginTop: 8 }}>
                       <b>Rust Errors:</b>
-                      <ul style={{ color: "#ff5555" }}>
+                      <ul style={{ color: '#ff5555' }}>
                         {jobStatus.error.rust_errors.map(
                           (err: any, idx: number) => (
                             <li key={idx}>
@@ -498,8 +498,8 @@ export default function ConsolePanel({
                                 </div>
                               )}
                               {err.details && err.details.length > 0 && (
-                                <pre style={{ fontSize: 12, color: "#ffb86c" }}>
-                                  {err.details.join("\n")}
+                                <pre style={{ fontSize: 12, color: '#ffb86c' }}>
+                                  {err.details.join('\n')}
                                 </pre>
                               )}
                             </li>

@@ -1,17 +1,19 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import { Chapter, validateCode } from "@/lib/chapters";
-import CodeEditor from "@/components/CodeEditor";
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { Chapter, validateCode } from '@/lib/chapters';
+import CodeEditor from '@/components/CodeEditor';
 
 interface CreatureCreationLabProps {
   chapter: Chapter;
 }
 
-export default function CreatureCreationLab({ chapter }: CreatureCreationLabProps) {
+export default function CreatureCreationLab({
+  chapter,
+}: CreatureCreationLabProps) {
   const [currentStep, setCurrentStep] = useState(0);
-  const [userCode, setUserCode] = useState("");
+  const [userCode, setUserCode] = useState('');
   const [isValidated, setIsValidated] = useState(false);
   const [showHint, setShowHint] = useState(false);
   const [showAssistant, setShowAssistant] = useState(true);
@@ -33,12 +35,12 @@ export default function CreatureCreationLab({ chapter }: CreatureCreationLabProp
     if (currentStepData?.validation) {
       const isValid = validateCode(userCode, currentStepData.validation);
       setIsValidated(isValid);
-      
+
       // Add step rewards when validation passes
       if (isValid && currentStepData.rewards) {
-        setEarnedRewards(prev => [...prev, ...currentStepData.rewards!]);
+        setEarnedRewards((prev) => [...prev, ...currentStepData.rewards!]);
       }
-      
+
       return isValid;
     }
     return true;
@@ -68,7 +70,7 @@ export default function CreatureCreationLab({ chapter }: CreatureCreationLabProp
       setUserCode(currentStepData.expectedCode);
       setIsValidated(true);
       if (currentStepData.rewards) {
-        setEarnedRewards(prev => [...prev, ...currentStepData.rewards!]);
+        setEarnedRewards((prev) => [...prev, ...currentStepData.rewards!]);
       }
     }
   };
@@ -81,7 +83,10 @@ export default function CreatureCreationLab({ chapter }: CreatureCreationLabProp
       <nav className="border-b border-slate-800 px-6 py-4 bg-slate-900/95 backdrop-blur-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <Link href="/lab" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
+            <Link
+              href="/lab"
+              className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
+            >
               <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-cyan-400 rounded-xl flex items-center justify-center">
                 <span className="text-slate-900 font-bold text-2xl">🧬</span>
               </div>
@@ -89,16 +94,20 @@ export default function CreatureCreationLab({ chapter }: CreatureCreationLabProp
                 <span className="text-xl font-bold bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
                   Bio-Lab
                 </span>
-                <div className="text-xs text-slate-400">Chapter {chapter.id}</div>
+                <div className="text-xs text-slate-400">
+                  Chapter {chapter.id}
+                </div>
               </div>
             </Link>
             <span className="text-slate-400">•</span>
             <div className="flex items-center space-x-2">
               <span className="text-2xl">{chapter.creature}</span>
-              <span className="text-slate-300 font-semibold">{chapter.title}</span>
+              <span className="text-slate-300 font-semibold">
+                {chapter.title}
+              </span>
             </div>
           </div>
-          
+
           <div className="flex items-center space-x-6">
             <div className="text-right">
               <div className="text-sm text-slate-400">Step Progress</div>
@@ -107,7 +116,7 @@ export default function CreatureCreationLab({ chapter }: CreatureCreationLabProp
               </div>
             </div>
             <div className="w-32 bg-slate-700 rounded-full h-3">
-              <div 
+              <div
                 className="bg-gradient-to-r from-purple-400 to-cyan-400 h-3 rounded-full transition-all duration-500"
                 style={{ width: `${progressPercentage}%` }}
               />
@@ -157,16 +166,31 @@ export default function CreatureCreationLab({ chapter }: CreatureCreationLabProp
                 <h2 className="text-2xl font-bold mb-4 text-purple-400">
                   {currentStepData.title}
                 </h2>
-                <div 
+                <div
                   className="prose prose-invert prose-purple max-w-none text-slate-300"
-                  dangerouslySetInnerHTML={{ 
+                  dangerouslySetInnerHTML={{
                     __html: currentStepData.content
                       .replace(/\n/g, '<br>')
-                      .replace(/### /g, '<h4 class="text-lg font-semibold text-cyan-400 mt-4 mb-2">')
-                      .replace(/## /g, '<h3 class="text-xl font-semibold text-purple-400 mt-6 mb-3">')
-                      .replace(/# /g, '<h2 class="text-2xl font-bold text-purple-400 mt-8 mb-4">')
-                      .replace(/💡 \*\*Bio-Engineer Tip:\*\*/g, '<div class="bg-amber-900/20 border border-amber-600/30 rounded-lg p-4 my-4"><strong class="text-amber-400">💡 Bio-Engineer Tip:</strong>')
-                      .replace(/💡 \*\*Bio-Engineer Tip:\*\*(.*?)$/gm, '<div class="bg-amber-900/20 border border-amber-600/30 rounded-lg p-4 my-4"><strong class="text-amber-400">💡 Bio-Engineer Tip:</strong>$1</div>')
+                      .replace(
+                        /### /g,
+                        '<h4 class="text-lg font-semibold text-cyan-400 mt-4 mb-2">'
+                      )
+                      .replace(
+                        /## /g,
+                        '<h3 class="text-xl font-semibold text-purple-400 mt-6 mb-3">'
+                      )
+                      .replace(
+                        /# /g,
+                        '<h2 class="text-2xl font-bold text-purple-400 mt-8 mb-4">'
+                      )
+                      .replace(
+                        /💡 \*\*Bio-Engineer Tip:\*\*/g,
+                        '<div class="bg-amber-900/20 border border-amber-600/30 rounded-lg p-4 my-4"><strong class="text-amber-400">💡 Bio-Engineer Tip:</strong>'
+                      )
+                      .replace(
+                        /💡 \*\*Bio-Engineer Tip:\*\*(.*?)$/gm,
+                        '<div class="bg-amber-900/20 border border-amber-600/30 rounded-lg p-4 my-4"><strong class="text-amber-400">💡 Bio-Engineer Tip:</strong>$1</div>'
+                      ),
                   }}
                 />
               </div>
@@ -179,15 +203,23 @@ export default function CreatureCreationLab({ chapter }: CreatureCreationLabProp
                     className="flex items-center space-x-2 text-amber-400 hover:text-amber-300 transition-colors p-2 rounded-lg hover:bg-amber-900/20"
                   >
                     <span>💡</span>
-                    <span>{showHint ? "Hide Lab Assistant Hint" : "Ask Lab Assistant for Help"}</span>
+                    <span>
+                      {showHint
+                        ? 'Hide Lab Assistant Hint'
+                        : 'Ask Lab Assistant for Help'}
+                    </span>
                   </button>
                   {showHint && (
                     <div className="mt-3 p-4 bg-amber-900/20 border border-amber-600/30 rounded-lg">
                       <div className="flex items-start space-x-3">
                         <span className="text-2xl">🤖</span>
                         <div>
-                          <p className="text-amber-200 font-semibold text-sm mb-1">Lab Assistant says:</p>
-                          <p className="text-amber-200">{currentStepData.hint}</p>
+                          <p className="text-amber-200 font-semibold text-sm mb-1">
+                            Lab Assistant says:
+                          </p>
+                          <p className="text-amber-200">
+                            {currentStepData.hint}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -202,12 +234,17 @@ export default function CreatureCreationLab({ chapter }: CreatureCreationLabProp
                     <div className="p-4 bg-green-900/20 border border-green-600/30 rounded-lg">
                       <div className="flex items-center space-x-2 text-green-400 mb-2">
                         <span>🎉</span>
-                        <span className="font-semibold">Excellent bio-engineering work!</span>
+                        <span className="font-semibold">
+                          Excellent bio-engineering work!
+                        </span>
                       </div>
                       {currentStepData.rewards && (
                         <div className="flex flex-wrap gap-2 mt-2">
                           {currentStepData.rewards.map((reward, idx) => (
-                            <span key={idx} className="px-2 py-1 bg-green-800/30 border border-green-600/30 rounded text-xs text-green-300">
+                            <span
+                              key={idx}
+                              className="px-2 py-1 bg-green-800/30 border border-green-600/30 rounded text-xs text-green-300"
+                            >
                               {reward}
                             </span>
                           ))}
@@ -243,10 +280,10 @@ export default function CreatureCreationLab({ chapter }: CreatureCreationLabProp
                       onClick={() => setCurrentStep(i)}
                       className={`w-4 h-4 rounded-full transition-colors ${
                         i === currentStep
-                          ? "bg-purple-400"
+                          ? 'bg-purple-400'
                           : i < currentStep
-                          ? "bg-green-400"
-                          : "bg-slate-600"
+                            ? 'bg-green-400'
+                            : 'bg-slate-600'
                       }`}
                     />
                   ))}
@@ -260,7 +297,11 @@ export default function CreatureCreationLab({ chapter }: CreatureCreationLabProp
                   }
                   className="px-6 py-3 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-all duration-200 flex items-center space-x-2"
                 >
-                  <span>{currentStep === chapter.steps.length - 1 ? "Complete Chapter" : "Next"}</span>
+                  <span>
+                    {currentStep === chapter.steps.length - 1
+                      ? 'Complete Chapter'
+                      : 'Next'}
+                  </span>
                   <span>→</span>
                 </button>
               </div>
@@ -277,7 +318,9 @@ export default function CreatureCreationLab({ chapter }: CreatureCreationLabProp
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <span className="text-xl">🧪</span>
-                    <h3 className="text-lg font-semibold">Creature DNA Editor</h3>
+                    <h3 className="text-lg font-semibold">
+                      Creature DNA Editor
+                    </h3>
                   </div>
                   <div className="flex space-x-2">
                     <button
@@ -322,8 +365,12 @@ export default function CreatureCreationLab({ chapter }: CreatureCreationLabProp
             <div className="h-full flex items-center justify-center">
               <div className="text-center">
                 <div className="text-6xl mb-4">{chapter.creature}</div>
-                <h3 className="text-xl font-semibold text-purple-400 mb-2">No coding needed!</h3>
-                <p className="text-slate-400">Just read and continue to the next step.</p>
+                <h3 className="text-xl font-semibold text-purple-400 mb-2">
+                  No coding needed!
+                </h3>
+                <p className="text-slate-400">
+                  Just read and continue to the next step.
+                </p>
               </div>
             </div>
           )}
@@ -331,4 +378,4 @@ export default function CreatureCreationLab({ chapter }: CreatureCreationLabProp
       </div>
     </div>
   );
-} 
+}
