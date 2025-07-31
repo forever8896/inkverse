@@ -350,6 +350,19 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
         .animate-fade-in-up {
           animation: fade-in-up 0.4s cubic-bezier(.4,0,.2,1) both;
         }
+        @keyframes pulse-glow {
+          0%, 100% { 
+            box-shadow: 0 0 20px rgba(147, 51, 234, 0.3), 0 0 40px rgba(6, 182, 212, 0.2);
+            transform: scale(1);
+          }
+          50% { 
+            box-shadow: 0 0 25px rgba(147, 51, 234, 0.5), 0 0 50px rgba(6, 182, 212, 0.3);
+            transform: scale(1.02);
+          }
+        }
+        .animate-pulse-glow {
+          animation: pulse-glow 2s ease-in-out infinite;
+        }
       `}</style>
 
       <div className="h-screen w-screen bg-slate-900 flex flex-col overflow-hidden bg-black">
@@ -622,15 +635,26 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
 
             {/* Navigation */}
             <div className="flex justify-between items-center flex-shrink-0">
-              <button
-                onClick={previousStep}
-                disabled={currentStep === 0}
-                className="px-4 py-2 bg-slate-700 hover:bg-slate-600 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg transition-all duration-200 font-medium flex items-center space-x-1 border border-slate-600 hover:border-slate-500 text-sm"
-              >
-                <span>←</span>
-                <span>Previous</span>
-              </button>
+              {/* Previous Button */}
+              <div className="relative group">
+                <button
+                  onClick={previousStep}
+                  disabled={currentStep === 0}
+                  className="w-10 h-10 rounded-lg border border-slate-600/50 bg-slate-800/50 hover:bg-slate-700/70 hover:border-slate-500/70 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-slate-800/50 disabled:hover:border-slate-600/50 transition-all duration-200 flex items-center justify-center backdrop-blur-sm hover:scale-105 active:scale-95"
+                  aria-label="Previous step"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-300 group-hover:text-white transition-colors duration-200">
+                    <polyline points="15,18 9,12 15,6"/>
+                  </svg>
+                </button>
+                {currentStep > 0 && (
+                  <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-slate-900/90 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none border border-slate-700/50 backdrop-blur-sm">
+                    Previous Step
+                  </div>
+                )}
+              </div>
 
+              {/* Step Indicators */}
               <div className="flex space-x-2">
                 {Array.from({ length: lesson.steps.length }, (_, i) => (
                   <button
@@ -647,31 +671,65 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
                 ))}
               </div>
 
+              {/* Next/Complete Button */}
               {currentStep === lesson.steps.length - 1 && lesson.id === 1 ? (
-                <button
-                  onClick={() => setShowCompletionModal(true)}
-                  disabled={currentStepData?.validation && !isValidated}
-                  className="px-4 py-2 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg transition-all duration-200 font-medium flex items-center space-x-1 shadow-lg text-sm"
-                >
-                  <span>Complete</span>
-                  <span>→</span>
-                </button>
+                <div className="relative group">
+                  <button
+                    onClick={() => setShowCompletionModal(true)}
+                    disabled={currentStepData?.validation && !isValidated}
+                    className={`w-10 h-10 rounded-lg border transition-all duration-300 flex items-center justify-center backdrop-blur-sm active:scale-95 ${
+                      currentStepData?.validation && !isValidated
+                        ? 'border-slate-600/50 bg-slate-800/50 opacity-30 cursor-not-allowed'
+                        : 'border-purple-500/50 bg-gradient-to-r from-purple-600/20 to-cyan-600/20 hover:from-purple-600/40 hover:to-cyan-600/40 hover:border-purple-400/70 hover:scale-105 shadow-lg shadow-purple-500/20 animate-pulse-glow'
+                    }`}
+                    aria-label="Complete lesson"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`transition-colors duration-200 ${
+                      currentStepData?.validation && !isValidated
+                        ? 'text-slate-500'
+                        : 'text-purple-200 group-hover:text-white'
+                    }`}>
+                      <path d="M20 6L9 17l-5-5"/>
+                      <circle cx="12" cy="12" r="10" strokeWidth="1" opacity="0.3"/>
+                    </svg>
+                  </button>
+                  <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-slate-900/90 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none border border-slate-700/50 backdrop-blur-sm">
+                    {currentStepData?.validation && !isValidated ? 'Complete validation first' : 'Complete Lesson'}
+                  </div>
+                </div>
               ) : (
-                <button
-                  onClick={nextStep}
-                  disabled={
-                    currentStep === lesson.steps.length - 1 ||
-                    (currentStepData?.validation && !isValidated)
-                  }
-                  className="px-4 py-2 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg transition-all duration-200 font-medium flex items-center space-x-1 shadow-lg text-sm"
-                >
-                  <span>
+                <div className="relative group">
+                  <button
+                    onClick={nextStep}
+                    disabled={
+                      currentStep === lesson.steps.length - 1 ||
+                      (currentStepData?.validation && !isValidated)
+                    }
+                    className={`w-10 h-10 rounded-lg border transition-all duration-200 flex items-center justify-center backdrop-blur-sm active:scale-95 ${
+                      currentStep === lesson.steps.length - 1 ||
+                      (currentStepData?.validation && !isValidated)
+                        ? 'border-slate-600/50 bg-slate-800/50 opacity-30 cursor-not-allowed'
+                        : 'border-purple-500/50 bg-gradient-to-r from-purple-600/20 to-cyan-600/20 hover:from-purple-600/40 hover:to-cyan-600/40 hover:border-purple-400/70 hover:scale-105 shadow-lg shadow-purple-500/20'
+                    }`}
+                    aria-label="Next step"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`transition-colors duration-200 ${
+                      currentStep === lesson.steps.length - 1 ||
+                      (currentStepData?.validation && !isValidated)
+                        ? 'text-slate-500'
+                        : 'text-purple-200 group-hover:text-white'
+                    }`}>
+                      <polyline points="9,18 15,12 9,6"/>
+                    </svg>
+                  </button>
+                  <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-slate-900/90 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none border border-slate-700/50 backdrop-blur-sm">
                     {currentStep === lesson.steps.length - 1
-                      ? 'Complete'
-                      : 'Next'}
-                  </span>
-                  <span>→</span>
-                </button>
+                      ? 'Complete lesson'
+                      : currentStepData?.validation && !isValidated
+                        ? 'Complete validation first'
+                        : 'Next Step'}
+                  </div>
+                </div>
               )}
             </div>
           </div>
