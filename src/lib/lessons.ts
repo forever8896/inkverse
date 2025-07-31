@@ -434,18 +434,5 @@ export function getPreviousLesson(currentId: number): Lesson | undefined {
   return lessons.find((lesson) => lesson.id === currentId - 1);
 }
 
-// Client-side validation function
-export function validateCode(code: string, rules: ValidationRule[]): boolean {
-  return rules.every((rule) => {
-    switch (rule.type) {
-      case 'includes':
-        return rule.patterns.every((pattern) => code.includes(pattern));
-      case 'excludes':
-        return rule.patterns.every((pattern) => !code.includes(pattern));
-      case 'regex':
-        return rule.patterns.every((pattern) => new RegExp(pattern).test(code));
-      default:
-        return true;
-    }
-  });
-}
+// Re-export validation function from shared utility
+export { validateCode } from './validation';

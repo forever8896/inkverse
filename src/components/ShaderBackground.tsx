@@ -244,9 +244,6 @@ export default function ShaderBackground() {
           mouseRef.current.x * canvas.width,
           mouseRef.current.y * canvas.height
         );
-      } else {
-        // Debug: log if mouse uniform is missing
-        console.warn('Mouse uniform location not found');
       }
 
       // Set up attributes
@@ -274,8 +271,6 @@ export default function ShaderBackground() {
         x: (event.clientX - rect.left) / canvas.width,
         y: 1.0 - (event.clientY - rect.top) / canvas.height, // Flip Y and normalize
       };
-      // Debug: log mouse position
-      console.log('Mouse:', mouseRef.current);
     };
 
     canvas.addEventListener('mousemove', handleMouseMove);
