@@ -33,6 +33,7 @@ interface ModelProps {
   color: string;
   metallic: number;
   roughness: number;
+  isHolographic: boolean;
 }
 
 interface ModelErrorBoundaryState {
@@ -84,44 +85,126 @@ class ModelErrorBoundary extends Component<
   }
 }
 
-function Model({ url, autoRotate, scale, color, metallic, roughness }: ModelProps) {
+function Model({ url, autoRotate, scale, color, metallic, roughness, isHolographic }: ModelProps) {
   const ref = useRef<THREE.Group>(null);
   const gltf = useLoader(GLTFLoader, url);
+  const largestMeshRef = useRef<THREE.Mesh | null>(null);
   
   useFrame((state, delta) => {
     if (ref.current && autoRotate) {
       ref.current.rotation.y += delta * 0.5;
+    }
+    
+    // Animate holographic effects on the largest mesh only
+    if (isHolographic && largestMeshRef.current && largestMeshRef.current.material) {
+      const materials = Array.isArray(largestMeshRef.current.material) ? largestMeshRef.current.material : [largestMeshRef.current.material];
+      materials.forEach((mat) => {
+        if (mat instanceof THREE.MeshPhysicalMaterial) {
+          // Animate iridescence and colors for holographic effect
+          const time = state.clock.elapsedTime;
+          mat.iridescence = 0.5 + Math.sin(time * 2) * 0.3;
+          mat.iridescenceIOR = 1.3 + Math.sin(time * 1.5) * 0.2;
+          
+          // Shift hue over time for holographic rainbow effect
+          const hsl = { h: 0, s: 0, l: 0 };
+          const baseColor = new THREE.Color(color);
+          baseColor.getHSL(hsl);
+          hsl.h = (hsl.h + time * 0.1) % 1;
+          mat.color.setHSL(hsl.h, Math.min(hsl.s + 0.3, 1), hsl.l);
+        }
+      });
     }
   });
 
   // Memoize the scene with applied material properties
   const processedScene = useMemo(() => {
     const clonedScene = gltf.scene.clone();
+    
+    // Find the largest mesh by bounding box volume
+    let largestMesh: THREE.Mesh | null = null;
+    let largestVolume = 0;
+    
+    if (isHolographic) {
+      clonedScene.traverse((child) => {
+        if (child instanceof THREE.Mesh) {
+          // Calculate bounding box volume
+          const bbox = new THREE.Box3().setFromObject(child);
+          const size = bbox.getSize(new THREE.Vector3());
+          const volume = size.x * size.y * size.z;
+          
+          if (volume > largestVolume) {
+            largestVolume = volume;
+            largestMesh = child;
+          }
+        }
+      });
+      // Store reference for animation
+      largestMeshRef.current = largestMesh;
+    } else {
+      largestMeshRef.current = null;
+    }
+    
     clonedScene.traverse((child) => {
       if (child instanceof THREE.Mesh && child.material) {
+        const isLargestMesh = isHolographic && child === largestMesh;
+        
         if (Array.isArray(child.material)) {
           child.material = child.material.map(mat => {
-            const newMat = mat.clone();
+            if (isLargestMesh) {
+              // Create holographic material for largest mesh only
+              const holoMat = new THREE.MeshPhysicalMaterial({
+                color: new THREE.Color(color),
+                metalness: Math.max(metallic, 0.8), // Higher metalness for holographic effect
+                roughness: Math.min(roughness, 0.2), // Lower roughness for more reflection
+                iridescence: 1.0,
+                iridescenceIOR: 1.5,
+                iridescenceThicknessRange: [100, 800],
+                transmission: 0.1, // Slight transparency
+                thickness: 0.5,
+                clearcoat: 1.0,
+                clearcoatRoughness: 0.1,
+              });
+              return holoMat;
+            } else {
+              const newMat = mat.clone();
+              if (newMat instanceof THREE.MeshStandardMaterial) {
+                newMat.color = new THREE.Color(color);
+                newMat.metalness = metallic;
+                newMat.roughness = roughness;
+              }
+              return newMat;
+            }
+          });
+        } else {
+          if (isLargestMesh) {
+            // Create holographic material for largest mesh only
+            const holoMat = new THREE.MeshPhysicalMaterial({
+              color: new THREE.Color(color),
+              metalness: Math.max(metallic, 0.8),
+              roughness: Math.min(roughness, 0.2),
+              iridescence: 1.0,
+              iridescenceIOR: 1.5,
+              iridescenceThicknessRange: [100, 800],
+              transmission: 0.1,
+              thickness: 0.5,
+              clearcoat: 1.0,
+              clearcoatRoughness: 0.1,
+            });
+            child.material = holoMat;
+          } else {
+            const newMat = child.material.clone();
             if (newMat instanceof THREE.MeshStandardMaterial) {
               newMat.color = new THREE.Color(color);
               newMat.metalness = metallic;
               newMat.roughness = roughness;
             }
-            return newMat;
-          });
-        } else {
-          const newMat = child.material.clone();
-          if (newMat instanceof THREE.MeshStandardMaterial) {
-            newMat.color = new THREE.Color(color);
-            newMat.metalness = metallic;
-            newMat.roughness = roughness;
+            child.material = newMat;
           }
-          child.material = newMat;
         }
       }
     });
     return clonedScene;
-  }, [gltf.scene, color, metallic, roughness]);
+  }, [gltf.scene, color, metallic, roughness, isHolographic]);
 
   return (
     <group ref={ref} scale={[scale, scale, scale]}>
@@ -172,6 +255,7 @@ export default function MonsterViewer() {
   const [roughness, setRoughness] = useState(0.8);
   const [isCapturing, setIsCapturing] = useState(false);
   const [backdrop, setBackdrop] = useState<'gradient' | 'polkadot' | 'web3'>('gradient');
+  const [isHolographic, setIsHolographic] = useState(false);
 
   const handleReset = () => {
     setScale(1);
@@ -181,6 +265,7 @@ export default function MonsterViewer() {
     setMetallic(0.2);
     setRoughness(0.8);
     setBackdrop('gradient');
+    setIsHolographic(false);
     setModelError(null);
   };
 
@@ -275,7 +360,7 @@ export default function MonsterViewer() {
     } finally {
       setIsCapturing(false);
     }
-  }, [backdrop]);
+  }, [backdrop, isHolographic]);
 
 
   return (
@@ -309,6 +394,7 @@ export default function MonsterViewer() {
                     color={color}
                     metallic={metallic}
                     roughness={roughness}
+                    isHolographic={isHolographic}
                   />
                 </ModelErrorBoundary>
                 <Background backdrop={backdrop} />
@@ -533,6 +619,26 @@ export default function MonsterViewer() {
             />
           </div>
 
+          {/* Holographic Effect */}
+          <div className="mb-4">
+            <button
+              onClick={() => setIsHolographic(!isHolographic)}
+              className={`w-full flex items-center justify-center gap-2 px-3 py-3 rounded-md text-sm font-medium transition-all duration-300 ${
+                isHolographic
+                  ? 'bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 text-white shadow-lg animate-pulse'
+                  : 'bg-gray-600 hover:bg-gray-500 text-gray-300'
+              }`}
+            >
+              <span className="text-lg">✨</span>
+              <span>{isHolographic ? 'Disable Holographic' : 'Enable Holographic'}</span>
+            </button>
+            {isHolographic && (
+              <p className="text-xs text-purple-300 mt-2 text-center animate-pulse">
+                🌈 Main body is holographic - details remain normal!
+              </p>
+            )}
+          </div>
+
           {/* Quick Material Presets */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -628,12 +734,12 @@ export default function MonsterViewer() {
           <div className="mb-4">
             <label className="flex items-center justify-between text-sm font-medium text-gray-300 mb-2">
               <span>Intensity</span>
-              <span className="text-blue-400">{Math.round(lightIntensity * 100)}%</span>
+              <span className="text-blue-400">{lightIntensity.toFixed(1)}x</span>
             </label>
             <input
               type="range"
               min="0.1"
-              max="2"
+              max="5"
               step="0.1"
               value={lightIntensity}
               onChange={(e) => setLightIntensity(parseFloat(e.target.value))}
@@ -655,12 +761,19 @@ export default function MonsterViewer() {
         </div>
 
         {/* NFT Info */}
-        <div className="mt-4 p-4 bg-purple-900/30 border border-purple-700/50 rounded-lg">
-          <h3 className="text-sm font-semibold text-purple-300 mb-2">🎨 NFT Creation</h3>
+        <div className={`mt-4 p-4 rounded-lg border ${
+          isHolographic 
+            ? 'bg-gradient-to-br from-purple-900/40 via-pink-900/40 to-blue-900/40 border-purple-400/50 animate-pulse' 
+            : 'bg-purple-900/30 border-purple-700/50'
+        }`}>
+          <h3 className="text-sm font-semibold text-purple-300 mb-2">
+            🎨 NFT Creation {isHolographic && <span className="text-yellow-300">✨</span>}
+          </h3>
           <div className="text-xs text-purple-200 space-y-1">
             <div>• Captures current 3D scene as PNG</div>
             <div>• Optimized 1024×1024 square format</div>
             <div>• Includes custom materials & lighting</div>
+            {isHolographic && <div className="text-yellow-300">• ✨ Main body holographic, details stay normal</div>}
             <div>• Ready for blockchain minting</div>
           </div>
           <div className="mt-3 pt-2 border-t border-purple-700/30">
@@ -672,6 +785,9 @@ export default function MonsterViewer() {
               <div>Metallic: {Math.round(metallic * 100)}%</div>
               <div>Roughness: {Math.round(roughness * 100)}%</div>
               <div>Backdrop: {backdrop === 'gradient' ? 'Gradient' : backdrop === 'polkadot' ? 'Polkadot' : 'Web3'}</div>
+              <div className={isHolographic ? 'text-purple-100 font-semibold' : ''}>
+                Effect: {isHolographic ? '✨ Holographic (Main Body)' : 'Standard'}
+              </div>
             </div>
           </div>
         </div>
