@@ -15,8 +15,12 @@
     "@monaco-editor/react": "^4.7.0",
     "@polkadot-api/descriptors": "file:.papi/descriptors",
     "@radix-ui/themes": "^3.2.1",
+    "@react-three/drei": "^10.6.1",
+    "@react-three/fiber": "^9.3.0",
     "@reactive-dot/react": "^0.44.0",
     "@reactive-dot/wallet-walletconnect": "^0.17.26",
+    "@types/three": "^0.178.1",
+    "@types/uuid": "^10.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lightningcss": "^1.30.1",
@@ -29,10 +33,13 @@
     "react-confetti": "^6.4.0",
     "react-dom": "19.1.0",
     "sonner": "^2.0.6",
-    "tailwind-merge": "^3.3.1"
+    "tailwind-merge": "^3.3.1",
+    "three": "^0.179.0",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@playwright/test": "^1.54.2",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.6.4",
     "@testing-library/react": "^16.3.0",
