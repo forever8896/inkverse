@@ -1,15 +1,18 @@
 'use client';
 
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { Lesson, validateCode, ValidationRule } from '@/lib/lessons';
+import MonacoCodeEditor from '@/components/MonacoCodeEditor';
+import ShaderBackground from '@/components/ShaderBackground';
+import dynamic from 'next/dynamic';
+import { HSLValues } from '@/components/CreatureColorPicker';
+import Confetti from 'react-confetti';
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import { Lesson, validateCode, ValidationRule } from "@/lib/lessons";
-import MonacoCodeEditor from "@/components/MonacoCodeEditor";
-import ShaderBackground from "@/components/ShaderBackground";
-import dynamic from "next/dynamic";
-import { HSLValues } from "@/components/CreatureColorPicker";
-import Confetti from "react-confetti";
-
+// wallet stuff
+import { ReactiveDotProvider } from '@reactive-dot/react';
+import { WalletConnection } from '@/components/WalletConnection';
+import { config } from '@/lib/reactive-dot/config';
 
 const ConsolePanel = dynamic(() => import('@/app/ConsolePanel'), {
   ssr: false,
@@ -369,6 +372,10 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
         {/* Full-screen Shader Background */}
         <ShaderBackground />
 
+        <ReactiveDotProvider config={config}>
+          <WalletConnection />
+        </ReactiveDotProvider>
+
         <div className="flex flex-1 overflow-hidden relative">
           {/* Left Panel: Creature Display */}
           <div className="w-1/2 relative overflow-hidden backdrop-blur-md">
@@ -386,11 +393,13 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
 
             {/* Creature Display */}
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className={`relative transition-all duration-300 ease-out ${
-                isTransitioning 
-                  ? 'opacity-0 scale-95 translate-y-4' 
-                  : 'opacity-100 scale-100 translate-y-0'
-              }`}>
+              <div
+                className={`relative transition-all duration-300 ease-out ${
+                  isTransitioning
+                    ? 'opacity-0 scale-95 translate-y-4'
+                    : 'opacity-100 scale-100 translate-y-0'
+                }`}
+              >
                 {lesson.id === 1 ? (
                   currentStepData?.image ? (
                     <img
@@ -405,7 +414,9 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
                     />
                   ) : (
                     <div className="w-64 h-64 bg-slate-800/30 rounded-full flex items-center justify-center backdrop-blur-sm transition-all duration-300">
-                      <span className="text-6xl transition-all duration-300">🔬</span>
+                      <span className="text-6xl transition-all duration-300">
+                        🔬
+                      </span>
                     </div>
                   )
                 ) : (
@@ -425,11 +436,13 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
 
             {/* Creature Info Overlay */}
             <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">
-              <div className={`text-center space-y-3 px-6 py-4 transition-all duration-300 ease-out ${
-                isTransitioning 
-                  ? 'opacity-0 translate-y-4' 
-                  : 'opacity-100 translate-y-0'
-              }`}>
+              <div
+                className={`text-center space-y-3 px-6 py-4 transition-all duration-300 ease-out ${
+                  isTransitioning
+                    ? 'opacity-0 translate-y-4'
+                    : 'opacity-100 translate-y-0'
+                }`}
+              >
                 {/* Creature Name */}
                 <h3 className="text-lg font-semibold text-white transition-all duration-300">
                   {lesson.id === 1
@@ -471,11 +484,13 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
           {/* Right Panel: Instructions + Code Editor */}
           <div className="w-1/2 flex flex-col p-10 min-h-0">
             {/* Instructions Section */}
-            <div className={`flex-1 p-6 flex flex-col overflow-hidden backdrop-blur-md bg-white/5 rounded-xl mb-4 min-h-0 transition-all duration-300 ease-out ${
-              isTransitioning 
-                ? 'opacity-0 translate-x-4' 
-                : 'opacity-100 translate-x-0'
-            }`}>
+            <div
+              className={`flex-1 p-6 flex flex-col overflow-hidden backdrop-blur-md bg-white/5 rounded-xl mb-4 min-h-0 transition-all duration-300 ease-out ${
+                isTransitioning
+                  ? 'opacity-0 translate-x-4'
+                  : 'opacity-100 translate-x-0'
+              }`}
+            >
               {currentStepData && (
                 <div className="flex-1 flex flex-col min-h-0">
                   <div
@@ -535,15 +550,19 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
             </div>
 
             {/* Code Editor Section */}
-            <div className={`flex-1 flex flex-col min-h-0 mb-4 transition-all duration-300 ease-out ${
-              isTransitioning 
-                ? 'opacity-0 translate-x-4' 
-                : 'opacity-100 translate-x-0'
-            }`}>
+            <div
+              className={`flex-1 flex flex-col min-h-0 mb-4 transition-all duration-300 ease-out ${
+                isTransitioning
+                  ? 'opacity-0 translate-x-4'
+                  : 'opacity-100 translate-x-0'
+              }`}
+            >
               {/* Editor Header */}
               <div className="p-3 flex-shrink-0">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-base font-semibold transition-all duration-300">Workspace</h4>
+                  <h4 className="text-base font-semibold transition-all duration-300">
+                    Workspace
+                  </h4>
                   <div className="flex space-x-2">
                     {/* Reset Button */}
                     <div className="relative group">
@@ -552,9 +571,19 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
                         className="w-8 h-8 rounded-lg border border-slate-600/50 bg-slate-800/50 hover:bg-slate-700/70 hover:border-slate-500/70 transition-all duration-200 flex items-center justify-center backdrop-blur-sm hover:scale-105 active:scale-95"
                         aria-label="Reset code"
                       >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-300 group-hover:text-white transition-colors duration-200">
-                          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-                          <path d="M3 3v5h5"/>
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="text-slate-300 group-hover:text-white transition-colors duration-200"
+                        >
+                          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                          <path d="M3 3v5h5" />
                         </svg>
                       </button>
                       <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-slate-900/90 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none border border-slate-700/50 backdrop-blur-sm">
@@ -570,8 +599,18 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
                           className="w-8 h-8 rounded-lg border border-purple-500/50 bg-gradient-to-r from-purple-600/20 to-cyan-600/20 hover:from-purple-600/40 hover:to-cyan-600/40 hover:border-purple-400/70 transition-all duration-200 flex items-center justify-center backdrop-blur-sm hover:scale-105 active:scale-95 shadow-lg shadow-purple-500/20"
                           aria-label="Check code"
                         >
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-purple-200 group-hover:text-white transition-colors duration-200">
-                            <polyline points="20,6 9,17 4,12"/>
+                          <svg
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="text-purple-200 group-hover:text-white transition-colors duration-200"
+                          >
+                            <polyline points="20,6 9,17 4,12" />
                           </svg>
                         </button>
                         <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-slate-900/90 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none border border-slate-700/50 backdrop-blur-sm">
@@ -588,10 +627,20 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
                           className="w-8 h-8 rounded-lg border border-cyan-500/50 bg-cyan-600/20 hover:bg-cyan-600/40 hover:border-cyan-400/70 transition-all duration-200 flex items-center justify-center backdrop-blur-sm hover:scale-105 active:scale-95 shadow-lg shadow-cyan-500/20"
                           aria-label="Show solution"
                         >
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-cyan-200 group-hover:text-white transition-colors duration-200">
-                            <circle cx="12" cy="12" r="10"/>
-                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-                            <path d="M12 17h.01"/>
+                          <svg
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="text-cyan-200 group-hover:text-white transition-colors duration-200"
+                          >
+                            <circle cx="12" cy="12" r="10" />
+                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                            <path d="M12 17h.01" />
                           </svg>
                         </button>
                         <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-slate-900/90 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none border border-slate-700/50 backdrop-blur-sm">
@@ -606,11 +655,13 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
               {/* Code Editor */}
               <div className="flex-1 min-h-0">
                 {currentStepData?.code !== undefined ? (
-                  <div className={`h-full transition-all duration-300 ease-out ${
-                    isTransitioning 
-                      ? 'opacity-0 scale-98' 
-                      : 'opacity-100 scale-100'
-                  }`}>
+                  <div
+                    className={`h-full transition-all duration-300 ease-out ${
+                      isTransitioning
+                        ? 'opacity-0 scale-98'
+                        : 'opacity-100 scale-100'
+                    }`}
+                  >
                     <MonacoCodeEditor
                       value={userCode}
                       onChange={setUserCode}
@@ -643,8 +694,18 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
                   className="w-10 h-10 rounded-lg border border-slate-600/50 bg-slate-800/50 hover:bg-slate-700/70 hover:border-slate-500/70 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-slate-800/50 disabled:hover:border-slate-600/50 transition-all duration-200 flex items-center justify-center backdrop-blur-sm hover:scale-105 active:scale-95"
                   aria-label="Previous step"
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-300 group-hover:text-white transition-colors duration-200">
-                    <polyline points="15,18 9,12 15,6"/>
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-slate-300 group-hover:text-white transition-colors duration-200"
+                  >
+                    <polyline points="15,18 9,12 15,6" />
                   </svg>
                 </button>
                 {currentStep > 0 && (
@@ -684,17 +745,35 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
                     }`}
                     aria-label="Complete lesson"
                   >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`transition-colors duration-200 ${
-                      currentStepData?.validation && !isValidated
-                        ? 'text-slate-500'
-                        : 'text-purple-200 group-hover:text-white'
-                    }`}>
-                      <path d="M20 6L9 17l-5-5"/>
-                      <circle cx="12" cy="12" r="10" strokeWidth="1" opacity="0.3"/>
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className={`transition-colors duration-200 ${
+                        currentStepData?.validation && !isValidated
+                          ? 'text-slate-500'
+                          : 'text-purple-200 group-hover:text-white'
+                      }`}
+                    >
+                      <path d="M20 6L9 17l-5-5" />
+                      <circle
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        strokeWidth="1"
+                        opacity="0.3"
+                      />
                     </svg>
                   </button>
                   <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-slate-900/90 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none border border-slate-700/50 backdrop-blur-sm">
-                    {currentStepData?.validation && !isValidated ? 'Complete validation first' : 'Complete Lesson'}
+                    {currentStepData?.validation && !isValidated
+                      ? 'Complete validation first'
+                      : 'Complete Lesson'}
                   </div>
                 </div>
               ) : (
@@ -713,13 +792,23 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
                     }`}
                     aria-label="Next step"
                   >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`transition-colors duration-200 ${
-                      currentStep === lesson.steps.length - 1 ||
-                      (currentStepData?.validation && !isValidated)
-                        ? 'text-slate-500'
-                        : 'text-purple-200 group-hover:text-white'
-                    }`}>
-                      <polyline points="9,18 15,12 9,6"/>
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className={`transition-colors duration-200 ${
+                        currentStep === lesson.steps.length - 1 ||
+                        (currentStepData?.validation && !isValidated)
+                          ? 'text-slate-500'
+                          : 'text-purple-200 group-hover:text-white'
+                      }`}
+                    >
+                      <polyline points="9,18 15,12 9,6" />
                     </svg>
                   </button>
                   <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-slate-900/90 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none border border-slate-700/50 backdrop-blur-sm">
