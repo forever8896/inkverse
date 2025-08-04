@@ -45,7 +45,6 @@ interface ModelProps {
   color: string;
   metallic: number;
   roughness: number;
-  emissive: number;
 }
 
 interface ModelErrorBoundaryState {
@@ -100,7 +99,7 @@ class ModelErrorBoundary extends Component<
   }
 }
 
-function Model({ url, color, metallic, roughness, emissive }: ModelProps) {
+function Model({ url, color, metallic, roughness }: ModelProps) {
   const ref = useRef<THREE.Group>(null);
   const gltf = useLoader(GLTFLoader, url);
   const { viewport } = useThree();
@@ -146,7 +145,6 @@ function Model({ url, color, metallic, roughness, emissive }: ModelProps) {
               newMat.color = new THREE.Color(color);
               newMat.metalness = metallic;
               newMat.roughness = roughness;
-              newMat.emissive = new THREE.Color(color).multiplyScalar(emissive);
             }
             return newMat;
           });
@@ -156,14 +154,13 @@ function Model({ url, color, metallic, roughness, emissive }: ModelProps) {
             newMat.color = new THREE.Color(color);
             newMat.metalness = metallic;
             newMat.roughness = roughness;
-            newMat.emissive = new THREE.Color(color).multiplyScalar(emissive);
           }
           child.material = newMat;
         }
       }
     });
     return clonedScene;
-  }, [gltf.scene, color, metallic, roughness, emissive]);
+  }, [gltf.scene, color, metallic, roughness]);
 
   return (
     <group
@@ -221,7 +218,6 @@ export default function MonsterViewer() {
   const [color, setColor] = useState('#8B5CF6');
   const [metallic, setMetallic] = useState(0.2);
   const [roughness, setRoughness] = useState(0.8);
-  const [emissive, setEmissive] = useState(0);
   const [isCapturing, setIsCapturing] = useState(false);
   const [showShutter, setShowShutter] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -234,7 +230,6 @@ export default function MonsterViewer() {
     setColor('#8B5CF6');
     setMetallic(0.2);
     setRoughness(0.8);
-    setEmissive(0);
     setBackdrop('gradient');
     setModelError(null);
   };
@@ -393,7 +388,6 @@ export default function MonsterViewer() {
                     color={color}
                     metallic={metallic}
                     roughness={roughness}
-                    emissive={emissive}
                   />
                 </ModelErrorBoundary>
                 <Background backdrop={backdrop} />
@@ -545,13 +539,8 @@ export default function MonsterViewer() {
 
           {/* Model Controls */}
           <div className="mb-4 p-4 bg-slate-700/30 backdrop-blur-sm rounded-xl border border-slate-600/30">
-            <h3 className="text-sm font-semibold text-slate-200 mb-3 flex items-center gap-2">
-              <span className="text-blue-400 text-xs">⚙️</span>
-              Model Controls
-            </h3>
-
             {/* Model Selection */}
-            <div className="mb-3">
+            <div className="mb-0">
               <div className="grid grid-cols-5 gap-1">
                 {[1, 2, 3, 4, 5].map((modelNumber) => (
                   <button
@@ -668,25 +657,6 @@ export default function MonsterViewer() {
                 step="0.01"
                 value={roughness}
                 onChange={(e) => setRoughness(parseFloat(e.target.value))}
-                className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer slider"
-              />
-            </div>
-
-            {/* Emissive Control */}
-            <div className="mb-3">
-              <label className="flex items-center justify-between text-xs font-medium text-gray-300 mb-1.5">
-                <span>Emissive</span>
-                <span className="text-blue-400">
-                  {Math.round(emissive * 100)}%
-                </span>
-              </label>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.01"
-                value={emissive}
-                onChange={(e) => setEmissive(parseFloat(e.target.value))}
                 className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer slider"
               />
             </div>
