@@ -368,18 +368,14 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
         }
       `}</style>
 
-      <div className="h-screen w-screen bg-slate-900 flex flex-col overflow-hidden bg-black">
+      <div className="h-screen w-screen bg-slate-900 flex flex-col overflow-hidden">
         {/* Full-screen Shader Background */}
         <ShaderBackground />
-
-        <ReactiveDotProvider config={config}>
-          <WalletConnection />
-        </ReactiveDotProvider>
 
         <div className="flex flex-1 overflow-hidden relative">
           {/* Left Panel: Creature Display */}
           <div className="w-1/2 relative overflow-hidden backdrop-blur-md">
-            <div className="absolute top-0 flex justify-between w-full z-20">
+            <div className="absolute top-0 flex justify-between w-full z-20 ">
               <div className="p-5">
                 <Link href="/" className="flex items-center space-x-2">
                   <img
@@ -388,6 +384,12 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
                     className="h-[120px]"
                   />
                 </Link>
+              </div>
+
+              <div className="p-5">
+                <ReactiveDotProvider config={config}>
+                  <WalletConnection />
+                </ReactiveDotProvider>
               </div>
             </div>
 
