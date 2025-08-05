@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { Lesson, validateCode, ValidationRule } from '@/lib/lessons';
 import MonacoCodeEditor from '@/components/MonacoCodeEditor';
@@ -8,6 +8,7 @@ import ShaderBackground from '@/components/ShaderBackground';
 import dynamic from 'next/dynamic';
 import { HSLValues } from '@/components/CreatureColorPicker';
 import Confetti from 'react-confetti';
+import { Camera, Loader2 } from 'lucide-react';
 
 // wallet stuff
 import { ReactiveDotProvider } from '@reactive-dot/react';
@@ -46,6 +47,10 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
     height: 0,
   });
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [isCapturing, setIsCapturing] = useState(false);
+  const [showShutter, setShowShutter] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const creatureDisplayRef = useRef<HTMLDivElement>(null);
 
   const currentStepData = lesson?.steps[currentStep];
 
@@ -273,6 +278,125 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
     }%) drop-shadow(0 0 20px rgba(147, 51, 234, 0.5))`;
   };
 
+  // NFT capture functionality
+  const captureNFT = useCallback(async () => {
+    if (!creatureDisplayRef.current) return;
+
+    setIsCapturing(true);
+    setShowShutter(true);
+
+    // Shutter effect timing
+    setTimeout(() => setShowShutter(false), 800);
+
+    try {
+      // Create a new canvas for the NFT with square dimensions
+      const nftCanvas = document.createElement('canvas');
+      const nftSize = 1024;
+      nftCanvas.width = nftSize;
+      nftCanvas.height = nftSize;
+
+      const ctx = nftCanvas.getContext('2d');
+      if (!ctx) {
+        throw new Error('Could not get 2D context');
+      }
+
+      // Fill background with gradient
+      const gradient = ctx.createLinearGradient(0, 0, 0, nftSize);
+      gradient.addColorStop(0, '#1e293b'); // slate-800
+      gradient.addColorStop(1, '#0f172a'); // slate-900
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, nftSize, nftSize);
+
+      // Get creature element
+      const creatureElement = creatureDisplayRef.current.querySelector('img, span');
+      if (creatureElement) {
+        if (creatureElement.tagName === 'IMG') {
+          // Handle image elements
+          const img = creatureElement as HTMLImageElement;
+          await new Promise((resolve) => {
+            if (img.complete) {
+              resolve(undefined);
+            } else {
+              img.onload = () => resolve(undefined);
+            }
+          });
+
+          // Draw the creature image centered with padding
+          const padding = nftSize * 0.1;
+          const targetSize = nftSize - padding * 2;
+          
+          ctx.drawImage(
+            img,
+            padding,
+            padding,
+            targetSize,
+            targetSize
+          );
+        } else {
+          // Handle emoji/text elements
+          const span = creatureElement as HTMLSpanElement;
+          const fontSize = nftSize * 0.4; // 40% of canvas size
+          ctx.font = `${fontSize}px system-ui`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillStyle = window.getComputedStyle(span).color || '#ffffff';
+          
+          // Apply any filters if present
+          const filter = window.getComputedStyle(span).filter;
+          if (filter && filter !== 'none') {
+            ctx.filter = filter;
+          }
+          
+          ctx.fillText(
+            span.textContent || '🔬',
+            nftSize / 2,
+            nftSize / 2
+          );
+        }
+      }
+
+      // Convert to blob
+      const blob = await new Promise<Blob>((resolve) => {
+        nftCanvas.toBlob((blob) => {
+          if (blob) resolve(blob);
+        }, 'image/png');
+      });
+
+      // Send to backend
+      const formData = new FormData();
+      formData.append('image', blob, 'creature-nft.png');
+
+      const response = await fetch('/api/nft-snapshot', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Show success overlay
+        setShowSuccess(true);
+        setTimeout(() => setShowSuccess(false), 2000);
+        addToast({
+          type: 'success',
+          title: '📸 NFT Created!',
+          message: 'Your creature has been captured successfully',
+        });
+      } else {
+        throw new Error(result.error || 'Failed to save NFT');
+      }
+    } catch (error) {
+      console.error('Error creating NFT:', error);
+      addToast({
+        type: 'error',
+        title: '❌ Capture Failed',
+        message: 'Failed to create NFT snapshot. Please try again.',
+      });
+    } finally {
+      setIsCapturing(false);
+    }
+  }, [addToast]);
+
   if (!lesson) {
     return (
       <div className="h-screen bg-slate-900 flex flex-col overflow-hidden">
@@ -366,6 +490,188 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
         .animate-pulse-glow {
           animation: pulse-glow 2s ease-in-out infinite;
         }
+        
+        .animate-fade-in {
+          animation: fadeIn 0.3s ease-out forwards;
+        }
+
+        .animate-bounce-in {
+          animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+        }
+
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+
+        @keyframes bounceIn {
+          0% {
+            opacity: 0;
+            transform: scale(0.3) translateY(20px);
+          }
+          50% {
+            opacity: 1;
+            transform: scale(1.1) translateY(-10px);
+          }
+          100% {
+            opacity: 1;
+            transform: scale(1) translateY(0px);
+          }
+        }
+
+        .camera-shutter {
+          position: relative;
+          width: 100vw;
+          height: 100vh;
+          overflow: hidden;
+        }
+
+        .shutter-blade {
+          position: absolute;
+          background: #1a1a1a;
+          border: 2px solid #333;
+          transform-origin: center;
+          opacity: 0.95;
+          box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Individual blade positioning and animations */
+        .blade-1 {
+          width: 60vw;
+          height: 60vh;
+          top: 50%;
+          left: 50%;
+          clip-path: polygon(50% 50%, 100% 0%, 100% 25%);
+          transform: translate(-50%, -50%) rotate(0deg);
+          animation: shutterBlade1 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .blade-2 {
+          width: 60vw;
+          height: 60vh;
+          top: 50%;
+          left: 50%;
+          clip-path: polygon(50% 50%, 100% 25%, 100% 50%);
+          transform: translate(-50%, -50%) rotate(0deg);
+          animation: shutterBlade2 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .blade-3 {
+          width: 60vw;
+          height: 60vh;
+          top: 50%;
+          left: 50%;
+          clip-path: polygon(50% 50%, 100% 50%, 100% 75%);
+          transform: translate(-50%, -50%) rotate(0deg);
+          animation: shutterBlade3 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .blade-4 {
+          width: 60vw;
+          height: 60vh;
+          top: 50%;
+          left: 50%;
+          clip-path: polygon(50% 50%, 100% 75%, 100% 100%);
+          transform: translate(-50%, -50%) rotate(0deg);
+          animation: shutterBlade4 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .blade-5 {
+          width: 60vw;
+          height: 60vh;
+          top: 50%;
+          left: 50%;
+          clip-path: polygon(50% 50%, 75% 100%, 50% 100%);
+          transform: translate(-50%, -50%) rotate(0deg);
+          animation: shutterBlade5 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .blade-6 {
+          width: 60vw;
+          height: 60vh;
+          top: 50%;
+          left: 50%;
+          clip-path: polygon(50% 50%, 25% 100%, 0% 100%);
+          transform: translate(-50%, -50%) rotate(0deg);
+          animation: shutterBlade6 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .blade-7 {
+          width: 60vw;
+          height: 60vh;
+          top: 50%;
+          left: 50%;
+          clip-path: polygon(50% 50%, 0% 75%, 0% 25%);
+          transform: translate(-50%, -50%) rotate(0deg);
+          animation: shutterBlade7 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .blade-8 {
+          width: 60vw;
+          height: 60vh;
+          top: 50%;
+          left: 50%;
+          clip-path: polygon(50% 50%, 0% 25%, 0% 0%, 25% 0%);
+          transform: translate(-50%, -50%) rotate(0deg);
+          animation: shutterBlade8 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        /* Blade animations - each closes and opens at slightly different times */
+        @keyframes shutterBlade1 {
+          0% { transform: translate(-50%, -50%) rotate(0deg) scale(0); }
+          30% { transform: translate(-50%, -50%) rotate(5deg) scale(1.2); }
+          70% { transform: translate(-50%, -50%) rotate(-2deg) scale(1.2); }
+          100% { transform: translate(-50%, -50%) rotate(0deg) scale(0); }
+        }
+
+        @keyframes shutterBlade2 {
+          0% { transform: translate(-50%, -50%) rotate(0deg) scale(0); }
+          35% { transform: translate(-50%, -50%) rotate(-3deg) scale(1.2); }
+          65% { transform: translate(-50%, -50%) rotate(4deg) scale(1.2); }
+          100% { transform: translate(-50%, -50%) rotate(0deg) scale(0); }
+        }
+
+        @keyframes shutterBlade3 {
+          0% { transform: translate(-50%, -50%) rotate(0deg) scale(0); }
+          40% { transform: translate(-50%, -50%) rotate(2deg) scale(1.2); }
+          60% { transform: translate(-50%, -50%) rotate(-5deg) scale(1.2); }
+          100% { transform: translate(-50%, -50%) rotate(0deg) scale(0); }
+        }
+
+        @keyframes shutterBlade4 {
+          0% { transform: translate(-50%, -50%) rotate(0deg) scale(0); }
+          45% { transform: translate(-50%, -50%) rotate(-4deg) scale(1.2); }
+          55% { transform: translate(-50%, -50%) rotate(3deg) scale(1.2); }
+          100% { transform: translate(-50%, -50%) rotate(0deg) scale(0); }
+        }
+
+        @keyframes shutterBlade5 {
+          0% { transform: translate(-50%, -50%) rotate(0deg) scale(0); }
+          50% { transform: translate(-50%, -50%) rotate(1deg) scale(1.2); }
+          50% { transform: translate(-50%, -50%) rotate(-1deg) scale(1.2); }
+          100% { transform: translate(-50%, -50%) rotate(0deg) scale(0); }
+        }
+
+        @keyframes shutterBlade6 {
+          0% { transform: translate(-50%, -50%) rotate(0deg) scale(0); }
+          45% { transform: translate(-50%, -50%) rotate(4deg) scale(1.2); }
+          55% { transform: translate(-50%, -50%) rotate(-2deg) scale(1.2); }
+          100% { transform: translate(-50%, -50%) rotate(0deg) scale(0); }
+        }
+
+        @keyframes shutterBlade7 {
+          0% { transform: translate(-50%, -50%) rotate(0deg) scale(0); }
+          40% { transform: translate(-50%, -50%) rotate(-1deg) scale(1.2); }
+          60% { transform: translate(-50%, -50%) rotate(5deg) scale(1.2); }
+          100% { transform: translate(-50%, -50%) rotate(0deg) scale(0); }
+        }
+
+        @keyframes shutterBlade8 {
+          0% { transform: translate(-50%, -50%) rotate(0deg) scale(0); }
+          35% { transform: translate(-50%, -50%) rotate(3deg) scale(1.2); }
+          65% { transform: translate(-50%, -50%) rotate(-4deg) scale(1.2); }
+          100% { transform: translate(-50%, -50%) rotate(0deg) scale(0); }
+        }
       `}</style>
 
       <div className="h-screen w-screen bg-slate-900 flex flex-col overflow-hidden">
@@ -386,16 +692,35 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
                 </Link>
               </div>
 
-              <div className="p-5">
+              <div className="p-5 flex items-center space-x-3">
                 <ReactiveDotProvider config={config}>
                   <WalletConnection />
                 </ReactiveDotProvider>
+                
+                {/* NFT Capture Button */}
+                <button
+                  onClick={captureNFT}
+                  disabled={isCapturing}
+                  className={`flex items-center justify-center w-10 h-10 rounded-lg text-sm font-semibold transition-all duration-300 ${
+                    isCapturing
+                      ? 'bg-slate-600 text-slate-400 cursor-not-allowed'
+                      : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-lg hover:shadow-purple-500/30 hover:scale-105'
+                  }`}
+                  title="Create NFT"
+                >
+                  {isCapturing ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : (
+                    <Camera size={16} />
+                  )}
+                </button>
               </div>
             </div>
 
             {/* Creature Display */}
             <div className="absolute inset-0 flex items-center justify-center">
               <div
+                ref={creatureDisplayRef}
                 className={`relative transition-all duration-300 ease-out ${
                   isTransitioning
                     ? 'opacity-0 scale-95 translate-y-4'
@@ -435,6 +760,40 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
                 )}
               </div>
             </div>
+
+            {/* Camera Shutter Effect */}
+            {showShutter && (
+              <div className="absolute inset-0 z-50 pointer-events-none">
+                <div className="absolute inset-0 bg-black flex items-center justify-center">
+                  <div className="camera-shutter">
+                    {/* Multiple shutter blades for realistic effect */}
+                    <div className="shutter-blade blade-1"></div>
+                    <div className="shutter-blade blade-2"></div>
+                    <div className="shutter-blade blade-3"></div>
+                    <div className="shutter-blade blade-4"></div>
+                    <div className="shutter-blade blade-5"></div>
+                    <div className="shutter-blade blade-6"></div>
+                    <div className="shutter-blade blade-7"></div>
+                    <div className="shutter-blade blade-8"></div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Success Overlay */}
+            {showSuccess && (
+              <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in">
+                <div className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-8 py-6 rounded-2xl shadow-2xl animate-bounce-in">
+                  <div className="text-center">
+                    <div className="text-4xl mb-2">📸</div>
+                    <h3 className="text-xl font-bold mb-1">NFT Created!</h3>
+                    <p className="text-green-100 text-sm">
+                      Your creature has been captured
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Creature Info Overlay */}
             <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">
