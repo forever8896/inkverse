@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import LessonLayout from '@/components/LessonLayout';
-import { getLessonById } from '@/lib/lessons';
+import { getLessonById } from '@/lib/lessons-server';
 
 interface LessonPageProps {
   params: Promise<{ id: string }>;

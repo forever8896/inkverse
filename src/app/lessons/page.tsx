@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { getAllLessons } from '@/lib/lessons';
+import { getAllLessons } from '@/lib/lessons-server';
 
 export default function LessonsPage() {
   const lessons = getAllLessons();

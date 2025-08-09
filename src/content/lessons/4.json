@@ -1,0 +1,16 @@
+{
+  "id": 4,
+  "title": "Into the Wild",
+  "description": "Deploy your fully conscious creature into the wild using PopCLI. Set it free on the blockchain!",
+  "difficulty": "Advanced",
+  "duration": "35 min",
+  "objectives": [
+    "Master PopCLI deployment",
+    "Deploy to live networks",
+    "Monitor your creature in the wild",
+    "Complete the bio-engineering journey"
+  ],
+  "steps": [],
+  "completed": false,
+  "locked": true
+}

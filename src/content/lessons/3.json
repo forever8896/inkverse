@@ -1,0 +1,16 @@
+{
+  "id": 3,
+  "title": "Elixir of Consciousness",
+  "description": "Your creature grows thirsty! Feed it the elixir of life and watch it become super conscious.",
+  "difficulty": "Intermediate",
+  "duration": "30 min",
+  "objectives": [
+    "Learn integration testing with drink!",
+    "Simulate contract interactions",
+    "Implement drinking mechanics",
+    "Unlock creature consciousness"
+  ],
+  "steps": [],
+  "completed": false,
+  "locked": true
+}

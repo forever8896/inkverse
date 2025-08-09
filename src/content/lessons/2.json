@@ -1,0 +1,16 @@
+{
+  "id": 2,
+  "title": "Growing Limbs",
+  "description": "Design your creature's body and legs. Control its walking speed and movement patterns.",
+  "difficulty": "Beginner",
+  "duration": "25 min",
+  "objectives": [
+    "Learn about ink! functions and events",
+    "Add body parts to your creature",
+    "Implement walking mechanics",
+    "Control movement speed and patterns"
+  ],
+  "steps": [],
+  "completed": false,
+  "locked": true
+}
