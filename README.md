@@ -18,3 +18,9 @@ Goal: Make Polkadot fun ~~again
 - Make lessons more extensible.
 - Add wallet integration
 - Mint creature as NFT
+
+
+
+# NOTES
+
+npx --yes @polkadot-api/cli   Might have to get run in order for the app to compile correctly, to investigate.

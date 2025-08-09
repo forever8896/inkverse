@@ -404,11 +404,11 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
         <nav className="border-b border-slate-800 px-6 py-4 flex-shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <Link href="/lessons" className="flex items-center space-x-2">
+              <Link href="/lab" className="flex items-center space-x-2">
                 <img src="/logo.png" alt="Monsters ink!" className="h-24" />
               </Link>
               <span className="text-slate-400">•</span>
-              <span className="text-slate-300">Lesson</span>
+              <span className="text-slate-300">Chapter</span>
             </div>
           </div>
         </nav>
@@ -416,16 +416,16 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
         <div className="flex flex-1 items-center justify-center overflow-hidden">
           <div className="text-center py-12">
             <div className="text-6xl mb-6">📖</div>
-            <h1 className="text-3xl font-bold mb-4">Empty Lesson</h1>
+            <h1 className="text-3xl font-bold mb-4">Empty Chapter</h1>
             <p className="text-slate-300 mb-6">
-              This lesson is ready for content. Start building your
+              This chapter is ready for content. Start building your
               bio-engineering tutorial here.
             </p>
             <Link
-              href="/lessons"
+              href="/lab"
               className="px-6 py-3 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 rounded-lg font-semibold transition-all duration-200 inline-block"
             >
-              ← Back to Lessons
+              ← Back to Lab
             </Link>
           </div>
         </div>
