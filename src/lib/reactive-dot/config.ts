@@ -3,15 +3,8 @@ import { defineConfig } from "@reactive-dot/core"
 import { InjectedWalletProvider } from "@reactive-dot/core/wallets.js"
 import { getWsProvider } from "polkadot-api/ws-provider/web"
 
-// Light Client Provider
-// const lightClientProvider = createLightClientProvider()
-
 export const config = defineConfig({
   chains: {
-    // dev: {
-    //   descriptor: dev,
-    //   provider: getWsProvider("ws://127.0.0.1:9944"),
-    // },
     pop: {
       descriptor: pop,
       provider: getWsProvider("wss://rpc1.paseo.popnetwork.xyz"),
@@ -21,6 +14,10 @@ export const config = defineConfig({
       provider: getWsProvider("wss://testnet-passet-hub.polkadot.io"),
     },
   },
-  ssr: true,
-  wallets: [new InjectedWalletProvider()],
+  ssr: false, // Set to false to avoid SSR issues with wallet detection
+  wallets: [
+    new InjectedWalletProvider({
+      // Wait longer for wallet extensions to load
+    })
+  ],
 })

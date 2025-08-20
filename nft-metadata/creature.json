@@ -1,0 +1,32 @@
+{
+  "name": "MonstersInk! Creature",
+  "description": "A digital creature born from ink! smart contract mastery. This unique bio-specimen was created by completing Lesson 1: Awakening Eyes in the MonstersInk! learning platform.",
+  "image": "https://ipfs.io/ipfs/bafybeiho757xnpftumubbuuwwoq625i3q7p6almcpvjlno5ar7yxwpmtc4/",
+  "attributes": [
+    {
+      "trait_type": "Lesson",
+      "value": "Awakening Eyes"
+    },
+    {
+      "trait_type": "Lesson Number",
+      "value": 1
+    },
+    {
+      "trait_type": "Consciousness Level",
+      "value": "Awakened"
+    },
+    {
+      "trait_type": "Contract Type",
+      "value": "Basic ink! Contract"
+    },
+    {
+      "trait_type": "Rarity",
+      "value": "Genesis"
+    },
+    {
+      "trait_type": "Creation Method",
+      "value": "Smart Contract Learning"
+    }
+  ],
+  "background_color": "1e293b"
+}

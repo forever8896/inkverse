@@ -9,10 +9,11 @@ import dynamic from 'next/dynamic';
 import { HSLValues } from '@/components/CreatureColorPicker';
 import Confetti from 'react-confetti';
 import { Camera, Loader2 } from 'lucide-react';
+import { MintCreatureNFT } from './MintCreatureNFT';
 
 // wallet stuff
-import { ReactiveDotProvider } from '@reactive-dot/react';
-import { WalletConnection } from '@/components/WalletConnection';
+import { ReactiveDotProvider, useAccounts } from '@reactive-dot/react';
+import { ConnectButton } from '@/components/web3/connect-button';
 import { config } from '@/lib/reactive-dot/config';
 
 const ConsolePanel = dynamic(() => import('@/app/ConsolePanel'), {
@@ -30,8 +31,11 @@ interface Toast {
   message: string;
 }
 
-export default function LessonLayout({ lesson }: LessonLayoutProps) {
+function LessonLayoutInner({ lesson }: LessonLayoutProps) {
   const [currentStep, setCurrentStep] = useState(0);
+  const [balance, setBalance] = useState<string>('0');
+  const [isLoadingBalance, setIsLoadingBalance] = useState(true);
+  const accounts = useAccounts();
   const [showCompletionModal, setShowCompletionModal] = useState(false);
   const [userCode, setUserCode] = useState('');
   const [isValidated, setIsValidated] = useState(false);
@@ -427,11 +431,11 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
             >
               ← Back to Lab
             </Link>
-          </div>
-        </div>
+                  </div>
       </div>
-    );
-  }
+    </div>
+  );
+}
 
   return (
     <>
@@ -693,9 +697,10 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
               </div>
 
               <div className="p-5 flex items-center space-x-3">
-                <ReactiveDotProvider config={config}>
+                {/* Wallet connection temporarily disabled - was causing loading issues */}
+                {/* <ReactiveDotProvider config={config}>
                   <WalletConnection />
-                </ReactiveDotProvider>
+                </ReactiveDotProvider> */}
                 
                 {/* NFT Capture Button */}
                 <button
@@ -1211,6 +1216,24 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
                 <br />
                 Welcome to the world of ink! smart contracts!
               </p>
+              
+              {/* Wallet Connection & NFT Minting Section - Only in completion modal */}
+              <div className="mb-6">
+                <div className="mb-4 flex justify-center">
+                  <ConnectButton />
+                </div>
+                <MintCreatureNFT 
+                  lessonId={lesson.id} 
+                  onMintSuccess={(txHash) => {
+                    addToast({
+                      type: 'success',
+                      title: '🎉 NFT Minted!',
+                      message: `Your creature NFT has been minted successfully! TX: ${txHash.substring(0, 8)}...`
+                    });
+                  }}
+                />
+              </div>
+              
               <div className="flex space-x-4">
                 <a
                   href="https://use.ink/docs/v6/"
@@ -1254,5 +1277,13 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
         )}
       </div>
     </>
+  );
+}
+
+export default function LessonLayout({ lesson }: LessonLayoutProps) {
+  return (
+    <ReactiveDotProvider config={config}>
+      <LessonLayoutInner lesson={lesson} />
+    </ReactiveDotProvider>
   );
 }
