@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "prebuild": "node scripts/build-papi.js",
+    "prebuild": "echo 'Skipping polkadot-api generation - using pre-built descriptors'",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
