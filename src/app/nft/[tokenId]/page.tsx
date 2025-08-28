@@ -5,9 +5,10 @@ import { useParams, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button-extended';
-import { ArrowLeft, ExternalLink, Copy, Check } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Copy, Check, Eye, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
+import ShaderBackground from '@/components/ShaderBackground';
 
 interface NFTMetadata {
   tokenId: string;
@@ -33,6 +34,7 @@ export default function NFTExplorerPage() {
   const [error, setError] = useState<string | null>(null);
   const [copiedAddress, setCopiedAddress] = useState(false);
   const [copiedTxHash, setCopiedTxHash] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   useEffect(() => {
     fetchNFTData();
@@ -265,16 +267,29 @@ export default function NFTExplorerPage() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <div className="h-96 bg-gray-200 rounded-lg"></div>
-              <div className="space-y-4">
-                <div className="h-6 bg-gray-200 rounded w-3/4"></div>
-                <div className="h-4 bg-gray-200 rounded w-full"></div>
-                <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+      <div className="min-h-screen relative overflow-hidden">
+        <ShaderBackground />
+        <div className="relative z-10 container mx-auto px-4 py-8">
+          <div className="max-w-6xl mx-auto">
+            <div className="animate-fade-in">
+              {/* Header skeleton */}
+              <div className="mb-8">
+                <div className="h-6 bg-white/10 rounded w-32 mb-4"></div>
+                <div className="h-8 bg-white/10 rounded w-64 mb-2"></div>
+                <div className="h-4 bg-white/10 rounded w-40"></div>
+              </div>
+              
+              {/* Content skeleton */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="space-y-6">
+                  <div className="h-96 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl animate-pulse"></div>
+                  <div className="h-40 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl animate-pulse"></div>
+                </div>
+                <div className="space-y-6">
+                  <div className="h-48 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl animate-pulse"></div>
+                  <div className="h-64 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl animate-pulse"></div>
+                  <div className="h-32 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl animate-pulse"></div>
+                </div>
               </div>
             </div>
           </div>
@@ -285,187 +300,253 @@ export default function NFTExplorerPage() {
 
   if (error || !nft) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-2xl mx-auto text-center">
-          <h1 className="text-2xl font-bold text-red-600 mb-4">Error Loading NFT</h1>
-          <p className="text-gray-600 mb-6">{error || 'NFT not found'}</p>
-          <Link href="/">
-            <Button>
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Home
-            </Button>
-          </Link>
+      <div className="min-h-screen relative overflow-hidden">
+        <ShaderBackground />
+        <div className="relative z-10 container mx-auto px-4 py-8">
+          <div className="max-w-2xl mx-auto text-center">
+            <div className="backdrop-blur-md bg-red-500/10 border border-red-500/20 rounded-2xl p-8 animate-fade-in">
+              <div className="text-6xl mb-6">💥</div>
+              <h1 className="text-2xl font-bold text-red-400 mb-4">Error Loading NFT</h1>
+              <p className="text-slate-300 mb-6">{error || 'NFT not found'}</p>
+              <Link href="/">
+                <Button className="bg-purple-500 hover:bg-purple-600 text-white">
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back to Home
+                </Button>
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <Link href="/" className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-4">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Lessons
-          </Link>
-          <h1 className="text-3xl font-bold text-gray-900">{nft.name}</h1>
-          <p className="text-gray-600 mt-2">Token ID: #{nft.tokenId}</p>
-        </div>
+    <div className="min-h-screen relative overflow-hidden">
+      <ShaderBackground />
+      
+      {/* Floating background orbs */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-10 w-32 h-32 bg-purple-500/20 rounded-full blur-xl animate-float-slow"></div>
+        <div className="absolute top-60 right-20 w-24 h-24 bg-cyan-500/15 rounded-full blur-lg animate-float-medium"></div>
+        <div className="absolute bottom-40 left-1/4 w-20 h-20 bg-pink-500/20 rounded-full blur-xl animate-float-fast"></div>
+        <div className="absolute bottom-20 right-1/3 w-28 h-28 bg-green-500/15 rounded-full blur-lg animate-float-slow"></div>
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* NFT Image */}
-          <div className="space-y-4">
-            <Card>
-              <CardContent className="p-6">
-                <div className="aspect-square bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg overflow-hidden">
-                  <img
-                    src={nft.image}
-                    alt={nft.name}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/shapes/svg?seed=${nft.tokenId}`;
-                    }}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Transaction Info */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Transaction Details</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Transaction Hash:</span>
-                  <div className="flex items-center space-x-2">
-                    <code className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded">
-                      {truncateAddress(nft.txHash)}
-                    </code>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => copyToClipboard(nft.txHash, 'txHash')}
-                    >
-                      {copiedTxHash ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      asChild
-                    >
-                      <a 
-                        href={`https://shibuya.subscan.io/extrinsic/${nft.txHash}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <ExternalLink className="w-3 h-3" />
-                      </a>
-                    </Button>
+      <div className="relative z-10 container mx-auto px-4 py-8">
+        <div className="max-w-6xl mx-auto animate-fade-in">
+          {/* Header */}
+          <div className="mb-8">
+            <Link href="/" className="inline-flex items-center text-purple-400 hover:text-purple-300 mb-6 transition-colors duration-200 group">
+              <ArrowLeft className="w-4 h-4 mr-2 transition-transform group-hover:-translate-x-1" />
+              <span className="font-pixel text-xs">Back to Lessons</span>
+            </Link>
+            
+            <div className="backdrop-blur-md bg-white/5 border border-white/10 rounded-2xl p-6 mb-6">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h1 className="text-2xl font-bold text-white mb-2 font-pixel">{nft.name}</h1>
+                  <div className="flex items-center gap-3">
+                    <Badge variant="outline" className="border-purple-400/50 text-purple-300 bg-purple-500/10">
+                      Token #{nft.tokenId}
+                    </Badge>
+                    <Badge variant="outline" className="border-cyan-400/50 text-cyan-300 bg-cyan-500/10">
+                      <Sparkles className="w-3 h-3 mr-1" />
+                      PSP34
+                    </Badge>
                   </div>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Network:</span>
-                  <Badge variant="secondary">Shibuya Testnet</Badge>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Standard:</span>
-                  <Badge variant="outline">PSP34</Badge>
-                </div>
-              </CardContent>
-            </Card>
+                <div className="text-4xl animate-bounce">🧬</div>
+              </div>
+            </div>
           </div>
 
-          {/* NFT Details */}
-          <div className="space-y-6">
-            {/* Basic Info */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Details</CardTitle>
-                <CardDescription>Information about this NFT</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-2">Description</h3>
-                  <p className="text-gray-600 text-sm leading-relaxed">{nft.description}</p>
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Owner:</span>
-                  <div className="flex items-center space-x-2">
-                    <code className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded">
-                      {truncateAddress(nft.owner)}
-                    </code>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => copyToClipboard(nft.owner, 'address')}
-                    >
-                      {copiedAddress ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                    </Button>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Left Column: NFT Image and Transaction Info */}
+            <div className="space-y-6">
+              {/* NFT Image */}
+              <div className="backdrop-blur-md bg-white/5 border border-white/10 rounded-2xl p-6 transition-all duration-300 hover:bg-white/10 hover:border-white/20">
+                <div className="relative">
+                  <div className="aspect-square bg-gradient-to-br from-purple-500/20 via-cyan-500/20 to-pink-500/20 rounded-xl overflow-hidden relative group">
+                    {/* Glow effect behind image */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-purple-400/30 to-cyan-400/30 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                    
+                    <img
+                      src={nft.image}
+                      alt={nft.name}
+                      className={`w-full h-full object-cover rounded-xl transition-all duration-500 ${
+                        imageLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+                      } group-hover:scale-105`}
+                      onLoad={() => setImageLoaded(true)}
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/shapes/svg?seed=${nft.tokenId}`;
+                        setImageLoaded(true);
+                      }}
+                    />
+                    
+                    {/* Overlay with view icon */}
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center rounded-xl">
+                      <Eye className="w-8 h-8 text-white" />
+                    </div>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
 
-            {/* Attributes */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Attributes</CardTitle>
-                <CardDescription>Traits and properties of this NFT</CardDescription>
-              </CardHeader>
-              <CardContent>
+              {/* Transaction Info */}
+              <div className="backdrop-blur-md bg-white/5 border border-white/10 rounded-2xl p-6 transition-all duration-300 hover:bg-white/10">
+                <h3 className="font-pixel text-sm text-purple-300 mb-4 flex items-center">
+                  <span className="text-lg mr-2">⛓️</span>
+                  Blockchain Details
+                </h3>
+                
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-slate-400">Transaction Hash:</span>
+                    <div className="flex items-center space-x-2">
+                      <code className="text-xs bg-slate-800/50 text-cyan-300 px-3 py-1 rounded-lg border border-slate-700/50">
+                        {truncateAddress(nft.txHash)}
+                      </code>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 w-8 p-0 hover:bg-white/10"
+                        onClick={() => copyToClipboard(nft.txHash, 'txHash')}
+                      >
+                        {copiedTxHash ? <Check className="w-3 h-3 text-green-400" /> : <Copy className="w-3 h-3" />}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 w-8 p-0 hover:bg-white/10"
+                        asChild
+                      >
+                        <a 
+                          href={`https://shibuya.subscan.io/extrinsic/${nft.txHash}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-slate-400">Network:</span>
+                    <Badge variant="secondary" className="bg-orange-500/20 text-orange-300 border-orange-400/30">
+                      Shibuya Testnet
+                    </Badge>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-slate-400">Standard:</span>
+                    <Badge variant="outline" className="border-purple-400/50 text-purple-300 bg-purple-500/10">
+                      PSP34
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column: NFT Details */}
+            <div className="space-y-6">
+              {/* Basic Info */}
+              <div className="backdrop-blur-md bg-white/5 border border-white/10 rounded-2xl p-6 transition-all duration-300 hover:bg-white/10">
+                <h3 className="font-pixel text-sm text-cyan-300 mb-4 flex items-center">
+                  <span className="text-lg mr-2">📊</span>
+                  Details
+                </h3>
+                
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-semibold text-white mb-2 text-sm">Description</h4>
+                    <p className="text-slate-300 text-sm leading-relaxed bg-slate-800/30 p-3 rounded-lg border border-slate-700/30">
+                      {nft.description}
+                    </p>
+                  </div>
+                  
+                  <div className="flex items-center justify-between pt-2">
+                    <span className="text-sm text-slate-400">Owner:</span>
+                    <div className="flex items-center space-x-2">
+                      <code className="text-xs bg-slate-800/50 text-green-300 px-3 py-1 rounded-lg border border-slate-700/50">
+                        {truncateAddress(nft.owner)}
+                      </code>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 w-8 p-0 hover:bg-white/10"
+                        onClick={() => copyToClipboard(nft.owner, 'address')}
+                      >
+                        {copiedAddress ? <Check className="w-3 h-3 text-green-400" /> : <Copy className="w-3 h-3" />}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Attributes */}
+              <div className="backdrop-blur-md bg-white/5 border border-white/10 rounded-2xl p-6 transition-all duration-300 hover:bg-white/10">
+                <h3 className="font-pixel text-sm text-pink-300 mb-4 flex items-center">
+                  <span className="text-lg mr-2">🏷️</span>
+                  Attributes
+                </h3>
+                
                 <div className="grid grid-cols-2 gap-3">
                   {nft.attributes.map((attribute, index) => (
-                    <div key={index} className="bg-gray-50 rounded-lg p-3 text-center">
-                      <div className="text-xs text-gray-600 uppercase tracking-wide">
+                    <div 
+                      key={index} 
+                      className="bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-lg p-3 text-center transition-all duration-200 hover:bg-slate-700/50 hover:border-slate-600/50 hover:scale-105"
+                    >
+                      <div className="text-xs text-slate-400 uppercase tracking-wide font-pixel mb-1">
                         {attribute.trait_type}
                       </div>
-                      <div className="font-semibold text-gray-900 mt-1">
+                      <div className="font-semibold text-white text-sm">
                         {attribute.value}
                       </div>
                     </div>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
+              </div>
 
-            {/* Actions */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Actions</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Button 
-                  className="w-full" 
-                  asChild
-                >
-                  <a 
-                    href={`https://shibuya.subscan.io/account/${nft.owner}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
+              {/* Actions */}
+              <div className="backdrop-blur-md bg-white/5 border border-white/10 rounded-2xl p-6 transition-all duration-300 hover:bg-white/10">
+                <h3 className="font-pixel text-sm text-green-300 mb-4 flex items-center">
+                  <span className="text-lg mr-2">🚀</span>
+                  Actions
+                </h3>
+                
+                <div className="space-y-3">
+                  <Button 
+                    className="w-full bg-gradient-to-r from-purple-500 to-cyan-500 hover:from-purple-600 hover:to-cyan-600 text-white border-0 transition-all duration-200 hover:scale-105" 
+                    asChild
                   >
-                    <ExternalLink className="w-4 h-4 mr-2" />
-                    View Owner on Explorer
-                  </a>
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full"
-                  asChild
-                >
-                  <a 
-                    href={`https://shibuya.subscan.io/extrinsic/${nft.txHash}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    <a 
+                      href={`https://shibuya.subscan.io/account/${nft.owner}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <ExternalLink className="w-4 h-4 mr-2" />
+                      View Owner on Explorer
+                    </a>
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    className="w-full border-slate-600 hover:border-slate-500 hover:bg-slate-800/50 transition-all duration-200 hover:scale-105"
+                    asChild
                   >
-                    <ExternalLink className="w-4 h-4 mr-2" />
-                    View Transaction
-                  </a>
-                </Button>
-              </CardContent>
-            </Card>
+                    <a 
+                      href={`https://shibuya.subscan.io/extrinsic/${nft.txHash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <ExternalLink className="w-4 h-4 mr-2" />
+                      View Transaction
+                    </a>
+                  </Button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
