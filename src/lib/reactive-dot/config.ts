@@ -13,6 +13,10 @@ export const config = defineConfig({
       descriptor: passethub,
       provider: getWsProvider("wss://testnet-passet-hub.polkadot.io"),
     },
+    shibuya: {
+      descriptor: passethub, // Using passethub descriptor for now since Shibuya has similar structure
+      provider: getWsProvider("wss://rpc.shibuya.astar.network"),
+    },
   },
   ssr: false, // Set to false to avoid SSR issues with wallet detection
   wallets: [

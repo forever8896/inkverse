@@ -23,6 +23,13 @@ export const NFT_CONTRACT_CONFIG = {
     chainId: "pop-testnet"
   },
   
+  // Shibuya testnet configuration (Astar Network)
+  shibuya: {
+    address: "5HNLhYcybokr625oTadE6sxBxAuneJRF48Qge6BaiByd4bnc",
+    rpc: "wss://rpc.shibuya.astar.network",
+    chainId: "shibuya"
+  },
+  
   // IPFS configuration for creature metadata
   ipfs: {
     baseUri: "ipfs://QmYourHashHere", // Will be set to actual IPFS hash

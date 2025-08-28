@@ -29,6 +29,10 @@ interface Toast {
   type: 'success' | 'error' | 'info';
   title: string;
   message: string;
+  action?: {
+    label: string;
+    onClick: () => void;
+  };
 }
 
 function LessonLayoutInner({ lesson }: LessonLayoutProps) {
@@ -468,7 +472,15 @@ function LessonLayoutInner({ lesson }: LessonLayoutProps) {
             aria-live="polite"
           >
             <div className="font-semibold mb-1">{toast.title}</div>
-            <div className="text-sm">{toast.message}</div>
+            <div className="text-sm mb-2">{toast.message}</div>
+            {toast.action && (
+              <button
+                onClick={toast.action.onClick}
+                className="mt-2 px-3 py-1 bg-white/20 hover:bg-white/30 rounded text-xs font-medium transition-colors duration-200 border border-white/30"
+              >
+                {toast.action.label}
+              </button>
+            )}
           </div>
         ))}
       </div>
@@ -1228,7 +1240,11 @@ function LessonLayoutInner({ lesson }: LessonLayoutProps) {
                     addToast({
                       type: 'success',
                       title: '🎉 NFT Minted!',
-                      message: `Your creature NFT has been minted successfully! TX: ${txHash.substring(0, 8)}...`
+                      message: `Your creature NFT has been minted successfully! TX: ${txHash.substring(0, 8)}...`,
+                      action: {
+                        label: 'View NFT',
+                        onClick: () => window.open(`/nft/${lesson.id}?tx=${txHash}`, '_blank'),
+                      },
                     });
                   }}
                 />

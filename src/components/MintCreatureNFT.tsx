@@ -1,8 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useAccounts } from "@reactive-dot/react"
-import { toast } from "sonner"
+import { useAccounts, useChainId } from "@reactive-dot/react"
 import { Button } from "./ui/button-extended"
 import { Badge } from "./ui/badge"
 import { NFT_CONTRACT_CONFIG } from "@/lib/contracts/nft-contract"
@@ -20,7 +19,48 @@ export function MintCreatureNFT({ lessonId, onMintSuccess }: MintCreatureNFTProp
   const [isLoadingBalance, setIsLoadingBalance] = useState(true)
   const accounts = useAccounts()
   
+  // Handle missing chain context gracefully
+  let chainId: string | undefined;
+  try {
+    chainId = useChainId();
+  } catch (error) {
+    console.warn("No chain context available, using default 'shibuya':", error);
+    chainId = undefined;
+  }
+  
   const connectedAccount = accounts?.[0]
+  
+  // Get chain-specific configuration
+  const getChainConfig = () => {
+    const currentChainId = chainId || 'shibuya' // Default to shibuya
+    
+    switch (currentChainId) {
+      case 'pop':
+        return {
+          rpc: 'wss://rpc1.paseo.popnetwork.xyz',
+          contractAddress: monstersContract.ss58Addresses.pop,
+          nativeSymbol: 'POP',
+          decimals: 12
+        }
+      case 'passethub':
+        return {
+          rpc: 'wss://testnet-passet-hub.polkadot.io',
+          contractAddress: monstersContract.ss58Addresses.passethub,
+          nativeSymbol: 'PAS',
+          decimals: 12
+        }
+      case 'shibuya':
+      default:
+        return {
+          rpc: 'wss://rpc.shibuya.astar.network',
+          contractAddress: monstersContract.ss58Addresses.shibuya,
+          nativeSymbol: 'SBY',
+          decimals: 18
+        }
+    }
+  }
+
+  const chainConfig = getChainConfig()
 
   // Check balance when account changes
   useEffect(() => {
@@ -36,46 +76,33 @@ export function MintCreatureNFT({ lessonId, onMintSuccess }: MintCreatureNFTProp
         // Import polkadot.js API to check balance
         const { ApiPromise, WsProvider } = await import('@polkadot/api')
         
-        // Connect to Pop Network
-        const wsProvider = new WsProvider('wss://rpc1.paseo.popnetwork.xyz')
+        // Connect to the current chain
+        const wsProvider = new WsProvider(chainConfig.rpc)
         const api = await ApiPromise.create({ provider: wsProvider })
         
         // Get account balance
         const accountInfo = await api.query.system.account(connectedAccount.address)
         const balance = (accountInfo as any).data.free.toString()
         
-        // Convert from smallest unit (12 decimals for POP) to readable format
-        const readable = (BigInt(balance) / BigInt(10 ** 12)).toString()
+        // Convert from smallest unit to readable format
+        const readable = (BigInt(balance) / BigInt(10 ** chainConfig.decimals)).toString()
         setBalance(readable)
         
         await api.disconnect()
       } catch (error) {
         console.error('Error checking balance:', error)
-        setBalance('0')
+        setBalance('Error')
       } finally {
         setIsLoadingBalance(false)
       }
     }
 
     checkBalance()
-  }, [connectedAccount?.address])
-
-  const hasInsufficientFunds = parseFloat(balance) < 1 // Need at least 1 POP for transaction fees
-
-  const handleFaucet = () => {
-    // Open both the faucet and bridge links to help users get tokens
-    window.open('https://learn.onpop.io/contracts/guides/bridge-tokens-to-pop-network', '_blank')
-    
-    // Also show a toast with instructions
-    toast.info('Token Setup Guide', {
-      description: '1. Get PAS from Paseo faucet → 2. Bridge PAS to Pop Network',
-      duration: 8000
-    })
-  }
+  }, [connectedAccount?.address, chainConfig.rpc, chainConfig.decimals])
 
   const handleMint = async () => {
-    if (!connectedAccount?.polkadotSigner) {
-      toast.error("Please connect your wallet first")
+    if (!connectedAccount?.address) {
+      console.log("Please connect your wallet first")
       return
     }
 
@@ -88,22 +115,14 @@ export function MintCreatureNFT({ lessonId, onMintSuccess }: MintCreatureNFTProp
       const { ApiPromise, WsProvider } = await import('@polkadot/api')
       const { ContractPromise } = await import('@polkadot/api-contract')
       
-      // Connect to Pop Network
-      const wsProvider = new WsProvider('wss://rpc1.paseo.popnetwork.xyz')
+      // Connect to the configured chain
+      const wsProvider = new WsProvider(chainConfig.rpc)
       const api = await ApiPromise.create({ provider: wsProvider })
       
       // Create contract instance
-      const contractAddress = monstersContract.ss58Addresses.pop
-      const contract = new ContractPromise(api, monstersContract.metadata, contractAddress)
+      const contract = new ContractPromise(api, monstersContract.metadata, chainConfig.contractAddress)
       
-      console.log("Contract created, calling public_mint...")
-      
-      // Use a simpler approach - just use the direct polkadot-api method
-      // since the reactive-dot signer is not compatible with polkadot.js contract calls
-      
-      console.log("Calling contract public_mint function...")
-      
-      // Get the injected web3 extension directly to bypass reactive-dot signer issues
+      // Get the injected web3 extension for signing
       const { web3Enable, web3Accounts, web3FromSource } = await import('@polkadot/extension-dapp')
       
       await web3Enable('Inkverse NFT Minting')
@@ -116,138 +135,101 @@ export function MintCreatureNFT({ lessonId, onMintSuccess }: MintCreatureNFTProp
       
       const injector = await web3FromSource(userAccount.meta.source)
       
-      // Use a fixed gas limit
+      // Call the mint function
       const gasLimit = api.registry.createType('WeightV2', {
         refTime: 50_000_000_000,
         proofSize: 1_000_000,
-      })
+      });
+
+      // Submit the transaction
+      const tx = contract.tx.publicMint(
+        {
+          gasLimit: gasLimit as any,
+          storageDepositLimit: null,
+        }
+      );
+
+      // Sign and send the transaction
+      const result = await new Promise<{txHash: string, blockHash: string}>((resolve, reject) => {
+        tx.signAndSend(connectedAccount.address, { signer: injector.signer }, (result) => {
+          if (result.status.isInBlock) {
+            console.log(`Transaction in block: ${result.status.asInBlock.toString()}`);
+            resolve({
+              txHash: result.txHash.toString(),
+              blockHash: result.status.asInBlock.toString()
+            });
+          } else if (result.status.isFinalized) {
+            console.log(`Transaction finalized: ${result.status.asFinalized.toString()}`);
+          } else if (result.dispatchError) {
+            reject(new Error(`Transaction failed: ${result.dispatchError.toString()}`));
+          }
+        }).catch(reject);
+      });
+
+      console.log(`✅ Transaction successful! Hash: ${result.txHash}`);
+      console.log(`🔗 View on Shibuya Explorer: https://shibuya.subscan.io/extrinsic/${result.txHash}`);
       
-      const result = await new Promise<string>((resolve, reject) => {
-        contract.tx
-          .publicMint({
-            gasLimit: gasLimit as any,
-            storageDepositLimit: null,
-          })
-          .signAndSend(
-            connectedAccount.address,
-            { signer: injector.signer },
-            ({ status, dispatchError }: any) => {
-            if (dispatchError) {
-              reject(new Error(`Dispatch error: ${dispatchError}`))
-            } else if (status.isInBlock) {
-              console.log(`Transaction included in block: ${status.asInBlock}`)
-              resolve(status.asInBlock.toString())
-            }
-          })
-          .catch(reject)
-      })
+      setHasMinted(true);
+      onMintSuccess?.(result.txHash);
       
-      // Cleanup
-      await api.disconnect()
-      
-      console.log("NFT minted successfully:", result)
-      
-      setHasMinted(true)
-      toast.success("🎉 Creature NFT minted successfully!", {
-        description: `Your lesson ${lessonId} creature is now immortalized on Pop Network testnet! TX: ${result.toString().substring(0, 8)}...`
-      })
-      
-      onMintSuccess?.(result.toString())
-      
-    } catch (error: any) {
-      console.error("Minting failed:", error)
-      toast.error("Failed to mint NFT", {
-        description: error.message || "Please try again or check your wallet connection"
-      })
+    } catch (error) {
+      console.error('Minting failed:', error)
+      setHasMinted(false)
+      console.error("Failed to mint NFT:", error instanceof Error ? error.message : "Unknown error occurred")
     } finally {
       setIsMinting(false)
     }
   }
 
-  if (!connectedAccount) {
-    return (
-      <div className="flex flex-col items-center gap-3 p-4 border border-orange-500/20 rounded-xl bg-orange-500/5">
-        <div className="text-center">
-          <h3 className="font-semibold text-orange-600">🏆 Lesson Complete!</h3>
-          <p className="text-sm text-muted-foreground mt-1">
-            Connect your wallet to mint your creature as an NFT
-          </p>
-        </div>
-        <Badge variant="outline" className="text-orange-600 border-orange-500/30">
-          NFT Reward Available
-        </Badge>
-      </div>
-    )
-  }
-
-  if (hasMinted) {
-    return (
-      <div className="flex flex-col items-center gap-3 p-4 border border-green-500/20 rounded-xl bg-green-500/5">
-        <div className="text-center">
-          <h3 className="font-semibold text-green-600">🎉 NFT Minted!</h3>
-          <p className="text-sm text-muted-foreground mt-1">
-            Your creature NFT has been successfully minted
-          </p>
-        </div>
-        <Badge variant="outline" className="text-green-600 border-green-500/30">
-          NFT Minted
-        </Badge>
-      </div>
-    )
-  }
-
   return (
-    <div className="flex flex-col items-center gap-3 p-4 border border-blue-500/20 rounded-xl bg-gradient-to-br from-blue-500/5 to-purple-500/5">
-      {/* Header */}
-      <div className="text-center">
-        <h3 className="font-semibold text-blue-600">🏆 Lesson Complete!</h3>
-        <p className="text-sm text-muted-foreground mt-1">
-          Mint your creature as an NFT on Pop Network testnet
-        </p>
-        {/* Balance display */}
-        <div className="mt-2 text-xs text-gray-600">
-          Balance: <span className={`font-medium ${hasInsufficientFunds ? "text-orange-600" : "text-green-600"}`}>
-            {isLoadingBalance ? "Loading..." : `${balance} PAS`}
-          </span>
-        </div>
+    <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-6 mb-6">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-bold text-white">Mint Your Creature NFT</h3>
+        <Badge variant={hasMinted ? "default" : "secondary"}>
+          {hasMinted ? "Minted" : "Ready to Mint"}
+        </Badge>
       </div>
       
-      {/* Faucet button - only when needed */}
-      {hasInsufficientFunds && !isLoadingBalance && (
-        <div className="w-full">
-          <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 mb-3">
-            <p className="text-sm text-orange-800 mb-2">
-              ⚠️ You need PAS tokens to pay for transaction fees
+      <div className="space-y-3">
+        <div className="text-sm text-gray-300">
+          <p><strong>Network:</strong> {chainId || 'shibuya'}</p>
+          <p><strong>Lesson:</strong> {lessonId}</p>
+          <p>
+            <strong>Balance:</strong> {' '}
+            {isLoadingBalance ? (
+              <span className="text-gray-400">Loading...</span>
+            ) : (
+              <span className="text-green-400">{balance} {chainConfig.nativeSymbol}</span>
+            )}
+          </p>
+        </div>
+        
+        {!connectedAccount ? (
+          <p className="text-orange-400 text-sm">
+            Please connect your wallet to mint an NFT
+          </p>
+        ) : (
+          <div className="space-y-2">
+            <p className="text-sm text-gray-300">
+              Mint an NFT to commemorate completing lesson {lessonId}!
             </p>
+            
             <Button
-              onClick={handleFaucet}
-              variant="outline"
-              size="sm"
-              className="w-full bg-orange-100 hover:bg-orange-200 text-orange-800 border-orange-300"
+              onClick={handleMint}
+              disabled={isMinting || hasMinted || !connectedAccount}
+              isLoading={isMinting}
+              className="w-full"
             >
-              📖 Get PAS Tokens Guide
+              {hasMinted 
+                ? "NFT Already Minted" 
+                : isMinting 
+                  ? "Minting..." 
+                  : "Mint Creature NFT"
+              }
             </Button>
           </div>
-        </div>
-      )}
-      
-      {/* Mint Button */}
-      <Button
-        onClick={handleMint}
-        disabled={isMinting || hasInsufficientFunds || isLoadingBalance}
-        className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg"
-      >
-        {isMinting ? (
-          <span className="flex items-center gap-2">
-            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            Minting...
-          </span>
-        ) : hasInsufficientFunds ? (
-          "Get Tokens First"
-        ) : (
-          "Mint NFT"
         )}
-      </Button>
+      </div>
     </div>
   )
 }
