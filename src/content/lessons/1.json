@@ -57,7 +57,8 @@
         { "type": "includes", "patterns": ["#[ink(constructor)]"] },
         { "type": "includes", "patterns": ["pub fn new"] },
         { "type": "includes", "patterns": ["Self { is_conscious: false }"] }
-      ]
+      ],
+      "requiresAuth": true
     },
     {
       "id": 5,
@@ -86,7 +87,8 @@
         { "type": "includes", "patterns": ["pub fn wake_up"] },
         { "type": "includes", "patterns": ["&mut self"] },
         { "type": "includes", "patterns": ["!self.is_conscious"] }
-      ]
+      ],
+      "requiresAuth": true
     }
   ],
   "completed": false,

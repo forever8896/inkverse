@@ -10,6 +10,8 @@ import { HSLValues } from '@/components/CreatureColorPicker';
 import Confetti from 'react-confetti';
 import { Camera, Loader2 } from 'lucide-react';
 import { MintCreatureNFT } from './MintCreatureNFT';
+import GitHubAuthModal from '@/components/GitHubAuthModal';
+import { useSession } from '@/lib/auth-client';
 
 // wallet stuff
 import { ReactiveDotProvider, useAccounts } from '@reactive-dot/react';
@@ -22,6 +24,8 @@ const ConsolePanel = dynamic(() => import('@/app/ConsolePanel'), {
 
 interface LessonLayoutProps {
   lesson?: Lesson;
+  authRequired?: boolean;
+  authError?: string;
 }
 
 interface Toast {
@@ -58,7 +62,11 @@ function LessonLayoutInner({ lesson }: LessonLayoutProps) {
   const [isCapturing, setIsCapturing] = useState(false);
   const [showShutter, setShowShutter] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const creatureDisplayRef = useRef<HTMLDivElement>(null);
+
+  // GitHub authentication session
+  const { data: session, isPending: isAuthLoading } = useSession();
 
   const currentStepData = lesson?.steps[currentStep];
 
@@ -133,6 +141,9 @@ function LessonLayoutInner({ lesson }: LessonLayoutProps) {
           title: '🎉 Perfect!',
           message: 'Your creature responds beautifully to the code!',
         });
+
+        // Check if we should show auth modal after completing step 3 of lesson 1
+        checkAuthRequirement();
       } else {
         setIsValidated(false);
         addToast({
@@ -149,7 +160,20 @@ function LessonLayoutInner({ lesson }: LessonLayoutProps) {
         title: '✅ Step Complete!',
         message: 'Ready to move on to the next step.',
       });
+
+      // Check if we should show auth modal
+      checkAuthRequirement();
       return true;
+    }
+  };
+
+  // Check if authentication is required before proceeding
+  const checkAuthRequirement = () => {
+    // Show auth modal after completing step 3 (index 3) of lesson 1
+    // This means steps 0, 1, 2, 3 are completed (first 4 stages)
+    if (lesson?.id === 1 && currentStep === 3 && isValidated && !session?.user && !isAuthLoading) {
+      // Small delay to let the success toast show first
+      setTimeout(() => setShowAuthModal(true), 1000);
     }
   };
 
@@ -236,6 +260,12 @@ function LessonLayoutInner({ lesson }: LessonLayoutProps) {
 
   const nextStep = () => {
     if (lesson && currentStep < lesson.steps.length - 1) {
+      // For lesson 1, require authentication after step 3 before allowing progression
+      if (lesson.id === 1 && currentStep === 3 && !session?.user && !isAuthLoading) {
+        setShowAuthModal(true);
+        return;
+      }
+
       setIsTransitioning(true);
       setTimeout(() => {
         setCurrentStep(currentStep + 1);
@@ -1271,6 +1301,20 @@ function LessonLayoutInner({ lesson }: LessonLayoutProps) {
             </div>
           </div>
         )}
+
+        {/* GitHub Authentication Modal */}
+        <GitHubAuthModal
+          isOpen={showAuthModal}
+          onClose={() => setShowAuthModal(false)}
+          onAuthSuccess={() => {
+            setShowAuthModal(false);
+            addToast({
+              type: 'success',
+              title: '🔐 Authentication Successful!',
+              message: 'You can now continue with advanced lessons and AI generation.',
+            });
+          }}
+        />
 
         {/* Confetti */}
         {showCompletionModal && (

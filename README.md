@@ -148,7 +148,7 @@ npm run test          # Run unit tests with Vitest
 npm run typecheck     # TypeScript type checking
 npm run format        # Format code with Prettier
 
-# Storage (optional)
+# Storage (needed to generate images)
 npm run storage:start # Start local MinIO server for S3-compatible storage
 ```
 

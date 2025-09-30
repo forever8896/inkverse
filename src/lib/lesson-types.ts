@@ -13,6 +13,7 @@ export interface LessonStep {
   hint?: string;
   validation?: ValidationRule[];
   image?: string; // Optional image URL or import for this step
+  requiresAuth?: boolean; // Whether this step requires authentication
 }
 
 export interface Lesson {

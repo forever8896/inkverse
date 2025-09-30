@@ -241,6 +241,7 @@ export default function CreatureColorPicker({
           border: 2px solid #ffffff;
           cursor: pointer;
           box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+          margin-top: -6px; /* Center the thumb: (thumb_height - track_height) / 2 = (24 - 12) / 2 = 6px */
         }
 
         input[type='range']::-moz-range-track {
