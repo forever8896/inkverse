@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GenerationJob, GenerationJobData } from '@/lib/generation-job';
 import { JobProcessor } from '@/lib/job-processor';
+import { S3Service } from '@/services/s3-service';
 import { auth } from '@/lib/auth';
 
 export interface MonsterStatusResponse {
@@ -34,7 +35,7 @@ export async function GET(
     }
 
     // Find the job
-    const job = await GenerationJob.findById(jobId);
+    let job = await GenerationJob.findById(jobId);
     if (!job) {
       return NextResponse.json(
         { success: false, error: 'Job not found' },
@@ -80,6 +81,23 @@ export async function GET(
     console.log(`🔄 [API] ========================================`);
 
     const jobProcessor = JobProcessor.getInstance();
+    const s3Service = S3Service.getInstance();
+
+    if (job.status === 'waiting_on_storage') {
+      const storageCheck = await s3Service.checkBucketAccessibility();
+      if (storageCheck.ok) {
+        console.log(`🧰 [API] Storage reachable again - moving job ${job.id} back to pending.`);
+        await job.update({
+          status: 'pending',
+          userMessage: 'Storage back online. Restarting generation...',
+          lastError: undefined,
+        });
+        job = (await GenerationJob.findById(jobId))!;
+      } else {
+        console.log(`🧰 [API] Storage still unreachable for job ${job.id}: ${storageCheck.error}`);
+        retryInSeconds = 15;
+      }
+    }
 
     // Check if job is stuck in retrying state (processor died/timed out)
     if (
@@ -88,13 +106,14 @@ export async function GET(
     ) {
       const timeSinceUpdate =
         (Date.now() - new Date(job.updatedAt).getTime()) / 1000;
-      const TIMEOUT_SECONDS = 300; // 5 minutes
+      const suggestedDelay = job.lastError?.suggestedRetryDelay ?? 30;
+      const TIMEOUT_SECONDS = Math.max(suggestedDelay * 2, 120); // At least 2 minutes, scaled by error delay
 
       console.log(`⏱️  [API] Job in retrying state - checking timeout...`);
       console.log(
         `⏱️  [API] Time since last update: ${Math.floor(timeSinceUpdate)}s`
       );
-      console.log(`⏱️  [API] Timeout threshold: ${TIMEOUT_SECONDS}s`);
+      console.log(`⏱️  [API] Timeout threshold: ${TIMEOUT_SECONDS}s (suggested delay: ${suggestedDelay}s)`);
 
       if (timeSinceUpdate > TIMEOUT_SECONDS) {
         // Job stuck in retrying state - mark as failed so it can be retried
@@ -200,7 +219,10 @@ export async function GET(
       console.log(`🎉 [API] → Total cost: $${job.totalCost}`);
 
       // Check if completed job is missing files (due to storage issues)
-      if (!job.imageUrl || !job.glbUrl) {
+      if (
+        job.generationType === 'full' &&
+        (!job.imageUrl || !job.glbUrl)
+      ) {
         console.log(
           `⚠️ [API] COMPLETED job has missing files - attempting restart...`
         );

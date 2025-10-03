@@ -34,7 +34,7 @@ export function useMonsterGeneration() {
   }, [store]);
 
   const handleAuthenticationError = useCallback(() => {
-    router.push('/auth-test');
+    router.push('/login');
   }, [router]);
 
   // Enhanced fetch with auth error handling

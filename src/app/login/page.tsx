@@ -1,21 +1,44 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from '@/lib/auth-client';
 import GitHubAuthModal from '@/components/GitHubAuthModal';
 
 export default function LoginPage() {
   const [isModalOpen, setIsModalOpen] = useState(true);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { data: session } = useSession();
 
-  // If already logged in, redirect to home
+  const redirectTarget = useMemo(() => {
+    const redirectParam = searchParams?.get('redirect');
+
+    if (!redirectParam) {
+      return '/';
+    }
+
+    if (!redirectParam.startsWith('/') || redirectParam.startsWith('//')) {
+      return '/';
+    }
+
+    if (redirectParam === '/login') {
+      return '/';
+    }
+
+    return redirectParam;
+  }, [searchParams]);
+
+  const goToRedirectTarget = useCallback(() => {
+    router.push(redirectTarget);
+  }, [router, redirectTarget]);
+
+  // If already logged in, redirect to requested destination
   useEffect(() => {
     if (session?.user) {
-      router.push('/');
+      goToRedirectTarget();
     }
-  }, [session, router]);
+  }, [session, goToRedirectTarget]);
 
   const handleClose = () => {
     setIsModalOpen(false);
@@ -23,7 +46,7 @@ export default function LoginPage() {
   };
 
   const handleAuthSuccess = () => {
-    router.push('/');
+    goToRedirectTarget();
   };
 
   return (

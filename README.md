@@ -152,6 +152,16 @@ npm run format        # Format code with Prettier
 npm run storage:start # Start local MinIO server for S3-compatible storage
 ```
 
+## 🧠 AI Generation Pipeline Safeguards
+
+The monster pipeline runs in three stages—prompt → OpenAI image → fal.ai 3D model—with every output persisted to S3 so we never redo completed work. When the status endpoint is polled the API starts background processing and supervises retryable failures.
+
+- **OpenAI failures:** Rate limits, transient network errors, and 5xx responses retry automatically with staged delays (30s baseline, up to five attempts). Content-policy rejections stop immediately so creators can adjust their prompt, while invalid API keys or exhausted credits are marked non-retryable and surface clear operator messages.
+- **S3 availability:** Upload/download issues—including a missing local MinIO instance—raise `s3_upload_error`, attempt up to five retries with spacing, and block downstream steps so we do not pay for 3D conversion without storage.
+- **fal.ai failures:** Busy queues and network hiccups retry with longer delays (60–120s, up to ten attempts). Invalid credentials or depleted credits halt the job, prompting human intervention instead of looping.
+
+Each retry stores structured metadata (`retryCount`, `lastRetryAt`, `suggestedRetryDelay`), and the status endpoint now honors those delays so we never tight-loop expensive generations. A safety watchdog only resets stuck jobs after twice the planned delay (minimum two minutes) to recover from crashed workers without spamming providers.
+
 ## 🏗️ Architecture Overview
 
 ### Deployment

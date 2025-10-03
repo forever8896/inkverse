@@ -8,7 +8,8 @@ export interface GenerationJobData {
   prompt: string;
   style: 'cute' | 'fierce' | 'mysterious' | 'playful' | 'cosmic';
   stage: 'egg' | 'young' | 'adult';
-  status: 'pending' | 'generating_image' | 'converting_3d' | 'completed' | 'failed';
+  generationType: 'full' | 'image_only';
+  status: 'pending' | 'generating_image' | 'converting_3d' | 'completed' | 'failed' | 'waiting_on_storage';
   progress: number;
   errorMessage?: string;
   imageS3Key?: string;
@@ -34,6 +35,7 @@ export const statusMessages = {
   converting_3d: '🏗️ Building your monster in 3D...',
   completed: '✨ Your monster is ready!',
   failed: '💥 Something went wrong...',
+  waiting_on_storage: '🧰 Waiting for storage to come online...',
 };
 
 export const statusEmojis = {
@@ -42,6 +44,7 @@ export const statusEmojis = {
   converting_3d: '🏗️',
   completed: '✨',
   failed: '💥',
+  waiting_on_storage: '🧰',
 };
 
 export const progressSteps = [

@@ -4,7 +4,7 @@
  * Supports resilient error handling and retry logic
  */
 
-import { GenerationJob, ErrorType } from './generation-job';
+import { GenerationJob, ErrorType, ERROR_HANDLERS, JobError } from './generation-job';
 import { ProductionPipelineOrchestrator, GenerationResult } from '../services/production-pipeline-orchestrator';
 import { S3Service } from '../services/s3-service';
 import * as path from 'path';
@@ -147,6 +147,43 @@ export class JobProcessor {
     console.log(`🎨 [JobProcessor] ========================================`);
 
     try {
+      // Ensure storage is reachable before we spend tokens
+      const storageCheck = await this.s3Service.checkBucketAccessibility();
+      if (!storageCheck.ok) {
+        const errorConfig = ERROR_HANDLERS.s3_storage_unavailable;
+        const waitingError: JobError = {
+          ...errorConfig,
+          technicalMessage: storageCheck.error || 'Storage service unreachable',
+          currentRetries: job.retryCount || 0,
+          lastRetryAt: new Date(),
+        };
+
+        const userMessage = process.env.S3_ENDPOINT
+          ? 'Local storage is offline. Start MinIO (npm run storage:start) and retry.'
+          : 'S3 storage is unreachable. Check network/firewall rules and retry.';
+
+        console.warn(`⚠️ [JobProcessor] Storage check failed for job ${job.id}: ${waitingError.technicalMessage}`);
+
+        await job.update({
+          status: 'waiting_on_storage',
+          progress: 0,
+          userMessage,
+          lastError: waitingError,
+        });
+
+        this.logStructured('warn', 'image', job.id, 'Storage unavailable, job paused', {
+          provider: 'S3',
+          userId: job.userId,
+          message: waitingError.technicalMessage,
+        });
+
+        return {
+          success: false,
+          completed: false,
+          shouldRetry: false,
+        };
+      }
+
       // Update progress to indicate we're starting
       console.log(`💾 [JobProcessor] Updating job status to 'generating_image'...`);
       await job.update({
@@ -254,6 +291,27 @@ export class JobProcessor {
         };
       }
 
+      if (job.generationType === 'image_only') {
+        console.log(`🖼️ [JobProcessor] Image-only job detected. Skipping 3D conversion.`);
+
+        await job.complete(result.totalCost);
+        await job.update({
+          userMessage: '🎉 Image generated! 3D conversion skipped as requested.'
+        });
+
+        this.logStructured('info', 'image', job.id, 'Image-only job completed', {
+          userId: job.userId,
+          imageS3Key: job.imageS3Key,
+          totalCost: result.totalCost
+        });
+
+        return {
+          success: true,
+          completed: true,
+          shouldRetry: false
+        };
+      }
+
       await job.update({
         totalCost: result.totalCost,
         userMessage: '✅ Image generated! Now creating your 3D model...'
@@ -283,6 +341,15 @@ export class JobProcessor {
    * Process 3D conversion stage
    */
   private async process3DConversion(job: GenerationJob): Promise<ProcessingResult> {
+    if (job.generationType === 'image_only') {
+      console.log(`⚙️  [JobProcessor] Skipping 3D conversion for image-only job ${job.id}`);
+      return {
+        success: true,
+        completed: true,
+        shouldRetry: false
+      };
+    }
+
     console.log(`🎯 [JobProcessor] ========================================`);
     console.log(`🎯 [JobProcessor] PROCESSING 3D CONVERSION`);
     console.log(`🎯 [JobProcessor] Job ID: ${job.id}`);
@@ -460,6 +527,20 @@ export class JobProcessor {
     // If job has failed permanently and can't retry, don't process
     if ((job.status === 'image_generation_failed' || job.status === 'conversion_failed') && !job.canRetry()) {
       return null;
+    }
+
+    // Image-only jobs never run the 3D pipeline
+    if (job.generationType === 'image_only') {
+      if (job.imageS3Key) {
+        return null;
+      }
+
+      // Retry image generation if needed
+      if (job.status === 'image_generation_failed' && job.canRetry()) {
+        return 'image';
+      }
+
+      return 'image';
     }
 
     // If we have a 3D model, job is already complete

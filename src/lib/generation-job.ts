@@ -16,6 +16,20 @@ export const ERROR_HANDLERS: Record<ErrorType, Omit<JobError, 'currentRetries' |
     suggestedRetryDelay: 30,
     maxRetries: 5
   },
+  openai_invalid_api_key: {
+    type: 'openai_invalid_api_key',
+    userMessage: 'We cannot authenticate with OpenAI right now. Please contact an administrator.',
+    retryable: false,
+    suggestedRetryDelay: 0,
+    maxRetries: 0
+  },
+  openai_insufficient_quota: {
+    type: 'openai_insufficient_quota',
+    userMessage: 'OpenAI credits are exhausted. Please top up the account before retrying.',
+    retryable: false,
+    suggestedRetryDelay: 0,
+    maxRetries: 0
+  },
   openai_content_policy: {
     type: 'openai_content_policy',
     userMessage: "Your monster description might need tweaking. Try making it more family-friendly and submit again.",
@@ -43,6 +57,20 @@ export const ERROR_HANDLERS: Record<ErrorType, Omit<JobError, 'currentRetries' |
     retryable: true,
     suggestedRetryDelay: 120,
     maxRetries: 10
+  },
+  fal_invalid_api_key: {
+    type: 'fal_invalid_api_key',
+    userMessage: 'We cannot authenticate with the 3D service. Please check the fal.ai key.',
+    retryable: false,
+    suggestedRetryDelay: 0,
+    maxRetries: 0
+  },
+  fal_insufficient_quota: {
+    type: 'fal_insufficient_quota',
+    userMessage: 'fal.ai credits are exhausted. Please top up the account before retrying.',
+    retryable: false,
+    suggestedRetryDelay: 0,
+    maxRetries: 0
   },
   fal_network_timeout: {
     type: 'fal_network_timeout',
@@ -72,6 +100,13 @@ export const ERROR_HANDLERS: Record<ErrorType, Omit<JobError, 'currentRetries' |
     suggestedRetryDelay: 10,
     maxRetries: 5
   },
+  s3_storage_unavailable: {
+    type: 's3_storage_unavailable',
+    userMessage: 'Storage is unreachable right now. Verify your S3/MinIO service before retrying.',
+    retryable: false,
+    suggestedRetryDelay: 0,
+    maxRetries: 0
+  },
   unknown: {
     type: 'unknown',
     userMessage: "Something unexpected happened. We're looking into it - please try again in a few minutes.",
@@ -83,6 +118,7 @@ export const ERROR_HANDLERS: Record<ErrorType, Omit<JobError, 'currentRetries' |
 
 export type MonsterStyle = 'cute' | 'fierce' | 'mysterious' | 'playful' | 'cosmic';
 export type MonsterStage = 'egg' | 'young' | 'adult';
+export type GenerationType = 'full' | 'image_only';
 export type GenerationStatus = 
   | 'pending' 
   | 'generating_image' 
@@ -92,18 +128,24 @@ export type GenerationStatus =
   | 'conversion_failed'
   | 'conversion_retrying'
   | 'completed' 
-  | 'failed_permanent';
+  | 'failed_permanent'
+  | 'waiting_on_storage';
 
 export type ErrorType = 
   | 'openai_rate_limit'
+  | 'openai_invalid_api_key'
+  | 'openai_insufficient_quota'
   | 'openai_content_policy' 
   | 'openai_network_timeout'
   | 'openai_api_error'
   | 'fal_overloaded'
+  | 'fal_invalid_api_key'
+  | 'fal_insufficient_quota'
   | 'fal_network_timeout' 
   | 'fal_api_error'
   | 'database_error'
   | 's3_upload_error'
+  | 's3_storage_unavailable'
   | 'unknown';
 
 export interface JobError {
@@ -123,6 +165,7 @@ export interface GenerationJobData {
   prompt: string;
   style: MonsterStyle;
   stage: MonsterStage;
+  generationType: GenerationType;
   status: GenerationStatus;
   progress: number;
   errorMessage?: string;
@@ -152,6 +195,7 @@ export interface CreateJobParams {
   prompt: string;
   style: MonsterStyle;
   stage: MonsterStage;
+  generationType: GenerationType;
 }
 
 export interface UpdateJobParams {
@@ -167,6 +211,7 @@ export interface UpdateJobParams {
   retryCount?: number;
   lastError?: JobError;
   completedAt?: Date;
+  generationType?: GenerationType;
   // Token tracking fields
   openaiTextTokens?: number;
   openaiImageTokens?: number;
@@ -229,6 +274,7 @@ export class GenerationJob {
   get prompt(): string { return this.data.prompt; }
   get style(): MonsterStyle { return this.data.style; }
   get stage(): MonsterStage { return this.data.stage; }
+  get generationType(): GenerationType { return this.data.generationType; }
   get status(): GenerationStatus { return this.data.status; }
   get progress(): number { return this.data.progress; }
   get errorMessage(): string | undefined { return this.data.errorMessage; }
@@ -254,8 +300,17 @@ export class GenerationJob {
     try {
       const result = await pool.query(`
         INSERT INTO monster_generations (
-          id, user_id, prompt, style, stage, status, progress, total_cost, retry_count
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+          id,
+          user_id,
+          prompt,
+          style,
+          stage,
+          generation_type,
+          status,
+          progress,
+          total_cost,
+          retry_count
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         RETURNING *
       `, [
         jobId,
@@ -263,6 +318,7 @@ export class GenerationJob {
         params.prompt,
         params.style,
         params.stage,
+        params.generationType,
         'pending',
         0,
         0.00,
@@ -278,6 +334,7 @@ export class GenerationJob {
         prompt: row.prompt,
         style: row.style,
         stage: row.stage,
+        generationType: row.generation_type,
         status: row.status,
         progress: row.progress,
         errorMessage: row.error_message,
@@ -330,6 +387,7 @@ export class GenerationJob {
         prompt: row.prompt,
         style: row.style,
         stage: row.stage,
+        generationType: row.generation_type,
         status: row.status,
         progress: row.progress,
         errorMessage: row.error_message,
@@ -384,6 +442,7 @@ export class GenerationJob {
         prompt: row.prompt,
         style: row.style,
         stage: row.stage,
+        generationType: row.generation_type,
         status: row.status,
         progress: row.progress,
         errorMessage: row.error_message,
@@ -472,6 +531,12 @@ export class GenerationJob {
         updates.push(`glb_url = $${paramIndex++}`);
         values.push(params.glbUrl);
         this.data.glbUrl = params.glbUrl;
+      }
+
+      if (params.generationType !== undefined) {
+        updates.push(`generation_type = $${paramIndex++}`);
+        values.push(params.generationType);
+        this.data.generationType = params.generationType;
       }
 
       if (params.totalCost !== undefined) {
@@ -698,9 +763,16 @@ export class GenerationJob {
     console.log(`⚠️  [GenerationJob] Current Retry Count: ${this.data.retryCount || 0}`);
     console.log(`⚠️  [GenerationJob] ========================================`);
     
-    const errorConfig = ERROR_HANDLERS[errorType];
+    let resolvedType: ErrorType = errorType;
+    let errorConfig = ERROR_HANDLERS[resolvedType];
+
+    if (!errorConfig) {
+      console.warn(`⚠️  [GenerationJob] Unknown error type '${errorType}' - defaulting to 'unknown' handler.`);
+      resolvedType = 'unknown';
+      errorConfig = ERROR_HANDLERS[resolvedType];
+    }
     const currentRetries = this.data.retryCount || 0;
-    
+
     console.log(`🔍 [GenerationJob] Error config:`);
     console.log(`🔍 [GenerationJob]   - Retryable: ${errorConfig.retryable}`);
     console.log(`🔍 [GenerationJob]   - Max retries: ${errorConfig.maxRetries}`);
@@ -722,8 +794,8 @@ export class GenerationJob {
     if (shouldRetry) {
       // Update status to retrying
       const retryStatus = this.data.status.includes('image') ? 'image_generation_retrying' : 'conversion_retrying';
-      const userMessage = this.getProgressiveErrorMessage(errorType, currentRetries);
-      
+      const userMessage = this.getProgressiveErrorMessage(resolvedType, currentRetries);
+
       console.log(`🔄 [GenerationJob] → Setting status to: ${retryStatus}`);
       console.log(`🔄 [GenerationJob] → User message: "${userMessage}"`);
       console.log(`🔄 [GenerationJob] → Retry count: ${currentRetries + 1}`);
@@ -735,12 +807,12 @@ export class GenerationJob {
         lastError: error
       });
 
-      console.log(`✅ [GenerationJob] ${this.data.id} - Retry ${currentRetries + 1}/${errorConfig.maxRetries} for ${errorType}`);
+      console.log(`✅ [GenerationJob] ${this.data.id} - Retry ${currentRetries + 1}/${errorConfig.maxRetries} for ${resolvedType}`);
       return true; // Retry
     } else {
       // Mark as permanently failed
       const failedStatus = this.data.status.includes('image') ? 'image_generation_failed' : 'conversion_failed';
-      const userMessage = this.getFinalErrorMessage(errorType);
+      const userMessage = this.getFinalErrorMessage(resolvedType);
       
       console.log(`❌ [GenerationJob] → Permanently failed - no more retries`);
       console.log(`❌ [GenerationJob] → Setting status to: ${failedStatus}`);
@@ -753,7 +825,7 @@ export class GenerationJob {
         lastError: error
       });
 
-      console.error(`❌ [GenerationJob] ${this.data.id} - Permanently failed: ${errorType} after ${currentRetries} retries`);
+      console.error(`❌ [GenerationJob] ${this.data.id} - Permanently failed: ${resolvedType} after ${currentRetries} retries`);
       return false; // Don't retry
     }
   }
@@ -762,7 +834,7 @@ export class GenerationJob {
    * Get progressive error message based on retry attempt
    */
   private getProgressiveErrorMessage(errorType: ErrorType, retryCount: number): string {
-    const config = ERROR_HANDLERS[errorType];
+    const config = ERROR_HANDLERS[errorType] || ERROR_HANDLERS.unknown;
     const isFirstRetry = retryCount === 0;
     const isLastRetry = retryCount >= config.maxRetries - 1;
 
@@ -787,6 +859,8 @@ export class GenerationJob {
         "Still having connection issues. Trying again...",
         "Network seems unstable. This may take a few more minutes."
       ],
+      openai_invalid_api_key: [config.userMessage],
+      openai_insufficient_quota: [config.userMessage],
       fal_network_timeout: [
         config.userMessage,
         "3D conversion is still processing. These can take up to 5 minutes during peak times.",
@@ -794,9 +868,12 @@ export class GenerationJob {
       ],
       openai_api_error: [config.userMessage],
       openai_content_policy: [config.userMessage],
+      fal_invalid_api_key: [config.userMessage],
+      fal_insufficient_quota: [config.userMessage],
       fal_api_error: [config.userMessage],
       database_error: [config.userMessage],
       s3_upload_error: [config.userMessage],
+      s3_storage_unavailable: [config.userMessage],
       unknown: [config.userMessage]
     };
 
@@ -811,14 +888,19 @@ export class GenerationJob {
   private getFinalErrorMessage(errorType: ErrorType): string {
     const finalMessages: Record<ErrorType, string> = {
       openai_rate_limit: "Our image generator is experiencing very high demand. Please try creating a different monster or check back in 10 minutes.",
+      openai_invalid_api_key: "OpenAI credentials are invalid. Please contact support to refresh the API key.",
+      openai_insufficient_quota: "OpenAI credits are depleted. Please top up the account and try again.",
       openai_content_policy: "Your monster description needs to be more family-friendly. Please try again with different wording.",
       openai_network_timeout: "We're having persistent connection issues. Please try again in a few minutes.",
       openai_api_error: "There's an ongoing issue with our image service. Please try again later.",
       fal_overloaded: "Our 3D service is experiencing extended high demand. Please bookmark this page and check back in 15-20 minutes.",
+      fal_invalid_api_key: "The fal.ai credentials are invalid. Please contact support to refresh the API key.",
+      fal_insufficient_quota: "fal.ai credits are depleted. Please top up the account and try again.",
       fal_network_timeout: "The 3D conversion is taking too long. Please try generating a simpler monster design.",
       fal_api_error: "Our 3D service provider is temporarily unavailable. Please try again later.",
       database_error: "We're having trouble saving your progress. Please contact support if this continues.",
       s3_upload_error: "Unable to store your files. Please try again.",
+      s3_storage_unavailable: 'Cannot reach storage. Please start MinIO or restore S3 connectivity before retrying.',
       unknown: "Something unexpected went wrong. Please try again or contact support if this continues."
     };
 
@@ -831,7 +913,9 @@ export class GenerationJob {
   canRetry(): boolean {
     const retryableStatuses: GenerationStatus[] = [
       'image_generation_failed',
-      'conversion_failed'
+      'conversion_failed',
+      'image_generation_retrying',
+      'conversion_retrying'
     ];
 
     if (!retryableStatuses.includes(this.data.status)) {
@@ -887,6 +971,7 @@ export class GenerationJob {
         prompt: row.prompt,
         style: row.style,
         stage: row.stage,
+        generationType: row.generation_type,
         status: row.status,
         progress: row.progress,
         errorMessage: row.error_message,
@@ -990,6 +1075,7 @@ export class GenerationJob {
       prompt: this.data.prompt,
       style: this.data.style,
       stage: this.data.stage,
+      generationType: this.data.generationType,
       status: this.data.status,
       progress: this.data.progress,
       errorMessage: this.data.errorMessage,
@@ -1027,6 +1113,7 @@ export class GenerationJob {
       const result = await pool.query(`
         SELECT * FROM monster_generations
         WHERE status IN ('conversion_failed', 'conversion_retrying')
+          AND generation_type = 'full'
           AND image_s3_key IS NOT NULL
           AND glb_s3_key IS NULL
           AND retry_count < 10
@@ -1040,6 +1127,7 @@ export class GenerationJob {
         prompt: row.prompt,
         style: row.style,
         stage: row.stage,
+        generationType: row.generation_type,
         status: row.status,
         progress: row.progress,
         errorMessage: row.error_message,

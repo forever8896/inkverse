@@ -1,6 +1,7 @@
 -- Custom enum types for monster generations
 CREATE TYPE monster_style AS ENUM ('cute', 'fierce', 'mysterious', 'playful', 'cosmic');
 CREATE TYPE monster_stage AS ENUM ('egg', 'young', 'adult');
+CREATE TYPE generation_type AS ENUM ('full', 'image_only');
 CREATE TYPE generation_status AS ENUM (
     'pending',
     'generating_image',
@@ -11,7 +12,8 @@ CREATE TYPE generation_status AS ENUM (
     'image_generation_retrying',
     'conversion_failed',
     'conversion_retrying',
-    'failed_permanent'
+    'failed_permanent',
+    'waiting_on_storage'
 );
 
 -- Trigger function to automatically update updated_at timestamp
@@ -37,6 +39,7 @@ CREATE TABLE monster_generations (
     prompt TEXT NOT NULL,
     style monster_style NOT NULL,
     stage monster_stage NOT NULL,
+    generation_type generation_type NOT NULL DEFAULT 'full',
     status generation_status NOT NULL DEFAULT 'pending',
     progress INTEGER NOT NULL DEFAULT 0,
     error_message TEXT,

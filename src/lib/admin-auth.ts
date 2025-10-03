@@ -40,7 +40,7 @@ export async function isUserAdmin(userId: string): Promise<boolean> {
 
 /**
  * Require admin access in a server component or page
- * Redirects to home page if user is not authenticated or not an admin
+ * Redirects unauthenticated users to the login page and non-admins to home
  *
  * @example
  * ```typescript
@@ -50,12 +50,12 @@ export async function isUserAdmin(userId: string): Promise<boolean> {
  * }
  * ```
  */
-export async function requireAdmin(): Promise<void> {
+export async function requireAdmin(redirectPath: string = '/admin'): Promise<void> {
   const { getServerSession } = await import('./auth-server');
   const session = await getServerSession();
 
   if (!session?.user) {
-    redirect('/');
+    redirect(`/login?redirect=${encodeURIComponent(redirectPath)}`);
   }
 
   const isAdmin = await isUserAdmin(session.user.id);

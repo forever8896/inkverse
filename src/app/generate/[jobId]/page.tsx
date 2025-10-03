@@ -7,13 +7,16 @@ import { useParams } from 'next/navigation';
 import Image from 'next/image';
 import MonsterViewer from '@/components/MonsterViewer';
 
+type GenerationType = 'full' | 'image_only';
+
 interface GenerationJobData {
   id: string;
   userId: string;
   prompt: string;
   style: 'cute' | 'fierce' | 'mysterious' | 'playful' | 'cosmic';
   stage: 'egg' | 'young' | 'adult';
-  status: 'pending' | 'generating_image' | 'image_generation_failed' | 'image_generation_retrying' | 'converting_3d' | 'conversion_failed' | 'conversion_retrying' | 'completed' | 'failed' | 'failed_permanent';
+  generationType: GenerationType;
+  status: 'pending' | 'generating_image' | 'image_generation_failed' | 'image_generation_retrying' | 'converting_3d' | 'conversion_failed' | 'conversion_retrying' | 'completed' | 'failed' | 'failed_permanent' | 'waiting_on_storage';
   progress: number;
   errorMessage?: string;
   userMessage?: string;
@@ -41,6 +44,8 @@ interface GenerationJobData {
 interface MonsterStatusResponse {
   success: boolean;
   job?: GenerationJobData;
+  processing?: boolean;
+  retryInSeconds?: number;
   error?: string;
 }
 
@@ -55,6 +60,7 @@ const statusMessages = {
   completed: '✨ Your monster is ready!',
   failed: '💥 Something went wrong...',
   failed_permanent: '💥 Generation failed permanently...',
+  waiting_on_storage: '🧰 Waiting for storage to come online...',
 };
 
 const statusEmojis = {
@@ -68,14 +74,15 @@ const statusEmojis = {
   completed: '✨',
   failed: '💥',
   failed_permanent: '💥',
+  waiting_on_storage: '🧰',
 };
 
 const progressSteps = [
   { threshold: 0, label: 'Queuing creation request', emoji: '📋' },
   { threshold: 5, label: 'Starting AI image generation', emoji: '🎨' },
   { threshold: 40, label: 'Image generation complete', emoji: '🖼️' },
-  { threshold: 50, label: 'Beginning 3D conversion', emoji: '🔄' },
-  { threshold: 90, label: '3D model created', emoji: '🏗️' },
+  { threshold: 50, label: 'Beginning 3D conversion', emoji: '🔄', requires3D: true },
+  { threshold: 90, label: '3D model created', emoji: '🏗️', requires3D: true },
   { threshold: 100, label: 'Monster ready!', emoji: '🎉' },
 ];
 
@@ -201,9 +208,15 @@ function ProgressBar({ progress, status }: { progress: number; status: string })
   );
 }
 
-function ProgressSteps({ progress }: { progress: number }) {
-  const currentStep = progressSteps.findIndex((step, index) => {
-    const nextStep = progressSteps[index + 1];
+function ProgressSteps({ progress, generationType }: { progress: number; generationType?: GenerationType }) {
+  const isImageOnly = generationType === 'image_only';
+
+  const activeSteps = isImageOnly
+    ? progressSteps.filter(step => !step.requires3D)
+    : progressSteps;
+
+  const activeCurrent = activeSteps.find((step, index) => {
+    const nextStep = activeSteps[index + 1];
     return progress >= step.threshold && (!nextStep || progress < nextStep.threshold);
   });
 
@@ -211,8 +224,9 @@ function ProgressSteps({ progress }: { progress: number }) {
     <div className="w-full max-w-3xl mx-auto">
       <div className="space-y-4">
         {progressSteps.map((step, index) => {
-          const isCompleted = progress >= step.threshold;
-          const isCurrent = index === currentStep;
+          const isSkipped = Boolean(step.requires3D) && isImageOnly;
+          const isCompleted = !isSkipped && progress >= step.threshold;
+          const isCurrent = !isSkipped && activeCurrent === step;
           
           return (
             <motion.div
@@ -221,7 +235,9 @@ function ProgressSteps({ progress }: { progress: number }) {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: index * 0.1 }}
               className={`flex items-center p-4 rounded-xl border transition-all duration-500 ${
-                isCompleted
+                isSkipped
+                  ? 'border-slate-700 bg-slate-900/40 text-slate-500'
+                  : isCompleted
                   ? 'border-green-500/50 bg-green-500/10 text-green-200'
                   : isCurrent
                   ? 'border-purple-400/50 bg-purple-500/10 text-purple-200'
@@ -233,11 +249,14 @@ function ProgressSteps({ progress }: { progress: number }) {
                 animate={isCurrent ? { scale: [1, 1.2, 1] } : {}}
                 transition={{ duration: 1.5, repeat: Infinity }}
               >
-                {isCompleted ? '✅' : step.emoji}
+                {isSkipped ? '⏭️' : isCompleted ? '✅' : step.emoji}
               </motion.div>
               
               <div className="flex-1">
                 <span className="font-medium">{step.label}</span>
+                {isSkipped && (
+                  <span className="ml-2 text-xs uppercase tracking-wide text-slate-400">Skipped</span>
+                )}
                 {isCurrent && (
                   <motion.div
                     initial={{ width: 0 }}
@@ -273,6 +292,7 @@ export default function GenerationProgressPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pollCount, setPollCount] = useState(0);
+  const [retrySeconds, setRetrySeconds] = useState<number | null>(null);
 
   const fetchJobStatus = useCallback(async () => {
     try {
@@ -281,7 +301,7 @@ export default function GenerationProgressPage() {
 
       if (!response.ok) {
         if (response.status === 401) {
-          router.push('/auth-test'); // Redirect to auth page
+          router.push('/login'); // Redirect to login page when session expired
           return;
         }
         throw new Error(data.error || 'Failed to fetch job status');
@@ -294,6 +314,11 @@ export default function GenerationProgressPage() {
       setJob(data.job);
       setError(null);
       setPollCount(prev => prev + 1);
+      if (typeof data.retryInSeconds === 'number') {
+        setRetrySeconds(Math.max(data.retryInSeconds, 0));
+      } else {
+        setRetrySeconds(null);
+      }
 
       // Stop polling if job is completed or failed
       if (data.job.status === 'completed' || data.job.status === 'failed') {
@@ -309,6 +334,18 @@ export default function GenerationProgressPage() {
       setLoading(false);
     }
   }, [jobId, router]);
+
+  useEffect(() => {
+    if (retrySeconds === null || retrySeconds <= 0) {
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setRetrySeconds(prev => (prev !== null ? Math.max(prev - 1, 0) : prev));
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [retrySeconds]);
 
   // Initial fetch and polling setup
   useEffect(() => {
@@ -393,6 +430,7 @@ export default function GenerationProgressPage() {
 
   const currentStatus = job?.status || 'pending';
   const currentProgress = job?.progress || 0;
+  const isImageOnly = job?.generationType === 'image_only';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900/20 to-cyan-900/20 relative overflow-hidden">
@@ -463,7 +501,7 @@ export default function GenerationProgressPage() {
             <h3 className="text-2xl font-bold text-white mb-6 text-center">
               Creation Steps
             </h3>
-            <ProgressSteps progress={currentProgress} />
+            <ProgressSteps progress={currentProgress} generationType={job?.generationType} />
           </div>
 
           {/* Monster Details */}
@@ -472,7 +510,7 @@ export default function GenerationProgressPage() {
               <h3 className="text-2xl font-bold text-white mb-6 text-center">
                 Your Monster Details
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <div className="text-center">
                   <div className="text-3xl mb-2">🎨</div>
                   <div className="font-semibold text-purple-300 capitalize">{job.style}</div>
@@ -489,6 +527,13 @@ export default function GenerationProgressPage() {
                     Poll #{pollCount}
                   </div>
                   <div className="text-sm text-slate-400">Updates</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl mb-2">🧪</div>
+                  <div className="font-semibold text-amber-300 capitalize">
+                    {job.generationType === 'image_only' ? 'Image Only' : 'Full Pipeline'}
+                  </div>
+                  <div className="text-sm text-slate-400">Generation Mode</div>
                 </div>
               </div>
             </div>
@@ -523,6 +568,33 @@ export default function GenerationProgressPage() {
                   )}
                 </div>
               )}
+              {retrySeconds !== null && (
+                <p className="text-sm text-yellow-200 mt-3">
+                  {retrySeconds > 0
+                    ? `Next retry in ${retrySeconds}s`
+                    : 'Retrying now...'}
+                </p>
+              )}
+            </motion.div>
+          )}
+
+          {currentStatus === 'waiting_on_storage' && job && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="bg-orange-500/10 border border-orange-500/30 rounded-2xl p-6"
+            >
+              <div className="flex items-center mb-4">
+                <div className="text-2xl mr-3">🧰</div>
+                <h3 className="text-lg font-semibold text-orange-200">
+                  Storage Unreachable
+                </h3>
+              </div>
+              <p className="text-orange-100">
+                {job.userMessage ||
+                  'We cannot reach the storage bucket right now. Start MinIO locally (npm run storage:start) or verify your S3 connectivity, then retry.'}
+              </p>
             </motion.div>
           )}
           </motion.div>
@@ -559,36 +631,43 @@ export default function GenerationProgressPage() {
                   >
                     📥 Download Image
                   </a>
+                  {isImageOnly && (
+                    <p className="text-sm text-slate-300">
+                      You selected image-only mode. No 3D model was generated for this monster.
+                    </p>
+                  )}
                 </div>
 
                 {/* Interactive 3D Model */}
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-xl font-semibold text-white">🏗️ Interactive 3D Model</h4>
-                    {job.glbUrl && (
-                      <a
-                        href={job.glbUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center px-4 py-2 bg-cyan-600 hover:bg-cyan-700 rounded-lg text-white font-medium transition-colors"
-                      >
-                        📥 Download GLB
-                      </a>
-                    )}
+                {!isImageOnly && (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-xl font-semibold text-white">🏗️ Interactive 3D Model</h4>
+                      {job.glbUrl && (
+                        <a
+                          href={job.glbUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center px-4 py-2 bg-cyan-600 hover:bg-cyan-700 rounded-lg text-white font-medium transition-colors"
+                        >
+                          📥 Download GLB
+                        </a>
+                      )}
+                    </div>
+                    
+                    <MonsterViewer 
+                      modelUrl={job.glbUrl}
+                      height="h-96"
+                      showControls={true}
+                      autoRotate={true}
+                      className="w-full"
+                    />
+                    
+                    <p className="text-slate-400 text-sm text-center">
+                      ✨ Drag to rotate • Scroll to zoom • Click controls to customize
+                    </p>
                   </div>
-                  
-                  <MonsterViewer 
-                    modelUrl={job.glbUrl}
-                    height="h-96"
-                    showControls={true}
-                    autoRotate={true}
-                    className="w-full"
-                  />
-                  
-                  <p className="text-slate-400 text-sm text-center">
-                    ✨ Drag to rotate • Scroll to zoom • Click controls to customize
-                  </p>
-                </div>
+                )}
               </div>
 
               {/* Action Buttons */}

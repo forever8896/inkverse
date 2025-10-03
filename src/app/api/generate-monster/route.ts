@@ -54,6 +54,7 @@ export interface GenerateMonsterRequest {
   // Keep existing for backward compatibility
   style: 'cute' | 'fierce' | 'mysterious' | 'playful' | 'cosmic';
   stage: 'egg' | 'young' | 'adult';
+  generationType?: 'full' | 'image_only';
 }
 
 export interface GenerateMonsterResponse {
@@ -144,6 +145,11 @@ export async function POST(request: NextRequest) {
       validationErrors.push('stage must be one of: egg, young, adult');
     }
 
+    const generationType = body.generationType ?? 'full';
+    if (!['full', 'image_only'].includes(generationType)) {
+      validationErrors.push('generationType must be one of: full, image_only');
+    }
+
     if (validationErrors.length > 0) {
       return NextResponse.json(
         { success: false, error: `Validation errors: ${validationErrors.join(', ')}` },
@@ -182,10 +188,12 @@ export async function POST(request: NextRequest) {
       prompt: aiPrompt,
       style: body.style,
       stage: body.stage,
+      generationType,
     });
 
     console.log(`✅ [API] Created generation job ${job.id} for user ${session.user.id}`);
     console.log(`✅ [API] Job status: ${job.status}`);
+    console.log(`✅ [API] Generation type: ${job.generationType}`);
     console.log(`✅ [API] Job progress: ${job.progress}%`);
     console.log(`✅ [API] Job will start processing when user polls status`);
 

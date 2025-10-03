@@ -4,12 +4,13 @@
  * Used ONLY by production pipeline - existing AI services remain unchanged
  */
 
-import { 
-  S3Client, 
-  PutObjectCommand, 
-  GetObjectCommand, 
+import {
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand,
   DeleteObjectCommand,
-  HeadObjectCommand
+  HeadObjectCommand,
+  HeadBucketCommand
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
@@ -148,6 +149,20 @@ export class S3Service {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown upload error',
       };
+    }
+  }
+
+  /**
+   * Lightweight connectivity check to ensure the bucket is reachable.
+   */
+  async checkBucketAccessibility(): Promise<{ ok: boolean; error?: string }> {
+    try {
+      await this.client.send(new HeadBucketCommand({ Bucket: this.bucket }));
+      return { ok: true };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown S3 connectivity error';
+      console.error(`[S3Service] Bucket accessibility check failed:`, error);
+      return { ok: false, error: message };
     }
   }
 
