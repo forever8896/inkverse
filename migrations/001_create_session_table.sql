@@ -13,7 +13,6 @@ CREATE TABLE session (
 );
 
 -- Indexes for session table
-CREATE INDEX idx_session_userId ON session("userId");
-CREATE INDEX idx_session_userid ON session("userId");
-CREATE INDEX idx_session_expiresat ON session("expiresAt");
+CREATE INDEX idx_session_user_id ON session("userId");
+CREATE INDEX idx_session_expires_at ON session("expiresAt");
 CREATE INDEX idx_session_token ON session(token);

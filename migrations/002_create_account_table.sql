@@ -17,6 +17,5 @@ CREATE TABLE account (
 );
 
 -- Indexes for account table
-CREATE INDEX idx_account_userId ON account("userId");
-CREATE INDEX idx_account_userid ON account("userId");
-CREATE INDEX idx_account_providerId_accountId ON account("providerId", "accountId");
+CREATE INDEX idx_account_user_id ON account("userId");
+CREATE INDEX idx_account_provider_id_account_id ON account("providerId", "accountId");
