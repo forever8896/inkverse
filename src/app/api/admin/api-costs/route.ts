@@ -28,9 +28,15 @@ export async function GET(request: NextRequest) {
       []
     );
 
+    // Convert cost_per_unit from string to number (PostgreSQL DECIMAL comes as string)
+    const costs = result.rows.map(row => ({
+      ...row,
+      cost_per_unit: parseFloat(row.cost_per_unit),
+    }));
+
     return NextResponse.json({
       success: true,
-      costs: result.rows,
+      costs,
     });
   } catch (error) {
     console.error('Error fetching API costs:', error);
@@ -117,9 +123,15 @@ export async function POST(request: NextRequest) {
       // Commit transaction
       await query('COMMIT', []);
 
+      // Convert cost_per_unit from string to number
+      const cost = {
+        ...result.rows[0],
+        cost_per_unit: parseFloat(result.rows[0].cost_per_unit),
+      };
+
       return NextResponse.json({
         success: true,
-        cost: result.rows[0],
+        cost,
       });
     } catch (error) {
       // Rollback transaction on error
