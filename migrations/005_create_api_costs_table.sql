@@ -1,3 +1,6 @@
+-- Enable btree_gist extension for EXCLUDE constraint
+CREATE EXTENSION IF NOT EXISTS btree_gist;
+
 -- API costs table for tracking provider pricing over time
 CREATE TABLE api_costs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

@@ -7,7 +7,10 @@ export const auth = betterAuth({
   database: new Pool({
     connectionString: process.env.POSTGRES_URL,
   }),
-  trustedOrigins: [process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3004'],
+  trustedOrigins: [
+    'http://localhost:3004',
+    ...(process.env.NEXT_PUBLIC_APP_URL ? [process.env.NEXT_PUBLIC_APP_URL] : [])
+  ],
   plugins: [
     admin({
       defaultRole: 'user',
@@ -16,7 +19,7 @@ export const auth = betterAuth({
       impersonationSessionDuration: 60 * 60, // 1 hour
     }),
   ],
-  // baseURL: process.env.NODE_ENV === 'production' ? 'https://your-domain.com' : 'http://localhost:3004',
+  baseURL: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3004',
   socialProviders: {
     github: {
       clientId: process.env.GITHUB_CLIENT_ID!,

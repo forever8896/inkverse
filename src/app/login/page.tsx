@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from '@/lib/auth-client';
 import GitHubAuthModal from '@/components/GitHubAuthModal';
 
-export default function LoginPage() {
+function LoginContent() {
   const [isModalOpen, setIsModalOpen] = useState(true);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -57,5 +57,13 @@ export default function LoginPage() {
         onAuthSuccess={handleAuthSuccess}
       />
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-slate-950" />}>
+      <LoginContent />
+    </Suspense>
   );
 }
