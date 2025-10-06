@@ -7,7 +7,7 @@ export const auth = betterAuth({
   database: new Pool({
     connectionString: process.env.POSTGRES_URL,
   }),
-  trustedOrigins: ['http://localhost:3001'],
+  trustedOrigins: [process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3004'],
   plugins: [
     admin({
       defaultRole: 'user',
