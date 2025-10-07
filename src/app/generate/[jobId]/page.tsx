@@ -7,6 +7,45 @@ import { useParams } from 'next/navigation';
 import Image from 'next/image';
 import MonsterViewer from '@/components/MonsterViewer';
 
+// Accordion component for prompt
+function PromptAccordion({ prompt }: { prompt: string }) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <div className="mt-4 max-w-2xl mx-auto">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full px-4 py-2 bg-slate-800/50 hover:bg-slate-800/70 border border-slate-700 rounded-lg text-slate-400 hover:text-slate-200 text-sm transition-all flex items-center justify-between"
+      >
+        <span>View Image Prompt</span>
+        <svg
+          className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="mt-2 p-4 bg-slate-900/50 border border-slate-700 rounded-lg text-slate-400 text-xs italic max-h-40 overflow-y-auto">
+              {prompt}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 type GenerationType = 'full' | 'image_only';
 
 interface GenerationJobData {
@@ -465,14 +504,7 @@ export default function GenerationProgressPage() {
           </motion.h1>
           
           {job && (
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.3 }}
-              className="text-xl text-slate-300 max-w-2xl mx-auto"
-            >
-              Creating: <span className="italic">"{job.prompt}"</span>
-            </motion.p>
+            <PromptAccordion prompt={job.prompt} />
           )}
         </motion.div>
 

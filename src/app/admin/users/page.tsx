@@ -141,9 +141,9 @@ export default function AdminUsers() {
             </div>
             <button
               type="submit"
-              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-medium transition-colors"
+              className="px-6 py-2 bg-cyan-600/20 hover:bg-cyan-600/40 border border-cyan-500/50 hover:border-cyan-400 text-cyan-300 hover:text-cyan-100 font-pixel text-[10px] uppercase transition-all hover:shadow-lg hover:shadow-cyan-500/20 rounded"
             >
-              Search
+              SEARCH
             </button>
             {searchQuery && (
               <button
@@ -153,9 +153,9 @@ export default function AdminUsers() {
                   setCurrentPage(1);
                   fetchUsers();
                 }}
-                className="px-4 py-2 bg-slate-600 hover:bg-slate-700 rounded-lg text-white font-medium transition-colors"
+                className="px-4 py-2 bg-slate-600/20 hover:bg-slate-600/40 border border-slate-500/50 hover:border-slate-400 text-slate-300 hover:text-slate-100 font-pixel text-[10px] uppercase transition-all hover:shadow-lg hover:shadow-slate-500/20 rounded"
               >
-                Clear
+                CLEAR
               </button>
             )}
           </form>
@@ -194,9 +194,9 @@ export default function AdminUsers() {
               <p className="text-red-300 mb-4">{error}</p>
               <button
                 onClick={fetchUsers}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-white font-medium transition-colors"
+                className="px-4 py-2 bg-orange-600/20 hover:bg-orange-600/40 border border-orange-500/50 hover:border-orange-400 text-orange-300 hover:text-orange-100 font-pixel text-[10px] uppercase transition-all hover:shadow-lg hover:shadow-orange-500/20 rounded"
               >
-                Retry
+                RETRY
               </button>
             </div>
           ) : users.length === 0 ? (
@@ -294,15 +294,15 @@ export default function AdminUsers() {
                           <div className="flex gap-2">
                             <Link
                               href={`/admin/users/${user.id}`}
-                              className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-white text-sm font-medium transition-colors"
+                              className="px-3 py-1 bg-cyan-600/20 hover:bg-cyan-600/40 border border-cyan-500/50 hover:border-cyan-400 text-cyan-300 hover:text-cyan-100 font-pixel text-[8px] uppercase transition-all hover:shadow-lg hover:shadow-cyan-500/20 rounded"
                             >
-                              View
+                              VIEW
                             </Link>
                             <Link
                               href={`/admin/jobs?userId=${user.id}`}
-                              className="px-3 py-1 bg-purple-600 hover:bg-purple-700 rounded text-white text-sm font-medium transition-colors"
+                              className="px-3 py-1 bg-purple-600/20 hover:bg-purple-600/40 border border-purple-500/50 hover:border-purple-400 text-purple-300 hover:text-purple-100 font-pixel text-[8px] uppercase transition-all hover:shadow-lg hover:shadow-purple-500/20 rounded"
                             >
-                              Jobs
+                              JOBS
                             </Link>
                           </div>
                         </td>
@@ -321,11 +321,11 @@ export default function AdminUsers() {
                 <button
                   onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                   disabled={currentPage === 1}
-                  className="px-4 py-2 bg-slate-600 hover:bg-slate-700 disabled:bg-slate-800 disabled:text-slate-500 rounded-lg text-white font-medium transition-colors"
+                  className="px-4 py-2 bg-slate-600/20 hover:bg-slate-600/40 border border-slate-500/50 hover:border-slate-400 text-slate-300 hover:text-slate-100 font-pixel text-[10px] uppercase transition-all hover:shadow-lg hover:shadow-slate-500/20 rounded disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Previous
+                  PREV
                 </button>
-                
+
                 <div className="flex gap-2">
                   {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                     const page = Math.max(1, Math.min(totalPages - 4, currentPage - 2)) + i;
@@ -333,10 +333,10 @@ export default function AdminUsers() {
                       <button
                         key={page}
                         onClick={() => setCurrentPage(page)}
-                        className={`px-3 py-2 rounded-lg font-medium transition-colors ${
+                        className={`px-3 py-2 rounded-lg font-pixel text-[10px] uppercase transition-all ${
                           currentPage === page
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-slate-600 hover:bg-slate-700 text-slate-300'
+                            ? 'bg-cyan-600/40 border border-cyan-400 text-cyan-100 shadow-lg shadow-cyan-500/20'
+                            : 'bg-slate-600/20 border border-slate-500/50 hover:border-slate-400 text-slate-300 hover:text-slate-100 hover:shadow-lg hover:shadow-slate-500/20'
                         }`}
                       >
                         {page}
@@ -348,9 +348,9 @@ export default function AdminUsers() {
                 <button
                   onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                   disabled={currentPage === totalPages}
-                  className="px-4 py-2 bg-slate-600 hover:bg-slate-700 disabled:bg-slate-800 disabled:text-slate-500 rounded-lg text-white font-medium transition-colors"
+                  className="px-4 py-2 bg-slate-600/20 hover:bg-slate-600/40 border border-slate-500/50 hover:border-slate-400 text-slate-300 hover:text-slate-100 font-pixel text-[10px] uppercase transition-all hover:shadow-lg hover:shadow-slate-500/20 rounded disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Next
+                  NEXT
                 </button>
               </div>
             </div>

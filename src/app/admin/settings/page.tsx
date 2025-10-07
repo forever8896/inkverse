@@ -105,7 +105,7 @@ export default function AdminSettings() {
           className="flex items-center justify-between mb-8"
         >
           <div>
-            <Link href="/admin" className="text-blue-400 hover:text-blue-300 mb-4 inline-block">
+            <Link href="/admin" className="text-purple-400 hover:text-purple-300 mb-4 inline-block">
               ← Back to Dashboard
             </Link>
             <h1 className="text-4xl font-bold text-white mb-2">⚙️ Admin Settings</h1>
@@ -114,9 +114,9 @@ export default function AdminSettings() {
           <button
             onClick={saveSettings}
             disabled={saving}
-            className="px-6 py-3 bg-green-600 hover:bg-green-700 disabled:bg-green-800 disabled:cursor-not-allowed rounded-lg text-white font-medium transition-colors"
+            className="px-6 py-3 bg-emerald-600/20 hover:bg-emerald-600/40 border border-emerald-500/50 hover:border-emerald-400 text-emerald-300 hover:text-emerald-100 font-pixel text-[10px] uppercase transition-all hover:shadow-lg hover:shadow-emerald-500/20 rounded disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {saving ? 'Saving...' : '💾 Save Settings'}
+            {saving ? 'SAVING...' : 'SAVE SETTINGS'}
           </button>
         </motion.div>
 
@@ -365,22 +365,9 @@ export default function AdminSettings() {
             <button
               onClick={saveSettings}
               disabled={saving}
-              className="px-8 py-3 bg-green-600 hover:bg-green-700 disabled:bg-green-800 disabled:cursor-not-allowed rounded-lg text-white font-medium transition-colors"
+              className="px-8 py-3 bg-emerald-600/20 hover:bg-emerald-600/40 border border-emerald-500/50 hover:border-emerald-400 text-emerald-300 hover:text-emerald-100 font-pixel text-[10px] uppercase transition-all hover:shadow-lg hover:shadow-emerald-500/20 rounded disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {saving ? (
-                <>
-                  <motion.div
-                    className="w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2 inline-block"
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                  />
-                  Saving Settings...
-                </>
-              ) : (
-                <>
-                  💾 Save All Settings
-                </>
-              )}
+              {saving ? 'SAVING...' : 'SAVE ALL SETTINGS'}
             </button>
           </motion.div>
         </div>

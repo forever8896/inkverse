@@ -186,9 +186,9 @@ export default function AdminSystem() {
             </label>
             <button
               onClick={fetchSystemHealth}
-              className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-white font-medium transition-colors"
+              className="px-4 py-2 bg-emerald-600/20 hover:bg-emerald-600/40 border border-emerald-500/50 hover:border-emerald-400 text-emerald-300 hover:text-emerald-100 font-pixel text-[10px] uppercase transition-all hover:shadow-lg hover:shadow-emerald-500/20 rounded"
             >
-              🔄 Refresh
+              REFRESH
             </button>
           </div>
         </motion.div>
@@ -204,9 +204,9 @@ export default function AdminSystem() {
             <p className="text-red-200 mb-4">{error}</p>
             <button
               onClick={fetchSystemHealth}
-              className="px-6 py-3 bg-red-600 hover:bg-red-700 rounded-lg text-white font-medium transition-colors"
+              className="px-6 py-3 bg-orange-600/20 hover:bg-orange-600/40 border border-orange-500/50 hover:border-orange-400 text-orange-300 hover:text-orange-100 font-pixel text-[10px] uppercase transition-all hover:shadow-lg hover:shadow-orange-500/20 rounded"
             >
-              Retry
+              RETRY
             </button>
           </motion.div>
         ) : health ? (
@@ -424,21 +424,21 @@ export default function AdminSystem() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Link
                   href="/admin/jobs?status=pending"
-                  className="flex items-center justify-center px-4 py-3 bg-yellow-600 hover:bg-yellow-700 rounded-lg text-white font-medium transition-colors"
+                  className="flex items-center justify-center px-4 py-3 bg-orange-600/20 hover:bg-orange-600/40 border border-orange-500/50 hover:border-orange-400 text-orange-300 hover:text-orange-100 font-pixel text-[10px] uppercase transition-all hover:shadow-lg hover:shadow-orange-500/20 rounded"
                 >
-                  📋 View Pending Jobs
+                  VIEW PENDING
                 </Link>
                 <Link
                   href="/admin/jobs?status=image_generation_failed"
-                  className="flex items-center justify-center px-4 py-3 bg-red-600 hover:bg-red-700 rounded-lg text-white font-medium transition-colors"
+                  className="flex items-center justify-center px-4 py-3 bg-red-600/20 hover:bg-red-600/40 border border-red-500/50 hover:border-red-400 text-red-300 hover:text-red-100 font-pixel text-[10px] uppercase transition-all hover:shadow-lg hover:shadow-red-500/20 rounded"
                 >
-                  ❌ View Failed Jobs
+                  VIEW FAILED
                 </Link>
                 <Link
                   href="/admin/users"
-                  className="flex items-center justify-center px-4 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-medium transition-colors"
+                  className="flex items-center justify-center px-4 py-3 bg-cyan-600/20 hover:bg-cyan-600/40 border border-cyan-500/50 hover:border-cyan-400 text-cyan-300 hover:text-cyan-100 font-pixel text-[10px] uppercase transition-all hover:shadow-lg hover:shadow-cyan-500/20 rounded"
                 >
-                  👥 Manage Users
+                  MANAGE USERS
                 </Link>
               </div>
             </motion.div>

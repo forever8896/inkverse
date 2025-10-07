@@ -200,6 +200,21 @@ Use emoji + colored badges for job/creature states:
 - NEVER proactively create documentation files (\*.md) or README files unless explicitly requested
 - Prioritize stability, security, and user experience improvements
 
+## 🚨 CRITICAL: GIT OPERATIONS ARE STRICTLY FORBIDDEN 🚨
+
+**NEVER, UNDER ANY CIRCUMSTANCES:**
+- Run `git commit` without explicit user authorization
+- Run `git push` without explicit user authorization
+- Run `git add` followed by commit/push operations
+- Proactively commit or push changes
+- Assume the user wants changes committed
+
+**ONLY commit/push when:**
+- The user explicitly says "commit this" or "push this"
+- The user explicitly authorizes git operations in their message
+
+**This is a hard rule with zero exceptions. Violating this rule is unacceptable.**
+
 ## CRITICAL AI PIPELINE TESTING RULES
 
 - **NEVER run AI generation tests without explicit user approval** - Each test costs ~$0.70 (OpenAI $0.40 + fal.ai $0.30)
