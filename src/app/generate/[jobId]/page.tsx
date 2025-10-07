@@ -632,25 +632,29 @@ export default function GenerationProgressPage() {
           </motion.div>
         )}
 
-          {/* Results Section */}
-          {currentStatus === 'completed' && job?.imageUrl && (
+          {/* Results Section - Show image as soon as available */}
+          {job?.imageUrl && (
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8 }}
-              className="bg-gradient-to-br from-green-500/10 to-purple-500/10 border border-green-500/30 rounded-2xl p-8"
+              className={`rounded-2xl p-8 ${
+                currentStatus === 'completed'
+                  ? 'bg-gradient-to-br from-green-500/10 to-purple-500/10 border border-green-500/30'
+                  : 'bg-gradient-to-br from-purple-500/10 to-cyan-500/10 border border-purple-500/30'
+              }`}
             >
               <h3 className="text-3xl font-bold text-white mb-6 text-center">
-                🎉 Your Monster is Ready!
+                {currentStatus === 'completed' ? '🎉 Your Monster is Ready!' : '✨ Image Generated!'}
               </h3>
-              
+
               <div className="space-y-8">
                 {/* Image Preview */}
                 <div className="space-y-4">
                   <h4 className="text-xl font-semibold text-white">🖼️ Generated Image</h4>
                   <div className="relative bg-slate-900/50 rounded-xl p-4 border border-slate-600">
-                    <img 
-                      src={job.imageUrl} 
+                    <img
+                      src={job.imageUrl}
                       alt="Your generated monster"
                       className="w-full h-auto rounded-lg"
                     />
@@ -668,33 +672,42 @@ export default function GenerationProgressPage() {
                       You selected image-only mode. No 3D model was generated for this monster.
                     </p>
                   )}
+                  {!isImageOnly && currentStatus !== 'completed' && (
+                    <p className="text-sm text-cyan-300 flex items-center gap-2">
+                      <motion.span
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                      >
+                        🏗️
+                      </motion.span>
+                      3D model is being generated...
+                    </p>
+                  )}
                 </div>
 
-                {/* Interactive 3D Model */}
-                {!isImageOnly && (
+                {/* Interactive 3D Model - Only show when completed */}
+                {!isImageOnly && currentStatus === 'completed' && job.glbUrl && (
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <h4 className="text-xl font-semibold text-white">🏗️ Interactive 3D Model</h4>
-                      {job.glbUrl && (
-                        <a
-                          href={job.glbUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center px-4 py-2 bg-cyan-600 hover:bg-cyan-700 rounded-lg text-white font-medium transition-colors"
-                        >
-                          📥 Download GLB
-                        </a>
-                      )}
+                      <a
+                        href={job.glbUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center px-4 py-2 bg-cyan-600 hover:bg-cyan-700 rounded-lg text-white font-medium transition-colors"
+                      >
+                        📥 Download GLB
+                      </a>
                     </div>
-                    
-                    <MonsterViewer 
+
+                    <MonsterViewer
                       modelUrl={job.glbUrl}
                       height="h-96"
                       showControls={true}
                       autoRotate={true}
                       className="w-full"
                     />
-                    
+
                     <p className="text-slate-400 text-sm text-center">
                       ✨ Drag to rotate • Scroll to zoom • Click controls to customize
                     </p>
@@ -702,21 +715,23 @@ export default function GenerationProgressPage() {
                 )}
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row gap-4 mt-8 justify-center">
-                <button
-                  onClick={() => router.push('/generate')}
-                  className="px-6 py-3 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 rounded-xl text-white font-semibold transition-all duration-200"
-                >
-                  🎭 Create Another Monster
-                </button>
-                <button
-                  onClick={() => router.push('/lab')}
-                  className="px-6 py-3 bg-slate-700 hover:bg-slate-600 rounded-xl text-white font-semibold transition-all duration-200"
-                >
-                  🏠 Back to Lab
-                </button>
-              </div>
+              {/* Action Buttons - Only show when fully completed */}
+              {currentStatus === 'completed' && (
+                <div className="flex flex-col sm:flex-row gap-4 mt-8 justify-center">
+                  <button
+                    onClick={() => router.push('/generate')}
+                    className="px-6 py-3 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 rounded-xl text-white font-semibold transition-all duration-200"
+                  >
+                    🎭 Create Another Monster
+                  </button>
+                  <button
+                    onClick={() => router.push('/lab')}
+                    className="px-6 py-3 bg-slate-700 hover:bg-slate-600 rounded-xl text-white font-semibold transition-all duration-200"
+                  >
+                    🏠 Back to Lab
+                  </button>
+                </div>
+              )}
             </motion.div>
           )}
 

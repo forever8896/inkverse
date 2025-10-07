@@ -33,26 +33,27 @@ function generatePromptFromStructuredData(
   const creatureDescription = `A cute, friendly Spore-like ${data.size} ${data.attitude} digital creature with ${eyeText}, ${data.bodyType} body type, ${data.texture} texture, ${data.colorScheme} colors, ${data.specialPower} powers, ${data.magicalAura} magical aura, ${flyText}, living in ${data.habitat}. Adorable, colorful, cartoon-like illustration suitable for educational content. The creature should look approachable and non-threatening, perfect for teaching programming concepts. High quality, detailed, vibrant colors.`;
 
   // Wrap with production instructions (matches production-openai-service.ts wrapper)
-  return `ISOLATED SUBJECT on COMPLETELY TRANSPARENT BACKGROUND. Product photography style - single creature floating in void with no environment.
-
-Generate a cute, lovable, friendly Spore-like digital creature for a learning game.
+  return `Generate a cute, lovable, friendly Spore-like digital creature for a learning game.
 
 Creature description: ${creatureDescription}
 
 CRITICAL REQUIREMENTS:
-- Style: adorable, colorful, cartoon-like illustration based on "Spore" game
-- The creature should look approachable and non-threatening, perfect for teaching programming
-- High quality, detailed, vibrant colors
+- Style: adorable, colorful, cartoon-like 3D character based on "Spore" game
+- THREE-DIMENSIONAL FORM with rounded, volumetric shapes that show depth and dimension
+- Use soft shading, highlights, and shadows to emphasize the creature's 3D form and curved surfaces
+- The creature should have clear dimensional depth - front/back, top/bottom distinctions visible
+- Approachable and non-threatening, perfect for teaching programming concepts
+- High quality, detailed, vibrant colors with gradients that enhance 3D appearance
 - TRANSPARENT BACKGROUND - absolutely clear/transparent, no colors, no gradient, pure transparency
-- Isolated subject floating in void - like a product photo or game sprite
+- Isolated subject suspended in void with no environment whatsoever
 - The creature is NOT standing, sitting, or resting on anything
-- NO floor, ground, platform, surface, grass, rocks, or terrain of any kind beneath the creature
-- NO environmental elements (stars, sparkles, fairy dust, halos, auras, glows) floating AROUND the creature
-- Any decorative elements (sparkles, stars, magical effects) must be physically ATTACHED TO or PART OF the creature's body itself
-- No background decorations, no surrounding effects, no ambient elements
-- Simple, clean silhouette suitable for 3D modeling - avoid overly complex shapes
+- NO floor, ground, platform, surface, grass, rocks, or terrain of any kind
+- NO separate environmental elements floating in space (stars, sparkles, fairy dust, halos, auras, glowing orbs)
+- Magical effects should be integrated INTO the creature's body as physical features (like glowing spots ON skin, crystalline horns, energy patterns IN fur)
+- NO detached ambient effects or floating decorative elements surrounding the creature
+- Avoid overly flat or symmetrical compositions - show the creature at a slight angle to reveal dimensionality
 
-The creature itself can be as decorative and sparkly as needed, but it must be an isolated subject on transparent background with nothing around it or under it.`;
+The creature itself should be fully three-dimensional and volumetric, like a 3D game character model, rendered with clear depth cues and shading. All magical/decorative elements must be part of the creature's anatomy, not floating around it. Pure transparent background with absolutely nothing except the creature itself.`;
 }
 
 export interface GenerateMonsterRequest {
@@ -131,6 +132,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { success: false, error: 'Authentication required' },
         { status: 401 }
+      );
+    }
+
+    // Require admin access - this is a testing interface
+    // In production, monster generation happens through the lesson flow
+    const { isUserAdmin } = await import('@/lib/admin-auth');
+    const isAdmin = await isUserAdmin(session.user.id);
+
+    if (!isAdmin) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Admin access required. This is a testing interface.',
+        },
+        { status: 403 }
       );
     }
 
