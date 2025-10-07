@@ -14,6 +14,14 @@ export interface LessonStep {
   validation?: ValidationRule[];
   image?: string; // Optional image URL or import for this step
   requiresAuth?: boolean; // Whether this step requires authentication
+  triggersGeneration?: boolean; // Whether completing this step triggers AI monster generation
+}
+
+// Chapter structure for lessons that include multiple chapters
+export interface LessonChapter {
+  id: number;
+  title: string;
+  steps: LessonStep[];
 }
 
 export interface Lesson {
@@ -26,4 +34,5 @@ export interface Lesson {
   steps: LessonStep[];
   completed: boolean;
   locked: boolean;
+  chapters?: LessonChapter[]; // Optional chapters for multi-chapter lessons
 }

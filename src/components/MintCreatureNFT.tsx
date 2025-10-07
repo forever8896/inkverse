@@ -18,16 +18,11 @@ export function MintCreatureNFT({ lessonId, onMintSuccess }: MintCreatureNFTProp
   const [balance, setBalance] = useState<string>('0')
   const [isLoadingBalance, setIsLoadingBalance] = useState(true)
   const accounts = useAccounts()
-  
-  // Handle missing chain context gracefully
-  let chainId: string | undefined;
-  try {
-    chainId = useChainId();
-  } catch (error) {
-    console.warn("No chain context available, using default 'shibuya':", error);
-    chainId = undefined;
-  }
-  
+
+  // Always call hooks unconditionally - handle errors in useEffect instead
+  const rawChainId = useChainId()
+  const chainId = rawChainId || 'shibuya' // Default to shibuya if undefined
+
   const connectedAccount = accounts?.[0]
   
   // Get chain-specific configuration

@@ -3,6 +3,18 @@ import { defineConfig } from "@reactive-dot/core"
 import { InjectedWalletProvider } from "@reactive-dot/core/wallets.js"
 import { getWsProvider } from "polkadot-api/ws-provider/web"
 
+// Only create wallet provider on client-side to avoid SSR errors
+const getWallets = () => {
+  if (typeof window === 'undefined') {
+    return []; // Return empty array during SSR
+  }
+  return [
+    new InjectedWalletProvider({
+      // Wait longer for wallet extensions to load
+    })
+  ];
+};
+
 export const config = defineConfig({
   chains: {
     pop: {
@@ -19,9 +31,5 @@ export const config = defineConfig({
     },
   },
   ssr: false, // Set to false to avoid SSR issues with wallet detection
-  wallets: [
-    new InjectedWalletProvider({
-      // Wait longer for wallet extensions to load
-    })
-  ],
+  wallets: getWallets(),
 })

@@ -19,9 +19,11 @@ export function MapAccountButton() {
 
     setIsLoading(true)
 
-    const tx = api.tx.Revive.map_account()
+    // Type assertion for Revive API methods which aren't typed
+    const mapAccountFn = (api.tx.Revive as any).map_account as () => any
+    const tx = mapAccountFn()
       .signAndSubmit(signer)
-      .then((tx) => {
+      .then((tx: any) => {
         if (!tx.ok) throw tx.dispatchError
       })
       .finally(() => setIsLoading(false))

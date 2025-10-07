@@ -116,7 +116,7 @@ function LessonLayoutInner({ lesson }: LessonLayoutProps) {
         const response = await fetch(`/api/progress/lesson?lessonId=${lesson.id}`);
         const data = await response.json();
 
-        if (data.lesson?.current_chapter_id !== undefined) {
+        if (data.lesson?.current_chapter_id !== undefined && lesson.chapters) {
           const chapterIndex = lesson.chapters.findIndex(
             ch => ch.id === data.lesson.current_chapter_id
           );
@@ -346,7 +346,7 @@ function LessonLayoutInner({ lesson }: LessonLayoutProps) {
         setCurrentStep(currentStep + 1);
         setTimeout(() => setIsTransitioning(false), 50);
       }, 200);
-    } else if (currentChapter < lesson.chapters.length - 1) {
+    } else if (lesson.chapters && currentChapter < lesson.chapters.length - 1) {
       // Completed this chapter! Show celebration
       setCompletedChapterTitle(currentChapterData.title);
       setShowChapterComplete(true);
@@ -372,9 +372,9 @@ function LessonLayoutInner({ lesson }: LessonLayoutProps) {
         setCurrentStep(currentStep - 1);
         setTimeout(() => setIsTransitioning(false), 50);
       }, 200);
-    } else if (currentChapter > 0) {
+    } else if (currentChapter > 0 && lesson && lesson.chapters) {
       // Move to last step of previous chapter
-      const prevChapter = lesson?.chapters[currentChapter - 1];
+      const prevChapter = lesson.chapters[currentChapter - 1];
       if (prevChapter) {
         setIsTransitioning(true);
         setTimeout(() => {
@@ -1258,7 +1258,7 @@ function LessonLayoutInner({ lesson }: LessonLayoutProps) {
               </div>
 
               {/* Next/Complete Button */}
-              {lesson && currentChapter === lesson.chapters.length - 1 && currentChapterData && currentStep === currentChapterData.steps.length - 1 ? (
+              {lesson && lesson.chapters && currentChapter === lesson.chapters.length - 1 && currentChapterData && currentStep === currentChapterData.steps.length - 1 ? (
                 <div className="relative group">
                   <button
                     onClick={() => setShowCompletionModal(true)}
@@ -1306,11 +1306,11 @@ function LessonLayoutInner({ lesson }: LessonLayoutProps) {
                   <button
                     onClick={nextStep}
                     disabled={
-                      (lesson && currentChapter === lesson.chapters.length - 1 && currentChapterData && currentStep === currentChapterData.steps.length - 1) ||
+                      (lesson && lesson.chapters && currentChapter === lesson.chapters.length - 1 && currentChapterData && currentStep === currentChapterData.steps.length - 1) ||
                       (currentStepData?.validation && !isValidated)
                     }
                     className={`w-10 h-10 rounded-lg border transition-all duration-200 flex items-center justify-center backdrop-blur-sm active:scale-95 ${
-                      (lesson && currentChapter === lesson.chapters.length - 1 && currentChapterData && currentStep === currentChapterData.steps.length - 1) ||
+                      (lesson && lesson.chapters && currentChapter === lesson.chapters.length - 1 && currentChapterData && currentStep === currentChapterData.steps.length - 1) ||
                       (currentStepData?.validation && !isValidated)
                         ? 'border-slate-600/50 bg-slate-800/50 opacity-30 cursor-not-allowed'
                         : 'border-purple-500/50 bg-gradient-to-r from-purple-600/20 to-cyan-600/20 hover:from-purple-600/40 hover:to-cyan-600/40 hover:border-purple-400/70 hover:scale-105 shadow-lg shadow-purple-500/20'
@@ -1327,7 +1327,7 @@ function LessonLayoutInner({ lesson }: LessonLayoutProps) {
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       className={`transition-colors duration-200 ${
-                        (lesson && currentChapter === lesson.chapters.length - 1 && currentChapterData && currentStep === currentChapterData.steps.length - 1) ||
+                        (lesson && lesson.chapters && currentChapter === lesson.chapters.length - 1 && currentChapterData && currentStep === currentChapterData.steps.length - 1) ||
                         (currentStepData?.validation && !isValidated)
                           ? 'text-slate-500'
                           : 'text-purple-200 group-hover:text-white'
@@ -1337,7 +1337,7 @@ function LessonLayoutInner({ lesson }: LessonLayoutProps) {
                     </svg>
                   </button>
                   <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-slate-900/90 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none border border-slate-700/50 backdrop-blur-sm">
-                    {(lesson && currentChapter === lesson.chapters.length - 1 && currentChapterData && currentStep === currentChapterData.steps.length - 1)
+                    {(lesson && lesson.chapters && currentChapter === lesson.chapters.length - 1 && currentChapterData && currentStep === currentChapterData.steps.length - 1)
                       ? 'Complete lesson'
                       : currentStepData?.validation && !isValidated
                         ? 'Complete validation first'
@@ -1529,7 +1529,9 @@ function LessonLayoutInner({ lesson }: LessonLayoutProps) {
 
 export default function LessonLayout({ lesson }: LessonLayoutProps) {
   return (
-    <ReactiveDotProvider config={config}>
+    // Type assertion due to duplicate @reactive-dot/core versions in node_modules
+    // Note: ReactiveDotProvider handles SSR internally
+    <ReactiveDotProvider config={config as any}>
       <LessonLayoutInner lesson={lesson} />
     </ReactiveDotProvider>
   );

@@ -28,7 +28,7 @@ export function ContractCard() {
 
       // Create SDK & contract instance
       const sdk = createReviveSdk(api as ReviveSdkTypedApi, flipper.contract)
-      const contract = sdk.getContract(flipper.evmAddresses[chain])
+      const contract = sdk.getContract(flipper.evmAddresses[String(chain) as keyof typeof flipper.evmAddresses])
 
       // Option 1: Query storage directly
       const storageResult = await contract.getStorage().getRoot()
@@ -64,7 +64,7 @@ export function ContractCard() {
     if (!api || !chain || !signer) return
 
     const sdk = createReviveSdk(api as ReviveSdkTypedApi, flipper.contract)
-    const contract = sdk.getContract(flipper.evmAddresses[chain])
+    const contract = sdk.getContract(flipper.evmAddresses[String(chain) as keyof typeof flipper.evmAddresses])
 
     // Map account if not mapped
     const isMapped = await sdk.addressIsMapped(signerAddress)
@@ -117,7 +117,7 @@ export function ContractCard() {
 
           <TableRow>
             <TableCell>Address</TableCell>
-            <TableCell>{flipper.evmAddresses[chain]}</TableCell>
+            <TableCell>{flipper.evmAddresses[String(chain) as keyof typeof flipper.evmAddresses]}</TableCell>
           </TableRow>
 
           <TableRow>

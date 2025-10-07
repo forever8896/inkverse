@@ -20,7 +20,7 @@ export function ChainSelect({ chainId, setChainId }: ChainSelectProps) {
   const chainIds = Object.keys(config.chains) as (keyof typeof config.chains)[]
 
   return (
-    <Select value={chainId} onValueChange={setChainId}>
+    <Select value={String(chainId)} onValueChange={(value) => setChainId(value as ChainId)}>
       <SelectTrigger
         className={buttonVariants({
           size: "lg",

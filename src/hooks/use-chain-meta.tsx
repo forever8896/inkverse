@@ -23,13 +23,13 @@ export function useChainMeta() {
 
       const chainId = await api.constants.Revive.ChainId()
       const ss58Prefix = await api.constants.System.SS58Prefix()
-      const versions = await api.constants.System.Version()
+      const versions = await api.constants.System.Version() as any
 
       setChainMeta({
         name: chainSpec.name,
         ss58Prefix: chainSpec.properties?.ss58Format || ss58Prefix,
-        implName: versions.impl_name,
-        systemVersion: versions.system_version,
+        implName: (versions as any).impl_name,
+        systemVersion: (versions as any).system_version,
         hasPalletRevive: !!chainId,
       })
     } catch (error) {

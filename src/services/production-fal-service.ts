@@ -142,7 +142,8 @@ export class ProductionFalService {
 
       // Upload image to fal.ai storage first
       console.log(`🎯 [ProductionFal] 📤 Uploading image to fal.ai storage...`);
-      const imageFile = new File([imageBuffer], `${conversionId}.png`, {
+      // Convert Buffer to Uint8Array for File constructor compatibility
+      const imageFile = new File([new Uint8Array(imageBuffer)], `${conversionId}.png`, {
         type: 'image/png'
       });
       
