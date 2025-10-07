@@ -31,7 +31,7 @@ interface GenerateMonsterRequest {
   habitat: 'mountains' | 'ocean' | 'forest' | 'space' | 'desert' | 'ruins' | 'city' | 'clouds';
   
   // Keep existing for backward compatibility
-  style: MonsterStyle;
+  style?: MonsterStyle; // Legacy - defaults to 'cute'
   stage: MonsterStage;
   generationType: GenerationType;
 }
@@ -217,24 +217,24 @@ export default function GeneratePage() {
     eyes: 2,
     bodyType: 'muscular',
     size: 'medium',
-    
+
     // Personality & Style
     attitude: 'sassy',
-    
+
     // Magical Abilities
     canFly: 'wings',
     specialPower: 'fire',
     magicalAura: 'sparkly',
-    
+
     // Appearance
     colorScheme: 'purple',
     texture: 'scales',
-    
+
     // Environment
     habitat: 'mountains',
-    
+
     // Keep existing for backward compatibility
-    style: 'cute',
+    // style is omitted - defaults to 'cute' on server
     stage: 'adult',
     generationType: 'full',
   });

@@ -29,8 +29,14 @@ function generatePromptFromStructuredData(
         ? 'that floats magically'
         : 'that is grounded';
 
-  // Core creature description
-  const creatureDescription = `A cute, friendly Spore-like ${data.size} ${data.attitude} digital creature with ${eyeText}, ${data.bodyType} body type, ${data.texture} texture, ${data.colorScheme} colors, ${data.specialPower} powers, ${data.magicalAura} magical aura, ${flyText}, living in ${data.habitat}. Adorable, colorful, cartoon-like illustration suitable for educational content. The creature should look approachable and non-threatening, perfect for teaching programming concepts. High quality, detailed, vibrant colors.`;
+  // Core creature description - include stage for proper lifecycle representation
+  const stageDescription = data.stage === 'egg'
+    ? 'in egg form, unhatched with visible shell'
+    : data.stage === 'young'
+      ? 'in juvenile/baby form, small and youthful'
+      : 'in fully grown adult form, mature and majestic';
+
+  const creatureDescription = `A cute, friendly Spore-like ${data.size} ${data.attitude} ${data.stage} digital creature ${stageDescription} with ${eyeText}, ${data.bodyType} body type, ${data.texture} texture, ${data.colorScheme} colors, ${data.specialPower} powers, ${data.magicalAura} magical aura, ${flyText}, living in ${data.habitat}. Adorable, colorful, cartoon-like illustration suitable for educational content. The creature should look approachable and non-threatening, perfect for teaching programming concepts. High quality, detailed, vibrant colors.`;
 
   // Wrap with production instructions (matches production-openai-service.ts wrapper)
   return `Generate a cute, lovable, friendly Spore-like digital creature for a learning game.
@@ -110,7 +116,7 @@ export interface GenerateMonsterRequest {
     | 'clouds';
 
   // Keep existing for backward compatibility
-  style: 'cute' | 'fierce' | 'mysterious' | 'playful' | 'cosmic';
+  style?: 'cute' | 'fierce' | 'mysterious' | 'playful' | 'cosmic'; // Legacy - defaults to 'cute'
   stage: 'egg' | 'young' | 'adult';
   generationType?: 'full' | 'image_only';
 }
@@ -291,9 +297,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Legacy fields
+    // Legacy fields - style is optional for backward compatibility
     if (
-      !body.style ||
+      body.style &&
       !['cute', 'fierce', 'mysterious', 'playful', 'cosmic'].includes(
         body.style
       )
@@ -302,6 +308,9 @@ export async function POST(request: NextRequest) {
         'style must be one of: cute, fierce, mysterious, playful, cosmic'
       );
     }
+
+    // Default to 'cute' if not provided (legacy support)
+    body.style = body.style || 'cute';
 
     if (!body.stage || !['egg', 'young', 'adult'].includes(body.stage)) {
       validationErrors.push('stage must be one of: egg, young, adult');
@@ -351,8 +360,8 @@ export async function POST(request: NextRequest) {
     console.log(`🧪 [API] CREATING NEW MONSTER GENERATION JOB`);
     console.log(`🧪 [API] User ID: ${session.user.id}`);
     console.log(`🧪 [API] Generated AI Prompt: "${aiPrompt}"`);
-    console.log(`🧪 [API] Style: ${body.style}`);
-    console.log(`🧪 [API] Stage: ${body.stage}`);
+    console.log(`🧪 [API] Style (legacy): ${body.style}`);
+    console.log(`🧪 [API] Stage (NOW IN PROMPT): ${body.stage}`);
     console.log(`🧪 [API] ========================================`);
 
     // Create the generation job
@@ -415,7 +424,7 @@ export async function GET() {
       habitat:
         'mountains | ocean | forest | space | desert | ruins | city | clouds',
       // Legacy fields
-      style: 'cute | fierce | mysterious | playful | cosmic',
+      style: '(optional) cute | fierce | mysterious | playful | cosmic - defaults to cute',
       stage: 'egg | young | adult',
     },
     note: 'AI prompt is generated server-side from structured data for security',
