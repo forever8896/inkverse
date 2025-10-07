@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Lesson, validateCode, ValidationRule } from '@/lib/lessons';
 import MonacoCodeEditor from '@/components/MonacoCodeEditor';
 import ShaderBackground from '@/components/ShaderBackground';
+import LessonContent from '@/components/LessonContent';
 import dynamic from 'next/dynamic';
 import { HSLValues } from '@/components/CreatureColorPicker';
 import Confetti from 'react-confetti';
@@ -12,6 +13,7 @@ import { Camera, Loader2 } from 'lucide-react';
 import { MintCreatureNFT } from './MintCreatureNFT';
 import GitHubAuthModal from '@/components/GitHubAuthModal';
 import { useSession } from '@/lib/auth-client';
+import '@/styles/lesson-content.css';
 
 // wallet stuff
 import { ReactiveDotProvider, useAccounts } from '@reactive-dot/react';
@@ -40,6 +42,7 @@ interface Toast {
 }
 
 function LessonLayoutInner({ lesson }: LessonLayoutProps) {
+  const [currentChapter, setCurrentChapter] = useState(0);
   const [currentStep, setCurrentStep] = useState(0);
   const [balance, setBalance] = useState<string>('0');
   const [isLoadingBalance, setIsLoadingBalance] = useState(true);
@@ -63,12 +66,18 @@ function LessonLayoutInner({ lesson }: LessonLayoutProps) {
   const [showShutter, setShowShutter] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showCodeEditor, setShowCodeEditor] = useState(true);
+  const [showChapterComplete, setShowChapterComplete] = useState(false);
+  const [completedChapterTitle, setCompletedChapterTitle] = useState('');
+  const [showNFTMinting, setShowNFTMinting] = useState(false);
   const creatureDisplayRef = useRef<HTMLDivElement>(null);
+  const lessonContentRef = useRef<HTMLDivElement>(null);
 
   // GitHub authentication session
   const { data: session, isPending: isAuthLoading } = useSession();
 
-  const currentStepData = lesson?.steps[currentStep];
+  const currentChapterData = lesson?.chapters?.[currentChapter];
+  const currentStepData = currentChapterData?.steps[currentStep];
 
   useEffect(() => {
     // Initialize code editor with step's initial code
@@ -78,6 +87,11 @@ function LessonLayoutInner({ lesson }: LessonLayoutProps) {
     setIsValidated(false);
     setShowHint(false);
     setShowCompletionModal(false); // Reset modal when step changes
+
+    // Scroll lesson content to top when step changes
+    if (lessonContentRef.current) {
+      lessonContentRef.current.scrollTop = 0;
+    }
   }, [currentStep, currentStepData]);
 
   // Load saved creature color from localStorage
@@ -92,6 +106,31 @@ function LessonLayoutInner({ lesson }: LessonLayoutProps) {
       }
     }
   }, []);
+
+  // Load saved progress on mount
+  useEffect(() => {
+    const loadProgress = async () => {
+      if (!lesson?.id || !session?.user) return;
+
+      try {
+        const response = await fetch(`/api/progress/lesson?lessonId=${lesson.id}`);
+        const data = await response.json();
+
+        if (data.lesson?.current_chapter_id !== undefined) {
+          const chapterIndex = lesson.chapters.findIndex(
+            ch => ch.id === data.lesson.current_chapter_id
+          );
+          if (chapterIndex >= 0) {
+            setCurrentChapter(chapterIndex);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load progress:', error);
+      }
+    };
+
+    loadProgress();
+  }, [lesson?.id, lesson?.chapters, session?.user]);
 
   // Track window dimensions for confetti
   useEffect(() => {
@@ -136,11 +175,22 @@ function LessonLayoutInner({ lesson }: LessonLayoutProps) {
 
       if (validationResult.isValid) {
         setIsValidated(true);
-        addToast({
-          type: 'success',
-          title: '🎉 Perfect!',
-          message: 'Your creature responds beautifully to the code!',
-        });
+
+        // Check if this step triggers NFT generation - show modal immediately
+        if (currentStepData?.triggersGeneration) {
+          addToast({
+            type: 'success',
+            title: '🎉 Perfect!',
+            message: 'Your creature is ready to be minted as an NFT!',
+          });
+          setTimeout(() => setShowNFTMinting(true), 800);
+        } else {
+          addToast({
+            type: 'success',
+            title: '🎉 Perfect!',
+            message: 'Your creature responds beautifully to the code!',
+          });
+        }
 
         // Check if we should show auth modal after completing step 3 of lesson 1
         checkAuthRequirement();
@@ -172,6 +222,8 @@ function LessonLayoutInner({ lesson }: LessonLayoutProps) {
     // Show auth modal after completing step 3 (index 3) of lesson 1
     // This means steps 0, 1, 2, 3 are completed (first 4 stages)
     if (lesson?.id === 1 && currentStep === 3 && isValidated && !session?.user && !isAuthLoading) {
+      // Save current step for restoration after auth
+      localStorage.setItem(`auth-flow-lesson-${lesson.id}-step`, currentStep.toString());
       // Small delay to let the success toast show first
       setTimeout(() => setShowAuthModal(true), 1000);
     }
@@ -258,29 +310,79 @@ function LessonLayoutInner({ lesson }: LessonLayoutProps) {
     );
   };
 
-  const nextStep = () => {
-    if (lesson && currentStep < lesson.steps.length - 1) {
-      // For lesson 1, require authentication after step 3 before allowing progression
-      if (lesson.id === 1 && currentStep === 3 && !session?.user && !isAuthLoading) {
-        setShowAuthModal(true);
-        return;
-      }
+  // Save progress to database
+  const saveStepProgress = async (completed: boolean = false) => {
+    if (!lesson || !currentChapterData || !currentStepData || !session?.user) return;
 
+    try {
+      await fetch('/api/progress/step', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          lessonId: lesson.id,
+          chapterId: currentChapterData.id,
+          stepId: currentStepData.id,
+          contractCode: userCode,
+          completed,
+          validationPassed: isValidated,
+        }),
+      });
+    } catch (error) {
+      console.error('Failed to save progress:', error);
+    }
+  };
+
+  const nextStep = async () => {
+    if (!lesson || !currentChapterData) return;
+
+    // Save progress for current step before moving
+    await saveStepProgress(true);
+
+    // Check if we're at the last step of the current chapter
+    if (currentStep < currentChapterData.steps.length - 1) {
+      // Move to next step in current chapter
       setIsTransitioning(true);
       setTimeout(() => {
         setCurrentStep(currentStep + 1);
         setTimeout(() => setIsTransitioning(false), 50);
       }, 200);
+    } else if (currentChapter < lesson.chapters.length - 1) {
+      // Completed this chapter! Show celebration
+      setCompletedChapterTitle(currentChapterData.title);
+      setShowChapterComplete(true);
     }
+  };
+
+  // Called after chapter celebration modal is closed
+  const moveToNextChapter = () => {
+    setShowChapterComplete(false);
+    setIsTransitioning(true);
+    setTimeout(() => {
+      setCurrentChapter(currentChapter + 1);
+      setCurrentStep(0);
+      setTimeout(() => setIsTransitioning(false), 50);
+    }, 200);
   };
 
   const previousStep = () => {
     if (currentStep > 0) {
+      // Move to previous step in current chapter
       setIsTransitioning(true);
       setTimeout(() => {
         setCurrentStep(currentStep - 1);
         setTimeout(() => setIsTransitioning(false), 50);
       }, 200);
+    } else if (currentChapter > 0) {
+      // Move to last step of previous chapter
+      const prevChapter = lesson?.chapters[currentChapter - 1];
+      if (prevChapter) {
+        setIsTransitioning(true);
+        setTimeout(() => {
+          setCurrentChapter(currentChapter - 1);
+          setCurrentStep(prevChapter.steps.length - 1);
+          setTimeout(() => setIsTransitioning(false), 50);
+        }, 200);
+      }
     }
   };
 
@@ -726,7 +828,9 @@ function LessonLayoutInner({ lesson }: LessonLayoutProps) {
 
         <div className="flex flex-1 overflow-hidden relative">
           {/* Left Panel: Creature Display */}
-          <div className="w-1/2 relative overflow-hidden backdrop-blur-md">
+          <div className={`relative overflow-hidden backdrop-blur-md transition-all duration-500 ${
+            currentStepData?.code !== undefined ? 'w-1/2' : 'w-1/2'
+          }`}>
             <div className="absolute top-0 flex justify-between w-full z-20 ">
               <div className="p-5">
                 <Link href="/" className="flex items-center space-x-2">
@@ -779,24 +883,22 @@ function LessonLayoutInner({ lesson }: LessonLayoutProps) {
                     <img
                       src={currentStepData.image}
                       alt="Creature"
-                      width={320}
-                      height={320}
-                      className="w-80 h-80 object-contain transition-all duration-300"
+                      className="object-contain transition-all duration-500 w-[28rem] h-[28rem]"
                       style={{
                         filter: getImageFilter(),
                       }}
                     />
                   ) : (
-                    <div className="w-64 h-64 bg-slate-800/30 rounded-full flex items-center justify-center backdrop-blur-sm transition-all duration-300">
-                      <span className="text-6xl transition-all duration-300">
+                    <div className="bg-slate-800/30 rounded-full flex items-center justify-center backdrop-blur-sm transition-all duration-500 w-96 h-96">
+                      <span className="transition-all duration-500 text-9xl">
                         🔬
                       </span>
                     </div>
                   )
                 ) : (
-                  <div className="w-64 h-64 bg-slate-800/30 rounded-full flex items-center justify-center backdrop-blur-sm transition-all duration-300">
+                  <div className="bg-slate-800/30 rounded-full flex items-center justify-center backdrop-blur-sm transition-all duration-500 w-96 h-96">
                     <span
-                      className="text-6xl transition-all duration-300"
+                      className="transition-all duration-500 text-9xl"
                       style={{
                         filter: getImageFilter(),
                       }}
@@ -842,90 +944,77 @@ function LessonLayoutInner({ lesson }: LessonLayoutProps) {
               </div>
             )}
 
-            {/* Creature Info Overlay */}
-            <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">
-              <div
-                className={`text-center space-y-3 px-6 py-4 transition-all duration-300 ease-out ${
-                  isTransitioning
-                    ? 'opacity-0 translate-y-4'
-                    : 'opacity-100 translate-y-0'
-                }`}
-              >
-                {/* Creature Name */}
-                <h3 className="text-lg font-semibold text-white transition-all duration-300">
-                  {lesson.id === 1
-                    ? currentStep === 0
-                      ? 'Mysterious Egg'
-                      : 'Bio-Specimen Alpha'
-                    : lesson.id === 2
-                      ? 'Enhanced Creature'
-                      : 'Specimen'}
-                </h3>
-
-                {/* Status */}
-                <p className="text-sm text-slate-300 transition-all duration-300">
-                  {lesson.id === 1
-                    ? currentStep === 0
-                      ? 'Waiting to hatch...'
-                      : currentStep < 4
-                        ? 'Sleeping peacefully'
-                        : isValidated
-                          ? 'Fully conscious!'
-                          : 'Ready to awaken'
-                    : lesson.id === 2
-                      ? 'Growing stronger'
-                      : 'In development'}
-                </p>
-
-                {/* Achievement */}
-                {isValidated && currentStep === 4 && lesson.id === 1 && (
-                  <div className="text-center">
-                    <span className="text-sm text-pink-400 font-semibold transition-all duration-300">
-                      ✨ Awakened
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
           </div>
 
           {/* Right Panel: Instructions + Code Editor */}
-          <div className="w-1/2 flex flex-col p-10 min-h-0">
+          <div className="flex flex-col p-10 min-h-0 w-1/2">
             {/* Instructions Section */}
             <div
-              className={`flex-1 p-6 flex flex-col overflow-hidden backdrop-blur-md bg-white/5 rounded-xl mb-4 min-h-0 transition-all duration-300 ease-out ${
+              className={`p-6 flex flex-col overflow-hidden backdrop-blur-md bg-white/5 rounded-xl mb-4 transition-all duration-500 ease-out ${
                 isTransitioning
                   ? 'opacity-0 translate-x-4'
                   : 'opacity-100 translate-x-0'
-              }`}
+              } ${currentStepData?.code !== undefined && showCodeEditor ? 'flex-1 min-h-0' : 'flex-[2] min-h-0'}`}
             >
               {currentStepData && (
                 <div className="flex-1 flex flex-col min-h-0">
                   <div
-                    className="prose prose-invert prose-purple max-w-none text-slate-200 leading-relaxed flex-1 overflow-y-auto transition-all duration-300
-                  [&>h1]:!text-[15px] [&>h1]:!font-bold [&>h1]:!uppercase [&>h1]:!text-purple-200 [&>h1]:!mb-4 [&>h1]:!leading-tight [&>h1]:!normal-case [&>h1]:!tracking-normal
-                  [&>h2]:!text-sm [&>h2]:!font-semibold [&>h2]:!text-purple-300 [&>h2]:!mb-3 [&>h2]:!mt-4  [&>h2]:!normal-case [&>h2]:!tracking-normal
-                  [&>h3]:!text-xs [&>h3]:!font-medium [&>h3]:!text-cyan-300 [&>h3]:!mb-2 [&>h3]:!mt-3  [&>h3]:!normal-case [&>h3]:!tracking-normal
-                  [&>p]:mb-4 [&>p]:text-base [&>p]:leading-6 [&>p]:text-slate-200
-                  [&>ul]:mb-4 [&>ul]:space-y-1 [&>ol]:mb-4 [&>ol]:space-y-1
-                  [&>li]:text-slate-200 [&>li]:leading-5 [&>li]:pl-1 [&>li]:text-sm
-                  [&>code]:bg-slate-800 [&>code]:text-purple-300 [&>code]:px-1 [&>code]:py-0.5 [&>code]:rounded [&>code]:text-xs [&>code]:font-mono
-                  [&>strong]:text-white [&>strong]:font-semibold
-                  [&>em]:text-slate-100 [&>em]:italic
-                  [&>blockquote]:border-l-4 [&>blockquote]:border-purple-500 [&>blockquote]:pl-3 [&>blockquote]:italic [&>blockquote]:text-slate-300 [&>blockquote]:bg-slate-800/30 [&>blockquote]:py-2 [&>blockquote]:my-3"
-                    dangerouslySetInnerHTML={{
-                      __html: currentStepData.content,
-                    }}
-                  />
+                    ref={lessonContentRef}
+                    className="flex-1 overflow-y-auto transition-all duration-300"
+                  >
+                    <LessonContent html={currentStepData.content} />
+                  </div>
                 </div>
               )}
 
-              {/* Hint */}
+              {/* Hint and Code Toggle Buttons */}
+              {(currentStepData?.hint || currentStepData?.code !== undefined) && (
+                <div className="mt-4 flex-shrink-0 flex items-center space-x-2">
+                  {/* Hint Button */}
+                  {currentStepData?.hint && (
+                    <button
+                      onClick={() => setShowHint(!showHint)}
+                      className="flex items-center space-x-2 text-amber-400 hover:text-amber-300 transition-all duration-200 bg-amber-500/10 hover:bg-amber-500/20 px-3 py-1.5 rounded-lg border border-amber-500/30 hover:border-amber-500/50 text-sm"
+                    >
+                      <span>💡</span>
+                      <span className="font-medium">Show Hint</span>
+                    </button>
+                  )}
+
+                  {/* Code Editor Toggle Button - Only show when code exists */}
+                  {currentStepData?.code !== undefined && (
+                    <button
+                      onClick={() => setShowCodeEditor(!showCodeEditor)}
+                      className="flex items-center space-x-2 text-cyan-400 hover:text-cyan-300 transition-all duration-200 bg-cyan-500/10 hover:bg-cyan-500/20 px-3 py-1.5 rounded-lg border border-cyan-500/30 hover:border-cyan-500/50 text-sm"
+                      title={showCodeEditor ? "Hide Code Editor" : "Show Code Editor"}
+                      aria-label={showCodeEditor ? "Hide Code Editor" : "Show Code Editor"}
+                    >
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="text-cyan-300"
+                      >
+                        <polyline points="16 18 22 12 16 6" />
+                        <polyline points="8 6 2 12 8 18" />
+                      </svg>
+                      <span className="font-medium">{showCodeEditor ? 'Hide Code' : 'Show Code'}</span>
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Hint Tooltip */}
               {currentStepData?.hint && (
-                <div className="mt-4 flex-shrink-0">
+                <div className="relative">
                   <button
                     onClick={() => setShowHint(!showHint)}
-                    className="flex items-center space-x-2 text-amber-400 hover:text-amber-300 transition-all duration-200 bg-amber-500/10 hover:bg-amber-500/20 px-3 py-1.5 rounded-lg border border-amber-500/30 hover:border-amber-500/50 text-sm"
+                    className="hidden"
                   >
                     <span>💡</span>
                     <span className="font-medium">Show Hint</span>
@@ -957,9 +1046,10 @@ function LessonLayoutInner({ lesson }: LessonLayoutProps) {
               )}
             </div>
 
-            {/* Code Editor Section */}
+            {/* Code Editor Section - Only visible when code is present AND toggle is on */}
+            {currentStepData?.code !== undefined && showCodeEditor && (
             <div
-              className={`flex-1 flex flex-col min-h-0 mb-4 transition-all duration-300 ease-out ${
+              className={`flex-1 flex flex-col min-h-0 mb-4 transition-all duration-500 ease-out ${
                 isTransitioning
                   ? 'opacity-0 translate-x-4'
                   : 'opacity-100 translate-x-0'
@@ -1062,35 +1152,22 @@ function LessonLayoutInner({ lesson }: LessonLayoutProps) {
 
               {/* Code Editor */}
               <div className="flex-1 min-h-0">
-                {currentStepData?.code !== undefined ? (
-                  <div
-                    className={`h-full transition-all duration-300 ease-out ${
-                      isTransitioning
-                        ? 'opacity-0 scale-98'
-                        : 'opacity-100 scale-100'
-                    }`}
-                  >
-                    <MonacoCodeEditor
-                      value={userCode}
-                      onChange={setUserCode}
-                      language="rust"
-                    />
-                  </div>
-                ) : (
-                  <div className="h-full flex items-center justify-center bg-slate-800/20 transition-all duration-300">
-                    <div className="text-center">
-                      <div className="text-4xl mb-4">💻</div>
-                      <h3 className="text-xl font-semibold mb-2">
-                        Code Workspace
-                      </h3>
-                      <p className="text-slate-400">
-                        Your code editor will appear here
-                      </p>
-                    </div>
-                  </div>
-                )}
+                <div
+                  className={`h-full transition-all duration-300 ease-out ${
+                    isTransitioning
+                      ? 'opacity-0 scale-98'
+                      : 'opacity-100 scale-100'
+                  }`}
+                >
+                  <MonacoCodeEditor
+                    value={userCode}
+                    onChange={setUserCode}
+                    language="rust"
+                  />
+                </div>
               </div>
             </div>
+            )}
 
             {/* Navigation */}
             <div className="flex justify-between items-center flex-shrink-0">
@@ -1123,25 +1200,65 @@ function LessonLayoutInner({ lesson }: LessonLayoutProps) {
                 )}
               </div>
 
-              {/* Step Indicators */}
-              <div className="flex space-x-2">
-                {Array.from({ length: lesson.steps.length }, (_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => goToStep(i)}
-                    className={`w-3 h-3 rounded-full transition-all duration-200 hover:scale-110 ${
-                      i === currentStep
-                        ? 'bg-gradient-to-r from-purple-400 to-cyan-400 shadow-lg shadow-purple-400/30'
-                        : i < currentStep
-                          ? 'bg-gradient-to-r from-pink-400 to-pink-400 shadow-md shadow-green-400/20'
-                          : 'bg-slate-600 hover:bg-slate-500'
-                    }`}
-                  />
-                ))}
+              {/* Chapter & Step Indicators */}
+              <div className="flex flex-col items-center space-y-2">
+                {/* Chapter Title */}
+                <div className="text-xs text-slate-400">
+                  Chapter {currentChapter + 1}: {currentChapterData?.title}
+                </div>
+
+                {/* Step Indicators for Current Chapter */}
+                <div className="flex space-x-2">
+                  {currentChapterData && Array.from({ length: currentChapterData.steps.length }, (_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => {
+                        setIsTransitioning(true);
+                        setTimeout(() => {
+                          setCurrentStep(i);
+                          setTimeout(() => setIsTransitioning(false), 50);
+                        }, 200);
+                      }}
+                      className={`w-3 h-3 rounded-full transition-all duration-200 hover:scale-110 ${
+                        i === currentStep
+                          ? 'bg-gradient-to-r from-purple-400 to-cyan-400 shadow-lg shadow-purple-400/30'
+                          : i < currentStep
+                            ? 'bg-gradient-to-r from-pink-400 to-pink-400 shadow-md shadow-green-400/20'
+                            : 'bg-slate-600 hover:bg-slate-500'
+                      }`}
+                      title={`Step ${i + 1}`}
+                    />
+                  ))}
+                </div>
+
+                {/* Chapter Indicators */}
+                <div className="flex space-x-1">
+                  {lesson && lesson.chapters && lesson.chapters.map((chapter, idx) => (
+                    <button
+                      key={chapter.id}
+                      onClick={() => {
+                        setIsTransitioning(true);
+                        setTimeout(() => {
+                          setCurrentChapter(idx);
+                          setCurrentStep(0);
+                          setTimeout(() => setIsTransitioning(false), 50);
+                        }, 200);
+                      }}
+                      className={`w-2 h-2 rounded-full transition-all duration-200 hover:scale-125 ${
+                        idx === currentChapter
+                          ? 'bg-purple-500'
+                          : idx < currentChapter
+                            ? 'bg-emerald-500'
+                            : 'bg-slate-700 hover:bg-slate-600'
+                      }`}
+                      title={`Chapter ${idx + 1}: ${chapter.title}`}
+                    />
+                  ))}
+                </div>
               </div>
 
               {/* Next/Complete Button */}
-              {currentStep === lesson.steps.length - 1 && lesson.id === 1 ? (
+              {lesson && currentChapter === lesson.chapters.length - 1 && currentChapterData && currentStep === currentChapterData.steps.length - 1 ? (
                 <div className="relative group">
                   <button
                     onClick={() => setShowCompletionModal(true)}
@@ -1189,11 +1306,11 @@ function LessonLayoutInner({ lesson }: LessonLayoutProps) {
                   <button
                     onClick={nextStep}
                     disabled={
-                      currentStep === lesson.steps.length - 1 ||
+                      (lesson && currentChapter === lesson.chapters.length - 1 && currentChapterData && currentStep === currentChapterData.steps.length - 1) ||
                       (currentStepData?.validation && !isValidated)
                     }
                     className={`w-10 h-10 rounded-lg border transition-all duration-200 flex items-center justify-center backdrop-blur-sm active:scale-95 ${
-                      currentStep === lesson.steps.length - 1 ||
+                      (lesson && currentChapter === lesson.chapters.length - 1 && currentChapterData && currentStep === currentChapterData.steps.length - 1) ||
                       (currentStepData?.validation && !isValidated)
                         ? 'border-slate-600/50 bg-slate-800/50 opacity-30 cursor-not-allowed'
                         : 'border-purple-500/50 bg-gradient-to-r from-purple-600/20 to-cyan-600/20 hover:from-purple-600/40 hover:to-cyan-600/40 hover:border-purple-400/70 hover:scale-105 shadow-lg shadow-purple-500/20'
@@ -1210,7 +1327,7 @@ function LessonLayoutInner({ lesson }: LessonLayoutProps) {
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       className={`transition-colors duration-200 ${
-                        currentStep === lesson.steps.length - 1 ||
+                        (lesson && currentChapter === lesson.chapters.length - 1 && currentChapterData && currentStep === currentChapterData.steps.length - 1) ||
                         (currentStepData?.validation && !isValidated)
                           ? 'text-slate-500'
                           : 'text-purple-200 group-hover:text-white'
@@ -1220,7 +1337,7 @@ function LessonLayoutInner({ lesson }: LessonLayoutProps) {
                     </svg>
                   </button>
                   <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-slate-900/90 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none border border-slate-700/50 backdrop-blur-sm">
-                    {currentStep === lesson.steps.length - 1
+                    {(lesson && currentChapter === lesson.chapters.length - 1 && currentChapterData && currentStep === currentChapterData.steps.length - 1)
                       ? 'Complete lesson'
                       : currentStepData?.validation && !isValidated
                         ? 'Complete validation first'
@@ -1231,7 +1348,33 @@ function LessonLayoutInner({ lesson }: LessonLayoutProps) {
             </div>
           </div>
         </div>
-        {/* Completion Modal */}
+        {/* Chapter Completion Modal */}
+        {showChapterComplete && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+            <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl shadow-2xl p-10 flex flex-col items-center max-w-md border border-purple-500/30">
+              <div className="text-6xl mb-6 animate-bounce">🎉</div>
+              <h2 className="text-3xl font-bold text-white mb-3 text-center">
+                Chapter Complete!
+              </h2>
+              <p className="text-xl text-purple-300 mb-6 text-center font-semibold">
+                {completedChapterTitle}
+              </p>
+              <div className="bg-purple-600/20 border border-purple-500/50 rounded-lg p-4 mb-6 text-center">
+                <p className="text-slate-200">
+                  Your progress has been saved! ✨
+                </p>
+              </div>
+              <button
+                onClick={moveToNextChapter}
+                className="px-8 py-3 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 rounded-lg text-white font-semibold shadow-lg transition-all duration-200 hover:scale-105"
+              >
+                Continue to Next Chapter →
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Lesson Completion Modal */}
         {showCompletionModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
             <div className="bg-slate-900 rounded-lg shadow-2xl p-8 flex flex-col items-center max-w-[90vw] max-h-[90vh] relative">
@@ -1316,13 +1459,57 @@ function LessonLayoutInner({ lesson }: LessonLayoutProps) {
           }}
         />
 
+        {/* NFT Minting Modal (triggered by step completion) */}
+        {showNFTMinting && lesson && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+            <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl shadow-2xl p-10 flex flex-col items-center max-w-md border border-purple-500/30 relative">
+              <div className="text-6xl mb-6 animate-bounce">🎨</div>
+              <h2 className="text-3xl font-bold text-white mb-3 text-center">
+                Mint Your Creature NFT!
+              </h2>
+              <p className="text-lg text-purple-300 mb-6 text-center">
+                You've completed a major milestone! Mint your creature NFT as proof of your progress.
+              </p>
+
+              {/* Wallet Connection & NFT Minting */}
+              <div className="w-full mb-6">
+                <div className="mb-4 flex justify-center">
+                  <ConnectButton />
+                </div>
+                <MintCreatureNFT
+                  lessonId={lesson.id}
+                  onMintSuccess={(txHash) => {
+                    addToast({
+                      type: 'success',
+                      title: '🎉 NFT Minted!',
+                      message: `Your creature NFT has been minted successfully! TX: ${txHash.substring(0, 8)}...`,
+                      action: {
+                        label: 'View NFT',
+                        onClick: () => window.open(`/nft/${lesson.id}?tx=${txHash}`, '_blank'),
+                      },
+                    });
+                    setShowNFTMinting(false);
+                  }}
+                />
+              </div>
+
+              <button
+                onClick={() => setShowNFTMinting(false)}
+                className="px-6 py-3 bg-gradient-to-r from-slate-700 to-slate-600 hover:from-slate-600 hover:to-slate-500 rounded-lg text-white font-semibold shadow-md transition-all duration-200"
+              >
+                Continue Without Minting →
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Confetti */}
-        {showCompletionModal && (
+        {(showCompletionModal || showChapterComplete) && (
           <Confetti
             width={windowDimensions.width}
             height={windowDimensions.height}
             recycle={false}
-            numberOfPieces={200}
+            numberOfPieces={showChapterComplete ? 150 : 200}
             gravity={0.1}
             colors={[
               '#9333ea',
