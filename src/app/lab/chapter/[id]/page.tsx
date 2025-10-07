@@ -25,7 +25,13 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
   // Check authentication requirements for any lesson steps
   try {
     const session = await getServerSession();
-    const hasAuthSteps = lesson.steps.some(step => step.requiresAuth);
+
+    // Check if lesson has chapters (new format) or steps (old format)
+    const allSteps = lesson.chapters
+      ? lesson.chapters.flatMap(chapter => chapter.steps)
+      : lesson.steps;
+
+    const hasAuthSteps = allSteps?.some(step => step.requiresAuth);
 
     if (hasAuthSteps) {
       const authResult = await validateLessonAccess(
