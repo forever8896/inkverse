@@ -629,13 +629,13 @@ function DiagnosticPanel({ job }: { job: JobDetail }) {
           <div className="text-xs font-medium text-slate-300 mb-3 uppercase tracking-wide">Recommended Actions:</div>
           <div className="space-y-2 text-xs text-slate-400">
             {job.status === 'pending' && timeSinceUpdate > 60 && (
-              <div className="text-yellow-300">→ Click &quot;Reset to Pending&quot; to force restart</div>
+              <div className="text-yellow-300">→ Click &quot;Reset to Pending&quot; to force pickup</div>
             )}
             {(job.status === 'generating_image' || job.status === 'converting_3d') && timeSinceUpdate > 300 && (
-              <div className="text-yellow-300">→ Job likely timed out - click &quot;Reset to Pending&quot; to restart</div>
+              <div className="text-yellow-300">→ Job likely timed out - click &quot;Reset to Pending&quot; to resume{job.imageS3Key && job.status === 'converting_3d' ? ' from 3D' : ''}</div>
             )}
             {job.status.includes('retrying') && calculateSecondsUntilRetry(job) === 0 && timeSinceUpdate > 120 && (
-              <div className="text-yellow-300">→ Processing deadlock detected - click &quot;Reset to Pending&quot;</div>
+              <div className="text-yellow-300">→ Processing deadlock detected - click &quot;Reset to Pending&quot; to resume</div>
             )}
             {anomalies.some(a => a.includes('presigned URL')) && (
               <div className="text-cyan-300">→ Check S3 bucket permissions and credentials</div>
@@ -911,7 +911,10 @@ export default function AdminJobDetail() {
   const handleResetJob = async () => {
     if (!job) return;
 
-    const confirmMessage = `Reset job ${job.id} back to PENDING status?\n\nThis will:\n• Clear all error states\n• Reset retry counters\n• Restart processing from the beginning\n• Keep existing files (if any)\n\nContinue?`;
+    const hasImage = !!job.imageS3Key;
+    const resumePoint = hasImage ? 'RESUME from 3D conversion (image already exists)' : 'start from image generation';
+
+    const confirmMessage = `Reset job ${job.id} back to PENDING status?\n\nThis will:\n• Clear all error states and retry counters\n• ${resumePoint}\n• Preserve any existing files (saves money!)\n\nExisting files will NOT be regenerated.\nContinue?`;
 
     if (!confirm(confirmMessage)) {
       return;
@@ -1363,7 +1366,10 @@ export default function AdminJobDetail() {
                     {resetting ? 'Resetting...' : '🔄 Reset to Pending'}
                   </button>
                   <div className="text-xs text-slate-400 px-2">
-                    Clears errors and restarts processing from the beginning
+                    {job.imageS3Key
+                      ? 'Clears errors and resumes from 3D conversion (preserves image)'
+                      : 'Clears errors and restarts from image generation'
+                    }
                   </div>
                 </div>
               </div>
