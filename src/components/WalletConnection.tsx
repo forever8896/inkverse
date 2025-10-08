@@ -8,7 +8,7 @@ import type { WalletAccount, ChainId } from '@/lib/reactive-dot/custom-types';
 
 export function WalletConnection() {
   const [account, setAccount] = useState<WalletAccount>();
-  const [chainId, setChainId] = useState<ChainId>('shibuya'); // Changed default to shibuya
+  const [chainId, setChainId] = useState<ChainId>('pop');
 
   return (
     <SignerProvider signer={account?.polkadotSigner}>

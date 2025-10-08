@@ -39,10 +39,11 @@ This application is deployed on **Vercel serverless functions**, which significa
 
 ### Core Application Structure
 
-The app uses Next.js 15 with React Server Components and has two main learning paths:
+The app uses Next.js 15 with React Server Components and implements a **Contract Evolution System** where students progressively build and enhance a single ink! smart contract throughout their learning journey:
 
-1. **Lessons** (`/src/lib/lessons.ts`) - Step-by-step ink! tutorials with validation
-2. **Chapters** (`/src/lib/chapters.ts`) - Story-driven creature creation labs
+1. **Lessons** (`/src/lib/lessons.ts`) - Progressive ink! tutorials with contract evolution
+2. **Contract Evolution** (`/src/lib/contract-evolution.ts`) - System for building contracts across lessons
+3. **Chapters** (`/src/lib/chapters.ts`) - Story-driven creature creation labs [DEPRECATED - replaced by evolution system]
 
 ### Key Components
 
@@ -52,11 +53,12 @@ The app uses Next.js 15 with React Server Components and has two main learning p
 
 ### Content Structure
 
-- `/src/app/lessons/[id]/` - Individual lesson pages
-- `/src/app/lab/chapter/[id]/` - Chapter-based creature creation labs
-- `/public/creatures/` - Creature artwork and animations (PNG/WebM formats)
-- `/src/lib/lessons/` - Extensible JSON lesson definitions (planned)
-- `/src/lib/schemas/` - JSON schemas for community content (planned)
+- `/src/app/lessons/[id]/` - Individual lesson pages with contract evolution
+- `/src/app/lab/chapter/[id]/` - Chapter-based creature creation labs [DEPRECATED]
+- `/public/creatures/` - Creature artwork and animations with evolution stages (PNG/WebM formats)
+- `/src/content/lessons/` - JSON lesson definitions with evolution metadata
+- `/src/lib/contract-templates.ts` - Contract templates for each evolution stage
+- `/docs/` - Comprehensive documentation for the contract evolution system
 
 ## Technology Stack
 
@@ -70,17 +72,24 @@ The app uses Next.js 15 with React Server Components and has two main learning p
 
 ## Content Focus
 
-### Educational Philosophy
+### Educational Philosophy - Contract Evolution System
 
-The application teaches ink! smart contract development through:
+The application teaches ink! smart contract development through a **progressive contract evolution approach**:
 
-- Basic contract structure and storage
-- Constructor and message functions
-- Testing and deployment patterns
-- Blockchain integration concepts
-- Real-world dApp development
+**Core Learning Path:**
+- **Lesson 1**: "The Egg Awakens" - Basic contract structure, storage, and simple functions
+- **Lesson 2**: "The Creature Emerges" - Monster identity, events, error handling, testing
+- **Lesson 3**: "The Monster Communicates" - Advanced events and error patterns
+- **Lesson 4**: "The Monster Learns" - Data structures, mappings, and storage optimization
+- **Lesson 5**: "The Monster Gets a Companion" - Cross-contract calls and trait definitions
 
-Educational content is structured as a gamified bio-engineering experience where users create digital creatures by writing working ink! smart contracts.
+**Key Principles:**
+- **Contract Continuity**: Each lesson builds the same contract, adding complexity progressively
+- **Visual Evolution**: Contract growth corresponds to creature visual evolution
+- **Real-world Patterns**: All concepts apply to production ink! development
+- **Emotional Investment**: Students develop attachment to their evolving creature
+
+Educational content is structured as a gamified bio-engineering experience where students evolve both their ink! skills and their digital creature through writing working smart contracts.
 
 ## Security & Anti-Abuse Measures
 
@@ -93,12 +102,14 @@ Educational content is structured as a gamified bio-engineering experience where
 
 ## Cost Management
 
-### Optimization Strategies
+### Optimization Strategies - Contract Evolution
 
-- Egg stages (no AI cost) for initial lessons
-- 30% failure rate buffer for retries
-- Caching for common generation patterns
-- Progressive loading to minimize API calls
+- **Strategic AI Generation**: Only trigger expensive generation at major evolution milestones
+- **Evolution Stages**: Egg → Creature → Monster → Communicator → Intelligent → Social
+- **30% failure rate buffer** for retries at generation points
+- **Caching for common patterns**: Reusable contract templates and visual assets
+- **Progressive loading**: Minimize API calls through smart evolution triggers
+- **Cost estimation**: Clear cost warnings before AI generation steps
 
 ## Development Guidelines
 
@@ -191,6 +202,24 @@ Use emoji + colored badges for job/creature states:
 3. **Transparency Layers**: Semi-transparent backgrounds maintain dark aesthetic while adding depth
 4. **Consistent Spacing**: Generous padding, comfortable hit targets despite small text
 5. **Color-Coded Actions**: Each action type has a consistent color across the entire interface
+
+## Contract Evolution System Documentation
+
+### Core Documentation Files
+
+- **`/docs/LESSON_EVOLUTION_ARCHITECTURE.md`** - Complete architectural overview of the contract evolution system
+- **`/docs/IMPLEMENTATION_GUIDE.md`** - Technical implementation guide with code examples and migration steps
+- **`/docs/API_SCHEMA_CHANGES.md`** - Detailed API and schema changes required for evolution system
+- **`/docs/CONTRIBUTING_LESSONS.md`** - Contributor guide for creating evolution-based lesson content
+
+### Implementation Status
+
+The Contract Evolution System documentation provides:
+- **Progressive Contract Building**: System for evolving contracts across lessons
+- **Visual Evolution Pipeline**: Coordinated creature and contract evolution
+- **Community Contribution Framework**: Standards for creating educational content
+- **Backward Compatibility**: Migration strategy for existing content
+- **Production-Ready Architecture**: Vercel serverless deployment considerations
 
 # Important Instruction Reminders
 

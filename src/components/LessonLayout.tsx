@@ -16,7 +16,7 @@ import { useSession } from '@/lib/auth-client';
 import '@/styles/lesson-content.css';
 
 // wallet stuff
-import { ReactiveDotProvider, useAccounts } from '@reactive-dot/react';
+import { ReactiveDotProvider, ChainProvider, SignerProvider, useAccounts } from '@reactive-dot/react';
 import { ConnectButton } from '@/components/web3/connect-button';
 import { config } from '@/lib/reactive-dot/config';
 
@@ -75,6 +75,8 @@ function LessonLayoutInner({ lesson }: LessonLayoutProps) {
 
   // GitHub authentication session
   const { data: session, isPending: isAuthLoading } = useSession();
+
+  // (Hydration guard moved to a wrapper component to preserve hook order)
 
   const currentChapterData = lesson?.chapters?.[currentChapter];
   const currentStepData = currentChapterData?.steps[currentStep];
@@ -1407,19 +1409,8 @@ function LessonLayoutInner({ lesson }: LessonLayoutProps) {
                 <div className="mb-4 flex justify-center">
                   <ConnectButton />
                 </div>
-                <MintCreatureNFT 
-                  lessonId={lesson.id} 
-                  onMintSuccess={(txHash) => {
-                    addToast({
-                      type: 'success',
-                      title: '🎉 NFT Minted!',
-                      message: `Your creature NFT has been minted successfully! TX: ${txHash.substring(0, 8)}...`,
-                      action: {
-                        label: 'View NFT',
-                        onClick: () => window.open(`/nft/${lesson.id}?tx=${txHash}`, '_blank'),
-                      },
-                    });
-                  }}
+                <MintCreatureNFT
+                  lessonId={lesson.id}
                 />
               </div>
               
@@ -1478,18 +1469,6 @@ function LessonLayoutInner({ lesson }: LessonLayoutProps) {
                 </div>
                 <MintCreatureNFT
                   lessonId={lesson.id}
-                  onMintSuccess={(txHash) => {
-                    addToast({
-                      type: 'success',
-                      title: '🎉 NFT Minted!',
-                      message: `Your creature NFT has been minted successfully! TX: ${txHash.substring(0, 8)}...`,
-                      action: {
-                        label: 'View NFT',
-                        onClick: () => window.open(`/nft/${lesson.id}?tx=${txHash}`, '_blank'),
-                      },
-                    });
-                    setShowNFTMinting(false);
-                  }}
                 />
               </div>
 
@@ -1532,7 +1511,49 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
     // Type assertion due to duplicate @reactive-dot/core versions in node_modules
     // Note: ReactiveDotProvider handles SSR internally
     <ReactiveDotProvider config={config as any}>
-      <LessonLayoutInner lesson={lesson} />
+      <ChainProvider chainId={"pop" as any}>
+        <WithSigner>
+          <HydrationGuard>
+            <LessonLayoutInner lesson={lesson} />
+          </HydrationGuard>
+        </WithSigner>
+      </ChainProvider>
     </ReactiveDotProvider>
   );
+}
+
+function HydrationGuard({ children }: { children: React.ReactNode }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  if (!mounted) {
+    return (
+      <div className="min-h-screen relative overflow-hidden">
+        <ShaderBackground />
+        <div className="relative z-10 container mx-auto px-4 py-8">
+          <div className="max-w-6xl mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="space-y-6">
+                <div className="h-96 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl animate-pulse" />
+                <div className="h-40 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl animate-pulse" />
+              </div>
+              <div className="space-y-6">
+                <div className="h-48 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl animate-pulse" />
+                <div className="h-64 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl animate-pulse" />
+                <div className="h-32 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl animate-pulse" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  return <>{children}</>;
+}
+
+function WithSigner({ children }: { children: React.ReactNode }) {
+  const accounts = useAccounts();
+  const signer = accounts?.[0]?.polkadotSigner;
+  return <SignerProvider signer={signer}>{children}</SignerProvider>;
 }

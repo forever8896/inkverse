@@ -1,5 +1,5 @@
 
-# MonstersInk! Documentation
+# Monsters Ink! Documentation
 
 ## Contract Evolution System
 

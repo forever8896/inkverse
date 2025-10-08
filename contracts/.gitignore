@@ -1,0 +1,9 @@
+target/
+node_modules/
+.node-data/
+*.contract
+*.wasm
+deployments/*/*.contract
+deployments/*/*.polkavm
+.papi/descriptors
+.env

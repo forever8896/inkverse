@@ -2,7 +2,7 @@
 
 ## Overview
 
-MonstersInk! uses a clean HTML-based content system with automatic styling. **Contributors write simple HTML** —the platform handles all styling automatically.
+Monsters Ink! uses a clean HTML-based content system with automatic styling. **Contributors write simple HTML** —the platform handles all styling automatically.
 
 ## Basic HTML Elements
 
