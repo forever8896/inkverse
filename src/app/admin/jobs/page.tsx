@@ -441,17 +441,17 @@ export default function AdminJobs() {
                         <td className="p-4">
                           <div className="text-slate-300">
                             <div className="font-mono text-sm">
-                              ${(job.openaiEstimatedCost + job.falEstimatedCost).toFixed(4)}
+                              ${job.totalCost.toFixed(4)}
                             </div>
                             <div className="text-xs text-slate-500 mt-1">
-                              {job.costCalculationMethod === 'token_based' ? (
+                              {job.openaiEstimatedCost > 0 || job.falEstimatedCost > 0 ? (
                                 <>
                                   <div>🤖 ${job.openaiEstimatedCost.toFixed(4)} • 🎯 ${job.falEstimatedCost.toFixed(4)}</div>
                                   <div>{job.openaiTotalTokens.toLocaleString()} tokens</div>
                                 </>
-                              ) : (
-                                <div>Legacy: ${job.totalCost.toFixed(2)}</div>
-                              )}
+                              ) : job.totalCost > 0 ? (
+                                <div>${job.totalCost.toFixed(4)}</div>
+                              ) : null}
                             </div>
                           </div>
                         </td>

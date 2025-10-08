@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useRouter } from 'next/navigation';
 import { useParams } from 'next/navigation';
+import Link from 'next/link';
 import Image from 'next/image';
 import MonsterViewer from '@/components/MonsterViewer';
 
@@ -489,9 +490,13 @@ export default function GenerationProgressPage() {
             animate={{ scale: [1, 1.05, 1] }}
             transition={{ duration: 2, repeat: Infinity }}
           >
-            <div className="w-32 h-32 rounded-full bg-gradient-to-br from-purple-500/20 to-cyan-500/20 border-2 border-purple-400/30 flex items-center justify-center text-6xl">
+            <Link
+              href="/generate"
+              className="w-32 h-32 rounded-full bg-gradient-to-br from-purple-500/20 to-cyan-500/20 border-2 border-purple-400/30 hover:border-purple-400/50 flex items-center justify-center text-6xl transition-all hover:scale-105 cursor-pointer"
+              title="Back to Generate"
+            >
               {statusEmojis[currentStatus]}
-            </div>
+            </Link>
           </motion.div>
           
           <motion.h1
