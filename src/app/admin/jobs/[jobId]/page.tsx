@@ -202,6 +202,12 @@ function detectJobAnomalies(job: JobDetail): string[] {
   const timeSinceUpdate = Math.floor((now - updatedTime) / 1000);
   const timeSinceCreation = Math.floor((now - createdTime) / 1000);
 
+  // Skip anomaly detection for terminal states - these jobs are done
+  const terminalStates = ['completed', 'failed_permanent'];
+  if (terminalStates.includes(job.status)) {
+    return [];
+  }
+
   // ═══════════ STATUS & ERROR STATE ANOMALIES ═══════════
 
   // ANOMALY 1: Status suggests error but no lastError recorded
