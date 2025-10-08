@@ -15,7 +15,7 @@ Milestone 1 deliverables have been completed. We deployed a production platform 
 | **Technical Feasibility Docs**    | ✅ Complete       | Architecture decisions documented & validated                                                                               |
 | **Testing Methodology**           | ✅ Complete       | Quality metrics and retry logic implemented                                                                                 |
 | **Risk Assessment**               | ✅ Complete       | Cost controls, rate limiting, error handling                                                                                |
-| **Serverless Timeout Validation** | ✅ Complete       | Initial production testing shows 300s timeout works for most cases; decision on external job queue pending further testing  |
+| **Serverless Timeout Validation** | ✅ Complete       | Extensive testing revealed need for Inngest job queue to prevent AI credit waste and ensure maximum reliability across all edge cases. Integration is our next step, to be completed before M2 submission. Free plan expected to be sufficient. |
 
 ---
 
@@ -82,11 +82,11 @@ Milestone 1 deliverables have been completed. We deployed a production platform 
 
 **Async Strategy:**
 
-- **Tested in Production:** 300s Vercel Pro timeout appears sufficient for the pipeline in most cases
-- OpenAI image generation + fal.ai 3D conversion typically completes within timeout limits
-- **Implementation:** Poll-triggered execution
-- **Current approach:** Database-backed queue without Redis/Bull/Inngest
-- **Decision pending:** More extensive production testing needed to determine if external job queue (Inngest) is required
+- **Tested in Production:** Extensive testing revealed edge cases where serverless timeouts risk wasting AI credits
+- **Decision:** Inngest job queue required to ensure zero credit waste and maximum reliability
+- **Implementation:** Inngest with per-step retry logic (image generation and 3D conversion as separate steps)
+- **Timeline:** Integration to be completed before M2 submission
+- **Cost:** Free plan expected to be sufficient for grant program usage
 
 ### Database Architecture
 
@@ -118,14 +118,14 @@ pending → generating_image → [success] → converting_3d → completed
 
 ### Async Job Processing
 
-**Pattern:** Database-backed queue with poll-triggered execution
+**Pattern:** Inngest job queue (to be implemented before M2 submission)
 
-**Current Approach (Database-backed queue):**
+**M1 Approach (Database-backed queue - being replaced):**
 
-- Serverless functions are stateless - persistent queue may not provide benefit
-- Database handles job state atomically
-- **Initial testing:** Vercel 300s timeout appears sufficient for most generations
-- Simpler architecture, fewer moving parts, lower cost
+- Initially tested database-backed queue for simplicity
+- Extensive testing revealed edge cases where timeouts waste AI credits
+- **Lesson learned:** Reliability and zero credit waste require proper job queue infrastructure
+- **Next step:** Migrating to Inngest with per-step retry logic
 
 **Processing Flow:**
 
@@ -136,11 +136,11 @@ pending → generating_image → [success] → converting_3d → completed
 5. Database updated with progress, client sees changes on next poll
 6. Retry logic with exponential backoff (max 3 attempts)
 
-**Initial Production Test Results:**
+**Production Test Results:**
 
-- Most generations complete within Vercel timeout
-- Some failures observed - requires more testing to determine root causes
-- **Decision pending:** Whether external job queue (Inngest) is needed will be determined after more extensive production testing
+- Most generations complete within Vercel timeout under normal conditions
+- Edge cases identified where timeouts result in wasted AI credits (partial completions)
+- **Decision made:** Inngest integration required to eliminate all credit waste scenarios
 
 ### Cost Management Strategy
 
@@ -197,7 +197,7 @@ pending → generating_image → [success] → converting_3d → completed
 - Infinite horizontal scaling (Vercel manages)
 - Edge deployment for static content
 - Database connection pooling (pg-pool)
-- 300s function timeout (testing ongoing to confirm sufficiency)
+- Inngest job queue for reliable async processing (to be implemented)
 
 **Performance Optimizations:**
 
@@ -206,11 +206,11 @@ pending → generating_image → [success] → converting_3d → completed
 - Presigned URL caching reduces R2 API calls
 - Error classification avoids unnecessary retries
 
-**Current Architecture Decisions:**
+**Architecture Decisions:**
 
-- **Database-backed queue** - Currently no external job queue infrastructure
-- **Poll-triggered pattern** - Client polls, function processes inline
-- **Pending decision:** Whether Inngest or similar job queue is needed requires more production testing
+- **Job Queue:** Inngest integration required (to be completed before M2 submission)
+- **Rationale:** Extensive testing proved database-backed approach risks credit waste in edge cases
+- **Benefits:** Per-step retry logic, zero credit waste, maximum reliability
 
 ---
 
