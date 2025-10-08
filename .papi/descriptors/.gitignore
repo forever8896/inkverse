@@ -1,0 +1,5 @@
+# Temporarily allow dist for Vercel deployment
+*
+!.gitignore
+!package.json
+!dist/
