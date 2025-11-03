@@ -5,7 +5,7 @@
   "scripts": {
     "predev": "lsof -ti:3004 | xargs kill -9 2>/dev/null || true",
     "dev": "PORT=3004 next dev --turbopack",
-    "prebuild": "echo 'Skipping polkadot-api generation - using pre-built descriptors'",
+    "prebuild": "papi generate",
     "build": "next build",
     "prestart": "lsof -ti:3004 | xargs kill -9 2>/dev/null || true",
     "start": "PORT=3004 next start",
