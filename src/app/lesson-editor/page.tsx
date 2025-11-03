@@ -5,6 +5,8 @@ import { Lesson, Chapter, Step } from '@/lib/lesson-types';
 import LessonContent from '@/components/LessonContent';
 import CodeEditor from '@/components/CodeEditor';
 import LessonEditorTutorial from '@/components/LessonEditorTutorial';
+import { validateLesson } from '@/lib/lesson-editor-validation';
+import { toast, Toaster } from 'sonner';
 import '@/styles/lesson-content.css';
 
 // Component palette for drag & drop
@@ -54,7 +56,10 @@ export default function LessonEditorPage() {
     fetch('/api/lessons/list')
       .then(res => res.json())
       .then(data => setAvailableLessons(data.lessons || []))
-      .catch(err => console.error('Failed to load lessons:', err));
+      .catch(err => {
+        console.error('Failed to load lessons:', err);
+        toast.error('Failed to load available lessons');
+      });
   }, []);
 
   // Load selected lesson
@@ -63,6 +68,10 @@ export default function LessonEditorPage() {
 
     try {
       const res = await fetch(`/api/lessons/${lessonId}`);
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+      }
+
       const data = await res.json();
 
       if (data.lesson) {
@@ -81,9 +90,11 @@ export default function LessonEditorPage() {
         setSelectedChapter(null);
         setSelectedStep(null);
         setSelectedLessonId(lessonId);
+        toast.success(`Loaded: ${data.lesson.title}`);
       }
     } catch (error) {
-      alert('Failed to load lesson');
+      console.error('Failed to load lesson:', error);
+      toast.error('Failed to load lesson. Please try again.');
     }
   };
 
@@ -167,19 +178,48 @@ export default function LessonEditorPage() {
     }, 100);
   };
 
-  // Generate JSON output
+  // Generate JSON output with validation
   const generateJson = () => {
     const output = {
       ...lesson,
       chapters: chapters,
     };
+
+    // Validate before generating
+    const validation = validateLesson(output);
+
+    if (!validation.success) {
+      toast.error('Validation failed! Please fix the following errors:', {
+        description: validation.errors?.slice(0, 3).map(e => `${e.field}: ${e.message}`).join('\n'),
+        duration: 6000,
+      });
+      console.error('Validation errors:', validation.errors);
+      return;
+    }
+
     setJsonOutput(JSON.stringify(output, null, 2));
+    toast.success('JSON generated successfully!', {
+      description: 'Review the output and copy to clipboard when ready.',
+    });
   };
 
-  // Load JSON from input
+  // Load JSON from input with validation
   const loadJson = () => {
     try {
       const parsed = JSON.parse(loadedJson);
+
+      // Validate the parsed JSON
+      const validation = validateLesson(parsed);
+
+      if (!validation.success) {
+        toast.error('Invalid lesson structure!', {
+          description: validation.errors?.slice(0, 3).map(e => `${e.field}: ${e.message}`).join('\n'),
+          duration: 6000,
+        });
+        console.error('Validation errors:', validation.errors);
+        return;
+      }
+
       setLesson({
         id: parsed.id,
         title: parsed.title,
@@ -194,9 +234,17 @@ export default function LessonEditorPage() {
       setChapters(parsed.chapters || []);
       setSelectedChapter(null);
       setSelectedStep(null);
-      alert('Lesson loaded successfully!');
+      setLoadedJson(''); // Clear input after successful load
+      toast.success('Lesson loaded successfully!');
     } catch (error) {
-      alert('Invalid JSON format');
+      if (error instanceof SyntaxError) {
+        toast.error('Invalid JSON format', {
+          description: 'Please check your JSON syntax and try again.',
+        });
+      } else {
+        toast.error('Failed to load lesson');
+      }
+      console.error('JSON load error:', error);
     }
   };
 
@@ -205,6 +253,9 @@ export default function LessonEditorPage() {
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100">
+      {/* Toast notifications */}
+      <Toaster position="top-right" theme="dark" richColors />
+
       {/* Tutorial overlay */}
       <LessonEditorTutorial
         isActive={showTutorial}

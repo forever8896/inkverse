@@ -28,15 +28,16 @@ const TUTORIAL_STEPS: TutorialStep[] = [
   {
     id: 'load-lesson',
     title: '📚 Step 1: Load an Example Lesson',
-    description: 'Click on the dropdown below and select "Lesson 1: The Egg Awakens". We\'ll use this as our example to explore the editor.',
+    description: 'Click on the dropdown below and select any lesson. We\'ll use it as an example to explore the editor.',
     targetSelector: '.lesson-selector',
     position: 'bottom',
-    action: 'Select Lesson 1 from the dropdown',
+    action: 'Select any lesson from the dropdown',
     waitForAction: true,
     autoAdvance: true,
     checkAction: () => {
       const select = document.querySelector('.lesson-selector') as HTMLSelectElement;
-      return select?.value === '1';
+      // Check if any lesson is selected (value is not empty and not the placeholder)
+      return select?.value !== '' && select?.value !== undefined;
     },
   },
   {
@@ -49,15 +50,23 @@ const TUTORIAL_STEPS: TutorialStep[] = [
   {
     id: 'select-chapter',
     title: '📂 Step 2: Explore a Chapter',
-    description: 'Now click on any chapter (the gray boxes) to expand it and see its steps. Try clicking on "Chapter 0: Welcome to Monsters Ink!"',
+    description: 'Now click on any chapter (the gray boxes) to expand it and see its steps. Try clicking on the first chapter!',
     targetSelector: '.chapters-list',
     position: 'right',
     action: 'Click on a chapter to expand it',
     waitForAction: true,
     autoAdvance: true,
     checkAction: () => {
-      // Check if any chapter steps are visible
-      return document.querySelector('.chapters-list .ml-3') !== null;
+      // Check if any chapter steps are visible by looking for step buttons
+      // More robust than checking for Tailwind class - looks for actual content structure
+      const chaptersList = document.querySelector('.chapters-list');
+      if (!chaptersList) return false;
+
+      // Check if there are any buttons with "Add Step" text, which appears when chapter is expanded
+      const addStepButton = Array.from(chaptersList.querySelectorAll('button')).find(
+        btn => btn.textContent?.includes('+ Add Step')
+      );
+      return addStepButton !== undefined;
     },
   },
   {
