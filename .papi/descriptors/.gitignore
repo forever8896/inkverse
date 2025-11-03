@@ -1,2 +1,3 @@
-# Generated files - do not commit
-dist/
+# Allow dist for deployment
+# Commit these files for Vercel
+
