@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useRef, useEffect, useState, useMemo } from "react";
-import Editor, { Monaco, loader } from "@monaco-editor/react";
+import React, { useRef, useMemo } from "react";
+import Editor, { Monaco } from "@monaco-editor/react";
 
 interface MonacoCodeEditorProps {
   value: string;
@@ -19,12 +19,8 @@ interface InkSuggestion {
   type: "macro" | "keyword" | "function" | "type";
 }
 
-// Configure Monaco loader for better performance
-loader.config({
-  paths: {
-    vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs'
-  }
-});
+// Monaco will auto-bundle when no loader config is specified
+// This is the recommended approach for Next.js + Vercel deployments
 
 // Custom ink! suggestions disabled - using native Rust language server instead
 const INK_SUGGESTIONS: InkSuggestion[] = [];
@@ -74,8 +70,6 @@ export default function MonacoCodeEditor({
   style,
 }: MonacoCodeEditorProps) {
   const editorRef = useRef<any>(null);
-  const [isEditorReady, setIsEditorReady] = useState(false);
-  const [showEditor, setShowEditor] = useState(false);
 
   // Memoize filtered suggestions for better performance
   const memoizedSuggestions = useMemo(() => {
@@ -86,12 +80,6 @@ export default function MonacoCodeEditor({
 
   const handleEditorDidMount = (editor: any, monaco: Monaco) => {
     editorRef.current = editor;
-    setIsEditorReady(true);
-    
-    // Delay showing the editor slightly for a smooth transition
-    setTimeout(() => {
-      setShowEditor(true);
-    }, 100);
 
     // Custom completion provider disabled - using native Rust language server instead
     // This allows Monaco's built-in Rust support to handle autocomplete
@@ -190,41 +178,28 @@ export default function MonacoCodeEditor({
   };
 
   return (
-    <div 
+    <div
       className={`h-full w-full rounded-xl border border-slate-600/50 shadow-2xl backdrop-blur-sm bg-white/5 overflow-hidden relative ${className || ''}`}
       style={style}
     >
-      {/* Loading State */}
-      <div 
-        className={`absolute inset-0 flex items-center justify-center backdrop-blur-md bg-white/10 rounded-xl transition-all duration-500 ease-out ${
-          showEditor 
-            ? 'opacity-0 translate-y-[-20px] pointer-events-none' 
-            : 'opacity-100 translate-y-0'
-        }`}
-      >
-        <div className="text-center">
-          <div className="text-4xl mb-4">🧬</div>
-          <div className="text-slate-300">Loading code editor...</div>
-        </div>
-      </div>
-
-      {/* Editor */}
-      <div 
-        className={`h-full w-full transition-all duration-500 ease-out ${
-          showEditor 
-            ? 'opacity-100 translate-y-0' 
-            : 'opacity-0 translate-y-[20px]'
-        }`}
-      >
-        <Editor
-          height="100%"
-          language={language}
-          value={value}
-          onChange={handleEditorChange}
-          onMount={handleEditorDidMount}
-          beforeMount={defineTheme}
-          theme="inkverse-theme"
-          options={{
+      {/* Editor with built-in loading state */}
+      <Editor
+        height="100%"
+        language={language}
+        value={value}
+        onChange={handleEditorChange}
+        onMount={handleEditorDidMount}
+        beforeMount={defineTheme}
+        theme="inkverse-theme"
+        loading={
+          <div className="h-full w-full flex items-center justify-center backdrop-blur-md bg-white/10 rounded-xl">
+            <div className="text-center">
+              <div className="text-4xl mb-4">🧬</div>
+              <div className="text-slate-300">Loading code editor...</div>
+            </div>
+          </div>
+        }
+        options={{
             readOnly,
             automaticLayout: true,
             contextmenu: false,
@@ -262,7 +237,6 @@ export default function MonacoCodeEditor({
             smoothScrolling: true,
           }}
         />
-      </div>
     </div>
   );
 }
