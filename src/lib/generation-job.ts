@@ -162,6 +162,7 @@ export interface JobError {
 export interface GenerationJobData {
   id: string;
   userId: string;
+  workflowRunId?: string; // Vercel Workflow Run ID for durable execution
   prompt: string;
   style: MonsterStyle;
   stage: MonsterStage;
@@ -201,6 +202,7 @@ export interface CreateJobParams {
 export interface UpdateJobParams {
   status?: GenerationStatus;
   progress?: number;
+  workflowRunId?: string; // Vercel Workflow Run ID
   errorMessage?: string;
   userMessage?: string;
   imageS3Key?: string;
@@ -271,6 +273,7 @@ export class GenerationJob {
   // Getters
   get id(): string { return this.data.id; }
   get userId(): string { return this.data.userId; }
+  get workflowRunId(): string | undefined { return this.data.workflowRunId; }
   get prompt(): string { return this.data.prompt; }
   get style(): MonsterStyle { return this.data.style; }
   get stage(): MonsterStage { return this.data.stage; }
@@ -302,6 +305,7 @@ export class GenerationJob {
         INSERT INTO monster_generations (
           id,
           user_id,
+          workflow_run_id,
           prompt,
           style,
           stage,
@@ -310,11 +314,12 @@ export class GenerationJob {
           progress,
           total_cost,
           retry_count
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         RETURNING *
       `, [
         jobId,
         params.userId,
+        null, // workflow_run_id - will be set after start() call
         params.prompt,
         params.style,
         params.stage,
@@ -331,6 +336,7 @@ export class GenerationJob {
       return new GenerationJob({
         id: row.id,
         userId: row.user_id,
+        workflowRunId: row.workflow_run_id,
         prompt: row.prompt,
         style: row.style,
         stage: row.stage,
@@ -384,6 +390,7 @@ export class GenerationJob {
       return new GenerationJob({
         id: row.id,
         userId: row.user_id,
+        workflowRunId: row.workflow_run_id,
         prompt: row.prompt,
         style: row.style,
         stage: row.stage,
@@ -439,6 +446,7 @@ export class GenerationJob {
       return result.rows.map((row: any) => new GenerationJob({
         id: row.id,
         userId: row.user_id,
+        workflowRunId: row.workflow_run_id,
         prompt: row.prompt,
         style: row.style,
         stage: row.stage,
@@ -495,6 +503,12 @@ export class GenerationJob {
         updates.push(`progress = $${paramIndex++}`);
         values.push(params.progress);
         this.data.progress = params.progress;
+      }
+
+      if (params.workflowRunId !== undefined) {
+        updates.push(`workflow_run_id = $${paramIndex++}`);
+        values.push(params.workflowRunId);
+        this.data.workflowRunId = params.workflowRunId;
       }
 
       if (params.errorMessage !== undefined) {
@@ -968,6 +982,7 @@ export class GenerationJob {
       return new GenerationJob({
         id: row.id,
         userId: row.user_id,
+        workflowRunId: row.workflow_run_id,
         prompt: row.prompt,
         style: row.style,
         stage: row.stage,
@@ -1072,6 +1087,7 @@ export class GenerationJob {
     return {
       id: this.data.id,
       userId: this.data.userId,
+      workflowRunId: this.data.workflowRunId,
       prompt: this.data.prompt,
       style: this.data.style,
       stage: this.data.stage,
@@ -1124,6 +1140,7 @@ export class GenerationJob {
       return result.rows.map(row => new GenerationJob({
         id: row.id,
         userId: row.user_id,
+        workflowRunId: row.workflow_run_id,
         prompt: row.prompt,
         style: row.style,
         stage: row.stage,
@@ -1154,6 +1171,73 @@ export class GenerationJob {
     } catch (error) {
       console.error('[GenerationJob] Failed to find resumable jobs:', error);
       return [];
+    }
+  }
+
+  /**
+   * Find an active job for a user (for duplicate prevention)
+   */
+  static async findActive(params: {
+    userId: string;
+    status?: GenerationStatus[];
+  }): Promise<GenerationJob | null> {
+    const pool = getPool();
+
+    const statusFilter = params.status || [
+      'pending',
+      'generating_image',
+      'converting_3d',
+      'image_generation_retrying',
+      'conversion_retrying'
+    ];
+
+    try {
+      const result = await pool.query(`
+        SELECT * FROM monster_generations
+        WHERE user_id = $1 AND status = ANY($2)
+        ORDER BY created_at DESC
+        LIMIT 1
+      `, [params.userId, statusFilter]);
+
+      if (result.rows.length === 0) {
+        return null;
+      }
+
+      const row = result.rows[0];
+      return new GenerationJob({
+        id: row.id,
+        userId: row.user_id,
+        workflowRunId: row.workflow_run_id,
+        prompt: row.prompt,
+        style: row.style,
+        stage: row.stage,
+        generationType: row.generation_type,
+        status: row.status,
+        progress: row.progress,
+        errorMessage: row.error_message,
+        userMessage: row.user_message,
+        imageS3Key: row.image_s3_key,
+        imageUrl: row.image_url,
+        glbS3Key: row.glb_s3_key,
+        glbUrl: row.glb_url,
+        totalCost: parseFloat(row.total_cost),
+        retryCount: row.retry_count || 0,
+        lastError: row.last_error ? GenerationJob.safeParseJSON(row.last_error) : undefined,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+        completedAt: row.completed_at,
+        openaiTextTokens: row.openai_text_tokens || 0,
+        openaiImageTokens: row.openai_image_tokens || 0,
+        openaiTotalTokens: row.openai_total_tokens || 0,
+        openaiEstimatedCost: parseFloat(row.openai_estimated_cost) || 0.0,
+        falEstimatedCost: parseFloat(row.fal_estimated_cost) || 0.0,
+        costCalculationMethod: row.cost_calculation_method || 'token_based',
+        lastCostUpdate: row.last_cost_update || row.created_at,
+      });
+
+    } catch (error) {
+      console.error(`[GenerationJob] Failed to find active job for user ${params.userId}:`, error);
+      throw error;
     }
   }
 

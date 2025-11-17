@@ -55,7 +55,7 @@ export function MintCreatureNFT({ lessonId, onMintSuccess, mintedTokenId }: Mint
       // Call map_account extrinsic
       const tx = (typedApi.tx.Revive as any).map_account()
         .signAndSubmit(signer)
-        .then(async (result) => {
+        .then(async (result: { ok: boolean; dispatchError?: any }) => {
           if (!result.ok) {
             throw new Error("Failed to map account", { cause: result.dispatchError })
           }

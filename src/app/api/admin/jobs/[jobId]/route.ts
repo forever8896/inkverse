@@ -7,6 +7,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { GenerationJob } from '@/lib/generation-job';
 import { S3Service } from '@/services/s3-service';
 import { requireAdminApi } from '@/lib/admin-auth';
+import {
+  validateAndFetchJob,
+  cleanupJobS3Files,
+  ValidationError,
+  NotFoundError
+} from '@/lib/admin-job-helpers';
 
 export interface DeleteJobResponse {
   success: boolean;
@@ -25,49 +31,13 @@ export async function DELETE(
   try {
     const { jobId } = await params;
 
-    // Validate job ID format (UUID)
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(jobId)) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid job ID format' },
-        { status: 400 }
-      );
-    }
-
-    // Find the job
-    const job = await GenerationJob.findById(jobId);
-    if (!job) {
-      return NextResponse.json(
-        { success: false, error: 'Job not found' },
-        { status: 404 }
-      );
-    }
+    // Validate and fetch job (throws ValidationError or NotFoundError)
+    const job = await validateAndFetchJob(jobId);
 
     console.log(`[ADMIN] Deleting job ${jobId} and associated files...`);
 
     // Delete S3 files if they exist
-    const s3Service = S3Service.getInstance();
-    const deletedFiles: string[] = [];
-
-    try {
-      if (job.imageS3Key) {
-        await s3Service.deleteFile(job.imageS3Key);
-        deletedFiles.push('image');
-        console.log(`[ADMIN] Deleted S3 image: ${job.imageS3Key}`);
-      }
-    } catch (error) {
-      console.warn(`[ADMIN] Failed to delete image S3 file: ${error}`);
-    }
-
-    try {
-      if (job.glbS3Key) {
-        await s3Service.deleteFile(job.glbS3Key);
-        deletedFiles.push('3D model');
-        console.log(`[ADMIN] Deleted S3 GLB: ${job.glbS3Key}`);
-      }
-    } catch (error) {
-      console.warn(`[ADMIN] Failed to delete GLB S3 file: ${error}`);
-    }
+    const deletedFiles = await cleanupJobS3Files(job);
 
     // Delete the job from database
     const { getPool } = await import('@/lib/postgres');
@@ -85,7 +55,23 @@ export async function DELETE(
 
   } catch (error) {
     console.error(`[ADMIN] Failed to delete job:`, error);
-    
+
+    // Handle validation errors
+    if (error instanceof ValidationError) {
+      return NextResponse.json(
+        { success: false, error: error.message },
+        { status: 400 }
+      );
+    }
+
+    // Handle not found errors
+    if (error instanceof NotFoundError) {
+      return NextResponse.json(
+        { success: false, error: error.message },
+        { status: 404 }
+      );
+    }
+
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }
@@ -105,23 +91,8 @@ export async function GET(
   try {
     const { jobId } = await params;
 
-    // Validate job ID format (UUID)
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(jobId)) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid job ID format' },
-        { status: 400 }
-      );
-    }
-
-    // Find the job
-    const job = await GenerationJob.findById(jobId);
-    if (!job) {
-      return NextResponse.json(
-        { success: false, error: 'Job not found' },
-        { status: 404 }
-      );
-    }
+    // Validate and fetch job (throws ValidationError or NotFoundError)
+    const job = await validateAndFetchJob(jobId);
 
     // Get user info
     const { getPool } = await import('@/lib/postgres');
@@ -156,6 +127,13 @@ export async function GET(
       console.warn(`[ADMIN] Failed to generate presigned URL for GLB:`, error);
     }
 
+    // Fetch workflow data if run ID exists
+    let workflowData = null;
+    if (job.workflowRunId) {
+      const { getWorkflowRunData } = await import('@/lib/workflow-data');
+      workflowData = await getWorkflowRunData(job.workflowRunId);
+    }
+
     const response = {
       success: true,
       job: {
@@ -164,13 +142,30 @@ export async function GET(
         glbUrl: freshGlbUrl,
         userName: user?.name,
         userEmail: user?.email
-      }
+      },
+      workflow: workflowData, // Workflow observability data (steps, events, status)
     };
 
     return NextResponse.json(response);
 
   } catch (error) {
     console.error(`[ADMIN] Failed to fetch job details:`, error);
+
+    // Handle validation errors
+    if (error instanceof ValidationError) {
+      return NextResponse.json(
+        { success: false, error: error.message },
+        { status: 400 }
+      );
+    }
+
+    // Handle not found errors
+    if (error instanceof NotFoundError) {
+      return NextResponse.json(
+        { success: false, error: error.message },
+        { status: 404 }
+      );
+    }
 
     return NextResponse.json(
       { success: false, error: 'Internal server error' },

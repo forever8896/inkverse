@@ -35,6 +35,11 @@ export interface PresignedUrlOptions {
   expiresIn?: number; // seconds, default 1 hour
 }
 
+export interface UploadOptions {
+  metadata?: Record<string, string>;
+  expiresIn?: number; // For presigned URL generation
+}
+
 export class S3Service {
   private static instance: S3Service;
   private client: S3Client;
@@ -111,37 +116,87 @@ export class S3Service {
   }
 
   /**
-   * Upload a file buffer to S3
+   * Upload a file buffer to S3 with optional idempotency support
+   *
+   * @param key - S3 object key
+   * @param buffer - File data buffer
+   * @param contentType - MIME type
+   * @param options - Upload options including metadata for idempotency
+   * @returns UploadResult with success status, URL, and error info
    */
   async uploadFile(
-    key: string, 
-    buffer: Buffer, 
-    contentType: string = 'application/octet-stream'
+    key: string,
+    buffer: Buffer,
+    contentType: string = 'application/octet-stream',
+    options?: UploadOptions
   ): Promise<UploadResult> {
     try {
+      // Idempotency check: If idempotencyKey provided, check if file exists
+      if (options?.metadata?.idempotencyKey) {
+        try {
+          const headResult = await this.client.send(
+            new HeadObjectCommand({
+              Bucket: this.bucket,
+              Key: key
+            })
+          );
+
+          // File exists - check if idempotency key matches
+          if (headResult.Metadata?.idempotencykey === options.metadata.idempotencyKey) {
+            console.log(`[S3Service] File ${key} already uploaded (idempotent - skipping upload)`);
+
+            // Return existing file URL
+            const presignedUrl = await this.getPresignedUrl(key, {
+              expiresIn: options.expiresIn || 7200 // 2 hours default
+            });
+
+            return {
+              key,
+              url: presignedUrl,
+              bucket: this.bucket,
+              success: true
+            };
+          } else {
+            console.log(`[S3Service] File ${key} exists but idempotency key mismatch - re-uploading`);
+          }
+        } catch (headError: any) {
+          // File doesn't exist (404) - proceed with upload
+          if (headError.name !== 'NotFound') {
+            throw headError; // Other error - propagate
+          }
+        }
+      }
+
+      // Upload file to S3
+      console.log(`[S3Service] Uploading ${key} to S3 (${buffer.length} bytes)`);
+
       const command = new PutObjectCommand({
         Bucket: this.bucket,
         Key: key,
         Body: buffer,
         ContentType: contentType,
+        Metadata: options?.metadata // Include idempotency key in metadata
       });
 
       await this.client.send(command);
 
-      const url = await this.getPresignedUrl(key, { expiresIn: 3600 }); // 1 hour
+      console.log(`[S3Service] Successfully uploaded ${key}`);
 
-      console.log(`[S3Service] Uploaded file: ${key} (${buffer.length} bytes)`);
+      // Generate presigned URL
+      const presignedUrl = await this.getPresignedUrl(key, {
+        expiresIn: options?.expiresIn || 7200 // 2 hours default
+      });
 
       return {
         key,
-        url,
+        url: presignedUrl,
         bucket: this.bucket,
         success: true,
       };
 
     } catch (error) {
       console.error(`[S3Service] Upload failed for ${key}:`, error);
-      
+
       return {
         key,
         url: '',

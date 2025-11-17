@@ -17,7 +17,7 @@ cp .env.example .env.local
 # 5. Install, migrate, and run
 npm install
 npm run db:migrate
-npm run dev
+vercel dev --listen 3004 --yes  # Use this for workflow testing
 ```
 
 Visit **http://localhost:3004**
@@ -138,9 +138,10 @@ npm run db:reset      # ⚠️  Drop all tables and re-run migrations (destructi
 npm run db:setup      # Alias for db:migrate
 
 # Development
-npm run dev           # Start development server with Turbopack
-npm run build         # Build for production
-npm start             # Start production server
+vercel dev --listen 3004 --yes  # Start development server with Vercel Workflows (REQUIRED for workflow testing)
+npm run dev                      # Alternative: Start Next.js dev server (workflows may not work locally)
+npm run build                    # Build for production
+npm start                        # Start production server
 
 # Code Quality
 npm run lint          # Run ESLint
@@ -182,6 +183,7 @@ Each retry stores structured metadata (`retryCount`, `lastRetryAt`, `suggestedRe
 - **Frontend:** React/Next.js 15 with Three.js for 3D visualization
 - **Code Editor:** Monaco Editor (ink!/Rust syntax)
 - **Backend:** Next.js API routes (Vercel serverless)
+- **Workflows:** Vercel Workflows for durable task execution
 - **Database:** PostgreSQL with connection pooling
 - **Authentication:** GitHub OAuth integration via Better Auth
 - **Infrastructure:** Docker containers for pop-cli compilation service

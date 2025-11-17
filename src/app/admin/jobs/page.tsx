@@ -223,6 +223,12 @@ export default function AdminJobs() {
             <p className="text-slate-400">Monitor monster generation pipeline and job statuses</p>
           </div>
           <div className="flex items-center gap-4">
+            <Link
+              href="/generate"
+              className="px-4 py-2 bg-emerald-600/20 hover:bg-emerald-600/40 border-2 border-emerald-500/50 hover:border-emerald-400 rounded-lg text-emerald-300 hover:text-emerald-100 font-pixel text-[10px] uppercase transition-all hover:shadow-lg hover:shadow-emerald-500/20"
+            >
+              ➕ New Job
+            </Link>
             <label className="flex items-center text-slate-300">
               <input
                 type="checkbox"

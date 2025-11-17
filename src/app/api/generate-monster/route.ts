@@ -124,6 +124,7 @@ export interface GenerateMonsterRequest {
 export interface GenerateMonsterResponse {
   success: boolean;
   jobId?: string;
+  runId?: string;
   error?: string;
 }
 
@@ -354,15 +355,39 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check for existing active job (duplicate prevention)
+    const existingJob = await GenerationJob.findActive({
+      userId: session.user.id
+    });
+
+    if (existingJob && existingJob.workflowRunId) {
+      // Verify workflow run actually exists before resuming
+      try {
+        const { getRun } = await import('workflow/api');
+        const run = await getRun(existingJob.workflowRunId);
+        const status = await run.status;
+
+        if (status === 'running') {
+          console.log(`♻️  [API] Resuming existing job ${existingJob.id} with run ${existingJob.workflowRunId}`);
+          return NextResponse.json({
+            success: true,
+            jobId: existingJob.id,
+            runId: existingJob.workflowRunId,
+            resumed: true
+          }, { status: 200 });
+        } else {
+          console.log(`⚠️  [API] Existing job ${existingJob.id} workflow is ${status}, marking as failed`);
+          await existingJob.update({ status: 'failed', errorMessage: 'Workflow no longer running' });
+        }
+      } catch (error) {
+        console.log(`❌ [API] Workflow run ${existingJob.workflowRunId} not found, marking job as failed`);
+        await existingJob.update({ status: 'failed', errorMessage: 'Workflow run not found' });
+      }
+    }
+
     // Generate AI prompt server-side from structured data
     const aiPrompt = generatePromptFromStructuredData(body);
-    console.log(`🧪 [API] ========================================`);
-    console.log(`🧪 [API] CREATING NEW MONSTER GENERATION JOB`);
-    console.log(`🧪 [API] User ID: ${session.user.id}`);
-    console.log(`🧪 [API] Generated AI Prompt: "${aiPrompt}"`);
-    console.log(`🧪 [API] Style (legacy): ${body.style}`);
-    console.log(`🧪 [API] Stage (NOW IN PROMPT): ${body.stage}`);
-    console.log(`🧪 [API] ========================================`);
+    console.log(`[API] Creating monster generation job - userId: ${session.user.id}, stage: ${body.stage}, style: ${body.style}`);
 
     // Create the generation job
     const job = await GenerationJob.create({
@@ -376,15 +401,28 @@ export async function POST(request: NextRequest) {
     console.log(
       `✅ [API] Created generation job ${job.id} for user ${session.user.id}`
     );
-    console.log(`✅ [API] Job status: ${job.status}`);
-    console.log(`✅ [API] Generation type: ${job.generationType}`);
-    console.log(`✅ [API] Job progress: ${job.progress}%`);
-    console.log(`✅ [API] Job will start processing when user polls status`);
 
-    // Return job ID for tracking
+    // Start Workflow
+    const { start } = await import('workflow/api');
+    const { generateMonster } = await import('@/workflows/generate-monster');
+
+    const run = await start(generateMonster, [{
+      jobId: job.id,
+      userId: session.user.id,
+      prompt: aiPrompt,
+      generationType
+    }]);
+
+    console.log(`✅ [API] Workflow started: ${run.runId}`);
+
+    // Store runId for status tracking
+    await job.update({ workflowRunId: run.runId });
+
+    // Return job ID and run ID for tracking
     const response: GenerateMonsterResponse = {
       success: true,
       jobId: job.id,
+      runId: run.runId,
     };
 
     return NextResponse.json(response, { status: 201 });

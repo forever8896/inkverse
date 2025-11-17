@@ -12,6 +12,7 @@ export interface AdminGenerationJob {
   userId: string;
   userName?: string;
   userEmail?: string;
+  workflowRunId?: string;
   prompt: string;
   style: string;
   stage: string;
@@ -37,6 +38,9 @@ export interface AdminGenerationJob {
     maxRetries: number;
     currentRetries: number;
   };
+  // Workflow observability fields
+  workflowStatus?: string | null;
+  currentStepName?: string | null;
 }
 
 export interface AdminJobsResponse {
@@ -131,6 +135,7 @@ export async function GET(request: NextRequest) {
         mg.user_id,
         u.name as user_name,
         u.email as user_email,
+        mg.workflow_run_id,
         mg.prompt,
         mg.style,
         mg.stage,
@@ -160,11 +165,13 @@ export async function GET(request: NextRequest) {
     const finalParams = [...queryParams, limit, offset];
     const jobsResult = await pool.query(jobsQuery, finalParams);
 
+    // Map database rows to job objects
     const jobs: AdminGenerationJob[] = jobsResult.rows.map((row: any) => ({
       id: row.id,
       userId: row.user_id,
       userName: row.user_name,
       userEmail: row.user_email,
+      workflowRunId: row.workflow_run_id,
       prompt: row.prompt,
       style: row.style,
       stage: row.stage,
@@ -189,12 +196,34 @@ export async function GET(request: NextRequest) {
         } catch {
           return undefined;
         }
-      })() : undefined
+      })() : undefined,
+      // Workflow fields will be enriched below
+      workflowStatus: null,
+      currentStepName: null,
     }));
+
+    // Enrich jobs with workflow status (only for jobs with workflow run IDs)
+    const { getWorkflowStatus } = await import('@/lib/workflow-data');
+
+    const enrichedJobs = await Promise.all(
+      jobs.map(async (job) => {
+        if (!job.workflowRunId) {
+          return job; // Legacy job without workflow
+        }
+
+        const workflowStatus = await getWorkflowStatus(job.workflowRunId);
+
+        return {
+          ...job,
+          workflowStatus: workflowStatus?.status || null,
+          currentStepName: workflowStatus?.currentStepName || null,
+        };
+      })
+    );
 
     const response: AdminJobsResponse = {
       success: true,
-      jobs,
+      jobs: enrichedJobs,
       total
     };
 

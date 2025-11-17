@@ -7,6 +7,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GenerationJob } from '@/lib/generation-job';
 import { requireAdminApi } from '@/lib/admin-auth';
+import {
+  validateAndFetchJob,
+  ValidationError,
+  NotFoundError
+} from '@/lib/admin-job-helpers';
 
 export interface ResetJobResponse {
   success: boolean;
@@ -25,23 +30,8 @@ export async function POST(
   try {
     const { jobId } = await params;
 
-    // Validate job ID format (UUID)
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(jobId)) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid job ID format' },
-        { status: 400 }
-      );
-    }
-
-    // Find the job
-    const job = await GenerationJob.findById(jobId);
-    if (!job) {
-      return NextResponse.json(
-        { success: false, error: 'Job not found' },
-        { status: 404 }
-      );
-    }
+    // Validate and fetch job (throws ValidationError or NotFoundError)
+    const job = await validateAndFetchJob(jobId);
 
     // Don't allow resetting already completed jobs
     if (job.status === 'completed') {
@@ -74,6 +64,22 @@ export async function POST(
 
   } catch (error) {
     console.error(`[ADMIN] Failed to reset job:`, error);
+
+    // Handle validation errors
+    if (error instanceof ValidationError) {
+      return NextResponse.json(
+        { success: false, error: error.message },
+        { status: 400 }
+      );
+    }
+
+    // Handle not found errors
+    if (error instanceof NotFoundError) {
+      return NextResponse.json(
+        { success: false, error: error.message },
+        { status: 404 }
+      );
+    }
 
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
