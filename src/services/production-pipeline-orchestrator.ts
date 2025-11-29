@@ -86,8 +86,6 @@ export class ProductionPipelineOrchestrator {
       // Step 1: Generate image with OpenAI
       console.log(`🏭 [ProductionPipeline] Step 1: Generating image with OpenAI...`);
       const imageResult = await this.openaiService.generateImage(options.customPrompt, {
-        saveToS3: options.saveToS3 !== false,
-        s3KeyPrefix: `monsters/${generationId}`,
         job: options.job
       });
 
@@ -95,29 +93,49 @@ export class ProductionPipelineOrchestrator {
         throw new Error(`Image generation failed: ${imageResult.error}`);
       }
 
-      result.imageS3Key = imageResult.imageS3Key;
-      result.imageUrl = imageResult.imageUrl;
+      // Handle S3 upload manually
+      if (options.saveToS3 !== false && imageResult.base64Image) {
+        const s3Key = `monsters/${generationId}/image.png`;
+        console.log(`🏭 [ProductionPipeline] Uploading image to S3: ${s3Key}`);
+        
+        const imageBuffer = Buffer.from(imageResult.base64Image, 'base64');
+        const uploadResult = await this.s3Service.uploadFile(s3Key, imageBuffer, 'image/png');
+        
+        if (!uploadResult.success) {
+           throw new Error(`S3 upload failed: ${uploadResult.error}`);
+        }
+        
+        result.imageS3Key = uploadResult.key;
+        result.imageUrl = uploadResult.url;
+      } else {
+        result.imageUrl = imageResult.imageUrl;
+      }
+
       result.totalCost += imageResult.cost || 0;
 
       console.log(`✅ [ProductionPipeline] Image generated successfully`);
-      console.log(`✅ [ProductionPipeline] Image S3 key: ${result.imageS3Key}`);
+      console.log(`✅ [ProductionPipeline] Image S3 key: ${result.imageS3Key || 'none'}`);
       console.log(`✅ [ProductionPipeline] Image URL: ${result.imageUrl ? 'present' : 'none'}`);
 
       // Step 2: Convert to 3D with fal.ai
       console.log(`🏭 [ProductionPipeline] Step 2: Converting to 3D with fal.ai...`);
       
-      if (!result.imageS3Key) {
-        throw new Error('No image S3 key available for 3D conversion');
+      let imageBuffer: Buffer;
+
+      if (options.saveToS3 === false && imageResult.base64Image) {
+        console.log(`🏭 [ProductionPipeline] Using in-memory base64 image (S3 skipped)`);
+        imageBuffer = Buffer.from(imageResult.base64Image, 'base64');
+      } else {
+        if (!result.imageS3Key) {
+          throw new Error('No image S3 key available for 3D conversion');
+        }
+        // Download image from S3 for fal.ai processing
+        console.log(`🏭 [ProductionPipeline] Downloading image from S3: ${result.imageS3Key}`);
+        imageBuffer = await this.s3Service.downloadFile(result.imageS3Key);
+        console.log(`🏭 [ProductionPipeline] Downloaded ${imageBuffer.length} bytes`);
       }
 
-      // Download image from S3 for fal.ai processing
-      console.log(`🏭 [ProductionPipeline] Downloading image from S3: ${result.imageS3Key}`);
-      const imageBuffer = await this.s3Service.downloadFile(result.imageS3Key);
-      console.log(`🏭 [ProductionPipeline] Downloaded ${imageBuffer.length} bytes`);
-
       const modelResult = await this.falService.convertImageTo3D(imageBuffer, {
-        saveToS3: options.saveToS3 !== false,
-        s3KeyPrefix: `monsters/${generationId}`,
         job: options.job
       });
 
@@ -125,8 +143,23 @@ export class ProductionPipelineOrchestrator {
         throw new Error(`3D conversion failed: ${modelResult.error}`);
       }
 
-      result.glbS3Key = modelResult.glbS3Key;
-      result.glbUrl = modelResult.glbUrl;
+      // Handle S3 upload manually
+      if (options.saveToS3 !== false && modelResult.glbUrl) {
+        const s3Key = `monsters/${generationId}/model.glb`;
+        console.log(`🏭 [ProductionPipeline] Uploading model to S3: ${s3Key}`);
+        
+        const uploadResult = await this.s3Service.uploadFromUrl(s3Key, modelResult.glbUrl, 'model/gltf-binary');
+        
+        if (!uploadResult.success) {
+           throw new Error(`S3 upload failed: ${uploadResult.error}`);
+        }
+        
+        result.glbS3Key = uploadResult.key;
+        result.glbUrl = uploadResult.url;
+      } else {
+        result.glbUrl = modelResult.glbUrl;
+      }
+
       result.totalCost += modelResult.cost || 0;
 
       // Step 3: Success
@@ -179,8 +212,6 @@ export class ProductionPipelineOrchestrator {
       console.log(`🏭 [ProductionPipeline] Generating image only for ${generationId}`);
 
       const imageResult = await this.openaiService.generateImage(prompt, {
-        saveToS3: true,
-        s3KeyPrefix: `monsters/${generationId}`,
         job
       });
 
@@ -188,8 +219,22 @@ export class ProductionPipelineOrchestrator {
         throw new Error(`Image generation failed: ${imageResult.error}`);
       }
 
-      result.imageS3Key = imageResult.imageS3Key;
-      result.imageUrl = imageResult.imageUrl;
+      // Handle S3 upload manually
+      if (imageResult.base64Image) {
+        const s3Key = `monsters/${generationId}/image.png`;
+        const imageBuffer = Buffer.from(imageResult.base64Image, 'base64');
+        const uploadResult = await this.s3Service.uploadFile(s3Key, imageBuffer, 'image/png');
+        
+        if (!uploadResult.success) {
+           throw new Error(`S3 upload failed: ${uploadResult.error}`);
+        }
+        
+        result.imageS3Key = uploadResult.key;
+        result.imageUrl = uploadResult.url;
+      } else {
+        result.imageUrl = imageResult.imageUrl;
+      }
+
       result.totalCost = imageResult.cost || 0;
       result.success = true;
       result.duration = Date.now() - startTime;
@@ -233,8 +278,6 @@ export class ProductionPipelineOrchestrator {
       const imageBuffer = await this.s3Service.downloadFile(imageS3Key);
       
       const modelResult = await this.falService.convertImageTo3D(imageBuffer, {
-        saveToS3: true,
-        s3KeyPrefix: `monsters/${generationId}`,
         job
       });
 
@@ -242,8 +285,21 @@ export class ProductionPipelineOrchestrator {
         throw new Error(`3D conversion failed: ${modelResult.error}`);
       }
 
-      result.glbS3Key = modelResult.glbS3Key;
-      result.glbUrl = modelResult.glbUrl;
+      // Handle S3 upload manually
+      if (modelResult.glbUrl) {
+        const s3Key = `monsters/${generationId}/model.glb`;
+        const uploadResult = await this.s3Service.uploadFromUrl(s3Key, modelResult.glbUrl, 'model/gltf-binary');
+        
+        if (!uploadResult.success) {
+           throw new Error(`S3 upload failed: ${uploadResult.error}`);
+        }
+        
+        result.glbS3Key = uploadResult.key;
+        result.glbUrl = uploadResult.url;
+      } else {
+        result.glbUrl = modelResult.glbUrl;
+      }
+
       result.totalCost = modelResult.cost || 0;
       result.success = true;
       result.duration = Date.now() - startTime;

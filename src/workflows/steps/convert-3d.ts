@@ -11,6 +11,7 @@ import { S3Service } from '@/services/s3-service';
 import { GenerationJob, type ErrorType } from '@/lib/generation-job';
 import { WorkflowLogger } from '../utils/logging';
 import { mapServiceErrorToWorkflowError, getRetryStatus } from '../utils/error-mapping';
+import { FAL_PRICING } from '@/config/pricing';
 
 export interface Conversion3DResult {
   glbS3Key: string;
@@ -47,8 +48,33 @@ export async function convert3D(
       retryCount: metadata.attempt
     });
 
-    // Download image from S3
     const s3Service = S3Service.getInstance();
+    // Deterministic S3 key for idempotency
+    const s3Key = `monsters/${jobId}/model.glb`;
+
+    // 1. Idempotency Check: Check if 3D model already exists
+    const exists = await s3Service.fileExists(s3Key);
+
+    if (exists) {
+      logger.info('3D model already exists in S3 (idempotent)', { s3Key });
+
+      const glbUrl = await s3Service.getPresignedUrl(s3Key, { expiresIn: 7200 }); // 2 hours
+
+      // Update job with existing results
+      await job.complete3DConversion(s3Key);
+      await job.update({
+        progress: 90,
+        userMessage: '✨ 3D model ready! Finalizing...'
+      });
+
+      return {
+        glbS3Key: s3Key,
+        glbUrl,
+        cost: 0 // No cost for cached result
+      };
+    }
+
+    // Download image from S3
     logger.info('Downloading image from S3', { imageS3Key });
 
     const imageBuffer = await s3Service.downloadFile(imageS3Key);
@@ -57,7 +83,6 @@ export async function convert3D(
     // Convert to 3D with fal.ai
     const falService = ProductionFalService.getInstance();
     const result = await falService.convertImageTo3D(imageBuffer, {
-      saveToS3: false, // We'll handle S3 upload separately for idempotency
       job: job
     });
 
@@ -114,8 +139,6 @@ export async function convert3D(
     });
 
     // Upload to S3 with idempotency metadata
-    const s3Key = `monsters/${jobId}.glb`;
-
     const uploadResult = await s3Service.uploadFile(
       s3Key,
       modelBuffer,
@@ -155,7 +178,7 @@ export async function convert3D(
     return {
       glbS3Key: uploadResult.key,
       glbUrl: uploadResult.url,
-      cost: result.cost || 0.30
+      cost: result.cost || FAL_PRICING.DEFAULT_3D_COST
     };
 
   } catch (error) {

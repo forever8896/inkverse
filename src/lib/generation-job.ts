@@ -1175,6 +1175,42 @@ export class GenerationJob {
   }
 
   /**
+   * Count completed sets for a user, broken down by stage
+   * A "Set" is defined as a completed full generation (Image + 3D)
+   */
+  static async countCompletedSets(userId: string): Promise<{ young: number; adult: number; egg: number; total: number }> {
+    const pool = getPool();
+
+    try {
+      const result = await pool.query(`
+        SELECT
+          COALESCE(COUNT(*) FILTER (WHERE stage = 'young')::int, 0) as young,
+          COALESCE(COUNT(*) FILTER (WHERE stage = 'adult')::int, 0) as adult,
+          COALESCE(COUNT(*) FILTER (WHERE stage = 'egg')::int, 0) as egg,
+          COUNT(*)::int as total
+        FROM monster_generations
+        WHERE user_id = $1
+          AND status = 'completed'
+          AND glb_s3_key IS NOT NULL
+          AND generation_type = 'full'
+      `, [userId]);
+
+      const row = result.rows[0];
+      return {
+        young: row.young || 0,
+        adult: row.adult || 0,
+        egg: row.egg || 0,
+        total: row.total || 0
+      };
+
+    } catch (error) {
+      console.error(`[GenerationJob] Failed to count completed sets for user ${userId}:`, error);
+      // Fallback to 0s on error to prevent blocking (or rethrow if strictness is preferred)
+      return { young: 0, adult: 0, egg: 0, total: 0 };
+    }
+  }
+
+  /**
    * Find an active job for a user (for duplicate prevention)
    */
   static async findActive(params: {

@@ -5,14 +5,12 @@
  */
 
 import { fal } from "@fal-ai/client";
-import { S3Service } from './s3-service';
 import { GenerationJob, CostTrackingData } from '../lib/generation-job';
 import { FAL_PRICING } from '../config/pricing';
 
 export interface ConversionResult {
   id: string;
   glbUrl?: string;
-  glbS3Key?: string;
   success: boolean;
   error?: string;
   errorCode?: string; // Structured error code for better classification
@@ -21,8 +19,6 @@ export interface ConversionResult {
 }
 
 export interface ConversionOptions {
-  saveToS3?: boolean;
-  s3KeyPrefix?: string;
   job?: GenerationJob; // Optional job for cost tracking
 }
 
@@ -30,14 +26,12 @@ export class ProductionFalService {
   private static instance: ProductionFalService;
   private requestCount = 0;
   private totalCost = 0;
-  private s3Service: S3Service;
 
   // Cost tracking - Updated September 2025
   // See src/config/pricing.ts for latest pricing information
   private readonly CONVERSION_COST = FAL_PRICING.DEFAULT_3D_COST; // $0.30 per conversion with standard textures
 
   private constructor() {
-    this.s3Service = S3Service.getInstance();
     this.validateConfig();
 
     // Configure fal client with API key
@@ -100,13 +94,6 @@ export class ProductionFalService {
     if (errorMessage.includes('overloaded') || errorMessage.includes('busy') ||
         errorMessage.includes('queue')) {
       return { errorCode: 'fal_overloaded', httpStatus: 503 };
-    }
-
-    // Handle S3 upload/download errors
-    if ((error as any).isS3Error || errorMessage.includes('s3') ||
-        errorMessage.includes('upload failed') || errorMessage.includes('download') ||
-        errorMessage.includes('failed to download')) {
-      return { errorCode: 's3_upload_error' };
     }
 
     // Default fal.ai error
@@ -186,71 +173,6 @@ export class ProductionFalService {
         throw new Error('No 3D model URL returned from fal.ai');
       }
 
-      let glbS3Key: string | undefined;
-
-      // Upload to S3 if requested
-      if (options.saveToS3) {
-        const s3KeyPrefix = options.s3KeyPrefix || 'models';
-        glbS3Key = `${s3KeyPrefix}/${conversionId}.glb`;
-
-        console.log(`📤 [ProductionFal] Downloading model from fal.ai...`);
-        console.log(`📤 [ProductionFal] Model URL: ${modelData.model_mesh.url}`);
-
-        // Download the GLB file with retry logic
-        const downloadStart = Date.now();
-        let downloadResponse;
-        let retries = 3;
-        
-        while (retries > 0) {
-          try {
-            downloadResponse = await fetch(modelData.model_mesh.url, { 
-              signal: AbortSignal.timeout(60000) // 60 second timeout
-            });
-            if (downloadResponse.ok) break;
-          } catch (error) {
-            retries--;
-            if (retries === 0) throw error;
-            console.log(`🎯 [ProductionFal] Download retry ${4 - retries}/3...`);
-            await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2s between retries
-          }
-        }
-        
-        if (!downloadResponse || !downloadResponse.ok) {
-          throw new Error(`Failed to download 3D model: ${downloadResponse?.statusText}`);
-        }
-
-        const modelBuffer = Buffer.from(await downloadResponse.arrayBuffer());
-        const downloadDuration = Date.now() - downloadStart;
-        
-        console.log(`📤 [ProductionFal] Model downloaded in ${downloadDuration}ms`);
-        console.log(`📤 [ProductionFal] Model size: ${(modelBuffer.length / (1024 * 1024)).toFixed(2)} MB`);
-
-        // Upload to S3
-        console.log(`📤 [ProductionFal] Uploading to S3: ${glbS3Key}`);
-        const uploadStart = Date.now();
-        try {
-          const uploadResult = await this.s3Service.uploadFile(glbS3Key, modelBuffer, 'model/gltf-binary');
-          const uploadDuration = Date.now() - uploadStart;
-
-          if (!uploadResult.success) {
-            console.error(`❌ [ProductionFal] S3 upload failed: ${uploadResult.error}`);
-            // Create specific S3 upload error
-            const s3Error = new Error(`S3 upload failed: ${uploadResult.error}`);
-            (s3Error as any).isS3Error = true;
-            throw s3Error;
-          }
-
-          console.log(`✅ [ProductionFal] S3 upload completed in ${uploadDuration}ms`);
-          console.log(`✅ [ProductionFal] S3 URL: ${uploadResult.url}`);
-        } catch (uploadError) {
-          console.error(`❌ [ProductionFal] S3 upload failed: ${uploadError}`);
-          // Mark as S3 error for classification
-          const s3Error = new Error(`S3 upload failed: ${uploadError instanceof Error ? uploadError.message : uploadError}`);
-          (s3Error as any).isS3Error = true;
-          throw s3Error;
-        }
-      }
-
       // Log cost tracking to database if job is provided
       if (options.job) {
         const costData: CostTrackingData = {
@@ -272,14 +194,12 @@ export class ProductionFalService {
       const conversionResult: ConversionResult = {
         id: conversionId,
         glbUrl: modelData.model_mesh.url,
-        glbS3Key,
         success: true,
         cost: this.CONVERSION_COST,
       };
 
       console.log(`✅ [ProductionFal] Successfully converted to 3D ${conversionId}`);
       console.log(`✅ [ProductionFal] Cost: $${this.CONVERSION_COST}`);
-      console.log(`✅ [ProductionFal] S3 Key: ${glbS3Key || 'none'}`);
       console.log(`✅ [ProductionFal] fal.ai URL: ${modelData.model_mesh.url}`);
 
       return conversionResult;

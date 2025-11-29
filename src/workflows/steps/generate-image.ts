@@ -11,6 +11,7 @@ import { S3Service } from '@/services/s3-service';
 import { GenerationJob, type ErrorType } from '@/lib/generation-job';
 import { WorkflowLogger } from '../utils/logging';
 import { mapServiceErrorToWorkflowError, getRetryStatus } from '../utils/error-mapping';
+import { OPENAI_PRICING } from '@/config/pricing';
 
 export interface ImageGenerationResult {
   imageS3Key: string;
@@ -47,11 +48,35 @@ export async function generateImage(
       retryCount: metadata.attempt
     });
 
-    // Generate image with OpenAI and upload to S3
+    const s3Service = S3Service.getInstance();
+    // Deterministic S3 key for idempotency
+    const imageS3Key = `monsters/${jobId}/image.png`;
+
+    // 1. Idempotency Check: Check if image already exists
+    const exists = await s3Service.fileExists(imageS3Key);
+    
+    if (exists) {
+      logger.info('Image already exists in S3 (idempotent)', { s3Key: imageS3Key });
+      
+      const s3Url = await s3Service.getPresignedUrl(imageS3Key, { expiresIn: 7200 }); // 2 hours
+
+      // Update job with existing results
+      await job.completeImageGeneration(imageS3Key);
+      await job.update({
+        progress: 40,
+        userMessage: '✅ Image generated! Now creating your 3D model...'
+      });
+
+      return {
+        imageS3Key,
+        imageUrl: s3Url,
+        cost: 0 // No cost for cached result
+      };
+    }
+
+    // 2. Generate image with OpenAI (returns base64)
     const openaiService = ProductionOpenAIService.getInstance();
     const result = await openaiService.generateImage(prompt, {
-      saveToS3: true, // Service handles S3 upload with base64 data
-      s3KeyPrefix: `monsters/${jobId}`,
       job: job
     });
 
@@ -86,32 +111,56 @@ export async function generateImage(
       throw workflowError;
     }
 
-    // Verify S3 upload succeeded
-    if (!result.imageS3Key) {
-      logger.error('Image generated but S3 key is missing');
-      throw new Error('S3 upload did not complete successfully');
+    // 3. Upload to S3
+    if (!result.base64Image) {
+      logger.error('Image generated but base64 data is missing');
+      throw new Error('No image data returned from generation service');
+    }
+
+    logger.info('Image generated, uploading to S3', { size: result.base64Image.length });
+
+    const imageBuffer = Buffer.from(result.base64Image, 'base64');
+    
+    const uploadResult = await s3Service.uploadFile(
+      imageS3Key,
+      imageBuffer,
+      'image/png',
+      {
+        metadata: { idempotencyKey: metadata.stepId },
+        expiresIn: 7200 // 2 hours
+      }
+    );
+
+    if (!uploadResult.success) {
+      logger.error('S3 upload failed', null, { error: uploadResult.error });
+      
+      // S3 errors are retryable
+      await job.update({
+        status: getRetryStatus('generateImage'),
+        userMessage: 'Storage upload issue. Retrying...',
+        errorMessage: uploadResult.error,
+        retryCount: metadata.attempt
+      });
+
+      throw mapServiceErrorToWorkflowError('s3_upload_error', uploadResult.error || 'S3 upload failed');
     }
 
     logger.success('Image generated and uploaded to S3', {
-      s3Key: result.imageS3Key,
+      s3Key: uploadResult.key,
       cost: result.cost
     });
 
-    // Get S3 URL for the uploaded image
-    const s3Service = S3Service.getInstance();
-    const s3Url = await s3Service.getPresignedUrl(result.imageS3Key, { expiresIn: 7200 }); // 2 hours
-
     // Update job with image generation results
-    await job.completeImageGeneration(result.imageS3Key);
+    await job.completeImageGeneration(uploadResult.key);
     await job.update({
       progress: 40,
       userMessage: '✅ Image generated! Now creating your 3D model...'
     });
 
     return {
-      imageS3Key: result.imageS3Key,
-      imageUrl: s3Url,
-      cost: result.cost || 0.04
+      imageS3Key: uploadResult.key,
+      imageUrl: uploadResult.url,
+      cost: result.cost || OPENAI_PRICING.DEFAULT_IMAGE_COST
     };
 
   } catch (error) {
