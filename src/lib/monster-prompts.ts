@@ -65,6 +65,41 @@ export interface GenerateMonsterRequest {
   generationType?: 'full' | 'image_only';
 }
 
+// Option Constants
+export const MONSTER_EYES = [1, 2, 3, 8] as const;
+export const MONSTER_BODY_TYPES = ['skeletal', 'muscular', 'fluffy', 'serpentine', 'rocky'] as const;
+export const MONSTER_SIZES = ['tiny', 'small', 'medium', 'large', 'massive'] as const;
+export const MONSTER_ATTITUDES = ['sassy', 'crypto-degen', 'rainbow', 'wise', 'mischievous', 'regal', 'robotic', 'kawaii'] as const;
+export const MONSTER_FLYING = ['wings', 'floating', 'no'] as const;
+export const MONSTER_SPECIAL_POWERS = ['fire', 'ice', 'lightning', 'nature', 'psychic', 'star', 'crystal', 'wind'] as const;
+export const MONSTER_MAGICAL_AURAS = ['sparkly', 'fiery', 'cosmic', 'watery', 'floral'] as const;
+export const MONSTER_COLOR_SCHEMES = ['red', 'blue', 'green', 'purple', 'rainbow', 'dark', 'light', 'metallic'] as const;
+export const MONSTER_TEXTURES = ['scales', 'fur', 'metal', 'crystal', 'plant', 'ethereal'] as const;
+export const MONSTER_HABITATS = ['mountains', 'ocean', 'forest', 'space', 'desert', 'ruins', 'city', 'clouds'] as const;
+
+/**
+ * Generates a random monster request configuration
+ * Useful for "Surprise Me" functionality or generating diverse examples
+ */
+export function generateRandomMonsterRequest(): GenerateMonsterRequest {
+  const getRandom = <T>(arr: readonly T[]): T => arr[Math.floor(Math.random() * arr.length)];
+
+  return {
+    eyes: getRandom(MONSTER_EYES),
+    bodyType: getRandom(MONSTER_BODY_TYPES),
+    size: getRandom(MONSTER_SIZES),
+    attitude: getRandom(MONSTER_ATTITUDES),
+    canFly: getRandom(MONSTER_FLYING),
+    specialPower: getRandom(MONSTER_SPECIAL_POWERS),
+    magicalAura: getRandom(MONSTER_MAGICAL_AURAS),
+    colorScheme: getRandom(MONSTER_COLOR_SCHEMES),
+    texture: getRandom(MONSTER_TEXTURES),
+    habitat: getRandom(MONSTER_HABITATS),
+    stage: 'young', // Default to young for random generation
+    generationType: 'full'
+  };
+}
+
 /**
  * Generates a detailed AI prompt from structured monster data.
  * This generates the FULL prompt that gets sent to OpenAI, including all wrapper instructions.

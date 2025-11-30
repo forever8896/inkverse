@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useMonsterGeneration } from './useMonsterGeneration';
 import { GenerationJobData } from '@/stores/monster-generation';
+import { generateRandomMonsterRequest } from '@/lib/monster-prompts';
 
 interface UseMonsterAssetReturn {
   // State
@@ -155,19 +156,15 @@ export function useMonsterAsset(userId: string | undefined, lessonId: number): U
       }
 
       // 2. Create new generation job
+      const randomMonster = generateRandomMonsterRequest();
+      
       const generateRes = await fetch('/api/generate-monster', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          ...randomMonster,
           stage: stage, 
-          style: 'cute',
-          generationType: 'full',
-          eyes: 2,
-          bodyType: 'fluffy',
-          size: 'small',
-          attitude: 'curious',
-          colorScheme: 'blue', 
-          habitat: 'lab'
+          generationType: 'full'
         })
       });
       

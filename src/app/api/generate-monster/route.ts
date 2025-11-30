@@ -31,21 +31,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Require admin access - this is a testing interface
-    // In production, monster generation happens through the lesson flow
-    const { isUserAdmin } = await import('@/lib/admin-auth');
-    const isAdmin = await isUserAdmin(session.user.id);
-
-    if (!isAdmin) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Admin access required. This is a testing interface.',
-        },
-        { status: 403 }
-      );
-    }
-
     // Parse request body
     let body: GenerateMonsterRequest;
     try {

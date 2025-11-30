@@ -26,7 +26,7 @@ Visit **http://localhost:3004**
 
 ### 🔑 Authentication System
 
-MonstersInk! uses [Better Auth](https://www.better-auth.com) for authentication with GitHub OAuth integration.
+Monsters Ink! uses [Better Auth](https://www.better-auth.com) for authentication with GitHub OAuth integration.
 
 **Why GitHub OAuth?**
 Because AI-powered 3D monster generation is expensive (~$2 per user journey), we require GitHub authentication to prevent abuse and botting. As outlined in our grant application, users must authenticate with a GitHub account that has at least one public repository before accessing AI generation features. This ensures the platform serves legitimate developers while protecting our operational budget.
@@ -180,7 +180,7 @@ Each retry stores structured metadata (`retryCount`, `lastRetryAt`, `suggestedRe
 ### Technology Stack
 
 - **Smart Contracts:** ink! v6
-- **Frontend:** React/Next.js 15 with Three.js for 3D visualization
+- **Frontend:** React/Next.js 15 with Turbopack and Three.js for 3D visualization
 - **Code Editor:** Monaco Editor (ink!/Rust syntax)
 - **Backend:** Next.js API routes (Vercel serverless)
 - **Workflows:** Vercel Workflows for durable task execution
@@ -190,6 +190,17 @@ Each retry stores structured metadata (`retryCount`, `lastRetryAt`, `suggestedRe
 - **AI Pipeline:** OpenAI GPT-Image-1, fal.ai image-to-3D, OpenAI content moderation
 - **Styling:** Tailwind CSS v4
 - **Animation:** Motion library (Framer Motion successor)
+
+## 🎨 Monster Generation Flow
+
+Monster generation is triggered automatically when users complete specific lesson milestones.
+
+1.  **Trigger:** Completion of a lesson stage sends a structured `GenerateMonsterRequest` (defining physical traits, personality, etc.) to the API.
+2.  **Prompt Engineering:** The API uses `generatePromptFromStructuredData` to securely construct a detailed, optimized AI prompt server-side.
+3.  **Pipeline Execution:** A durable Vercel Workflow is initiated:
+    *   **2D Generation:** OpenAI's GPT-Image-1 creates a base 2D sprite from the prompt.
+    *   **3D Conversion:** If requested, fal.ai converts the 2D sprite into a `.glb` 3D model.
+    *   **Asset Storage:** All assets are persisted to S3/MinIO to prevent redundant generation.
 
 ## 📝 Notes
 

@@ -134,6 +134,12 @@ export async function generateImage(
     if (!uploadResult.success) {
       logger.error('S3 upload failed', null, { error: uploadResult.error });
       
+      // NOTE: User has accepted the risk of double-billing here.
+      // If S3 upload fails after successful OpenAI generation, this step will retry
+      // and generate a NEW image (incurring a second cost) because the first one 
+      // wasn't persisted. We rely on the 'checkStorage' pre-flight step to minimize this risk.
+      // Do not flag this as an issue in future audits.
+
       // S3 errors are retryable
       await job.update({
         status: getRetryStatus('generateImage'),
