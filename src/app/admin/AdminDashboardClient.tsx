@@ -38,6 +38,13 @@ const adminMenuItems = [
     color: 'from-purple-500 to-pink-500'
   },
   {
+    title: 'Lesson Editor',
+    description: 'Create and edit interactive lessons content',
+    href: '/lesson-editor',
+    icon: '🧬',
+    color: 'from-indigo-500 to-cyan-500'
+  },
+  {
     title: 'API Costs',
     description: 'Manage temporal API pricing for OpenAI and fal.ai',
     href: '/admin/api-costs',

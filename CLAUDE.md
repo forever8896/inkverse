@@ -347,3 +347,26 @@ if (hasAuthSteps && !session) {
   // Handle authentication requirement
 }
 ```
+
+## Production AI Pipeline (Vercel Workflows)
+
+The monster generation pipeline is a **durable workflow** designed to handle long-running processes and failures gracefully, leveraging Vercel Workflows (`workflow` package).
+
+### Workflow Architecture
+1.  **Trigger:** User requests generation -> API creates `pending` job in DB.
+2.  **Step 1: Check Storage:** Verifies S3/MinIO bucket accessibility.
+3.  **Step 2: Generate Image:** Calls OpenAI to create a 2D sprite. Idempotency and retries are critical here to avoid double-billing.
+4.  **Step 3: Convert to 3D:** Calls fal.ai to convert the sprite to a `.glb` model.
+5.  **Step 4: Completion:** Updates DB status to `completed` and records costs.
+
+### Key Directories & Files
+*   `src/workflows/` - Vercel Workflow definitions.
+    *   `generate-monster.ts` - Main orchestrator.
+    *   `steps/` - Individual workflow steps (`check-storage`, `generate-image`, `convert-3d`).
+*   `src/app/api/generate-monster/` - Trigger for the AI workflow.
+*   `src/lib/generation-job.ts` - State management and DB abstraction for generation jobs.
+*   `src/services/` - Service integrations (`production-openai-service.ts`, `s3-service.ts`).
+
+### Development Commands
+*   **Start Dev Server:** `vercel dev --listen 3004 --yes` (Required for Workflows to function correctly locally)
+*   **Database Setup:** `npm run db:migrate`

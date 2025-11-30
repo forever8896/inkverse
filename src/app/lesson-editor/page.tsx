@@ -1,11 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { authClient } from '@/lib/auth-client';
 import { Lesson, Chapter, Step } from '@/lib/lesson-types';
 import LessonContent from '@/components/LessonContent';
 import CodeEditor from '@/components/CodeEditor';
+import { CreatureStageDisplay } from '@/components/CreatureStageDisplay';
 import LessonEditorTutorial from '@/components/LessonEditorTutorial';
 import { validateLesson } from '@/lib/lesson-editor-validation';
+import { useMonsterAsset } from '@/hooks/useMonsterAsset';
 import { toast, Toaster } from 'sonner';
 import '@/styles/lesson-content.css';
 
@@ -51,6 +54,9 @@ export default function LessonEditorPage() {
   const [hoveredComponent, setHoveredComponent] = useState<{ name: string; template: string; rect: DOMRect } | null>(null);
   const [copiedToClipboard, setCopiedToClipboard] = useState(false);
 
+  const { data: session } = authClient.useSession();
+  const asset = useMonsterAsset(session?.user?.id, lesson.id || 0);
+
   // Load available lessons on mount
   useEffect(() => {
     fetch('/api/lessons/list')
@@ -75,6 +81,16 @@ export default function LessonEditorPage() {
       const data = await res.json();
 
       if (data.lesson) {
+        // Validate loaded data
+        const validation = validateLesson(data.lesson);
+        if (!validation.success) {
+            toast.warning('Lesson loaded with validation issues', {
+                description: 'Check console for details. You may need to fix some fields.',
+                duration: 5000
+            });
+            console.warn('Lesson validation errors:', validation.errors);
+        }
+
         setLesson({
           id: data.lesson.id,
           title: data.lesson.title,
@@ -91,6 +107,8 @@ export default function LessonEditorPage() {
         setSelectedStep(null);
         setSelectedLessonId(lessonId);
         toast.success(`Loaded: ${data.lesson.title}`);
+      } else {
+        toast.error('Lesson data not found in response');
       }
     } catch (error) {
       console.error('Failed to load lesson:', error);
@@ -117,7 +135,7 @@ export default function LessonEditorPage() {
 
   // Add new step to selected chapter
   const addStep = () => {
-    if (selectedChapter === null) return;
+    if (selectedChapter === null || selectedChapter < 0 || selectedChapter >= chapters.length) return;
 
     const chapter = chapters[selectedChapter];
     const newStep: Step = {
@@ -129,9 +147,12 @@ export default function LessonEditorPage() {
     };
 
     const updatedChapters = [...chapters];
-    updatedChapters[selectedChapter].steps.push(newStep);
+    updatedChapters[selectedChapter] = {
+      ...updatedChapters[selectedChapter],
+      steps: [...updatedChapters[selectedChapter].steps, newStep]
+    };
     setChapters(updatedChapters);
-    setSelectedStep(chapter.steps.length);
+    setSelectedStep(updatedChapters[selectedChapter].steps.length - 1);
   };
 
   // Update lesson field
@@ -141,7 +162,7 @@ export default function LessonEditorPage() {
 
   // Update chapter field
   const updateChapter = (field: string, value: any) => {
-    if (selectedChapter === null) return;
+    if (selectedChapter === null || selectedChapter < 0 || selectedChapter >= chapters.length) return;
     const updatedChapters = [...chapters];
     updatedChapters[selectedChapter] = { ...updatedChapters[selectedChapter], [field]: value };
     setChapters(updatedChapters);
@@ -150,11 +171,49 @@ export default function LessonEditorPage() {
   // Update step field
   const updateStep = (field: string, value: any) => {
     if (selectedChapter === null || selectedStep === null) return;
+    if (selectedChapter < 0 || selectedChapter >= chapters.length) return;
+    if (selectedStep < 0 || selectedStep >= chapters[selectedChapter].steps.length) return;
+    
     const updatedChapters = [...chapters];
-    updatedChapters[selectedChapter].steps[selectedStep] = {
-      ...updatedChapters[selectedChapter].steps[selectedStep],
+    const chapterIndex = selectedChapter;
+    const stepIndex = selectedStep;
+
+    // Deep clone the path we are modifying
+    const updatedChapter = { ...updatedChapters[chapterIndex] };
+    const updatedSteps = [...updatedChapter.steps];
+    
+    updatedSteps[stepIndex] = {
+      ...updatedSteps[stepIndex],
       [field]: value,
     };
+
+    updatedChapter.steps = updatedSteps;
+    updatedChapters[chapterIndex] = updatedChapter;
+    
+    setChapters(updatedChapters);
+  };
+
+  // Update multiple step fields at once
+  const updateStepFields = (updates: Record<string, any>) => {
+    if (selectedChapter === null || selectedStep === null) return;
+    if (selectedChapter < 0 || selectedChapter >= chapters.length) return;
+    if (selectedStep < 0 || selectedStep >= chapters[selectedChapter].steps.length) return;
+    
+    const updatedChapters = [...chapters];
+    const chapterIndex = selectedChapter;
+    const stepIndex = selectedStep;
+
+    const updatedChapter = { ...updatedChapters[chapterIndex] };
+    const updatedSteps = [...updatedChapter.steps];
+    
+    updatedSteps[stepIndex] = {
+      ...updatedSteps[stepIndex],
+      ...updates,
+    };
+
+    updatedChapter.steps = updatedSteps;
+    updatedChapters[chapterIndex] = updatedChapter;
+    
     setChapters(updatedChapters);
   };
 
@@ -450,7 +509,7 @@ export default function LessonEditorPage() {
                     <input
                       type="number"
                       value={currentChapter.estimatedTime}
-                      onChange={(e) => updateChapter('estimatedTime', parseInt(e.target.value))}
+                      onChange={(e) => updateChapter('estimatedTime', parseInt(e.target.value) || 0)}
                       className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2"
                     />
                   </div>
@@ -513,7 +572,7 @@ export default function LessonEditorPage() {
                     />
                   </div>
 
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 mb-4">
                     <label className="flex items-center gap-2 text-sm">
                       <input
                         type="checkbox"
@@ -523,15 +582,58 @@ export default function LessonEditorPage() {
                       />
                       Requires Auth
                     </label>
-                    <label className="flex items-center gap-2 text-sm">
+                  </div>
+
+                  <div className="p-4 bg-slate-900/50 rounded border border-purple-500/20 space-y-4 mb-4">
+                    <h4 className="text-xs font-bold text-purple-400 uppercase">Asset Lifecycle (AI)</h4>
+                    
+                    <label className="flex items-center gap-2 text-sm text-slate-300 hover:text-white cursor-pointer bg-slate-800/50 p-2 rounded border border-slate-700 hover:border-purple-500/50 transition-colors">
                       <input
                         type="checkbox"
                         checked={currentStep.triggersGeneration || false}
-                        onChange={(e) => updateStep('triggersGeneration', e.target.checked)}
-                        className="rounded"
+                        onChange={(e) => {
+                            const isChecked = e.target.checked;
+                            if (isChecked) {
+                                updateStepFields({ triggersGeneration: true, generationStage: 'young' });
+                            } else {
+                                updateStepFields({ triggersGeneration: false });
+                            }
+                        }}
+                        className="rounded border-slate-600 bg-slate-800 text-purple-600 focus:ring-purple-500"
                       />
-                      Triggers Generation
+                      <span>🚀 Triggers Generation</span>
                     </label>
+
+                    {currentStep.triggersGeneration && (
+                        <div className="ml-6 mt-2 p-2 bg-purple-900/20 rounded border border-purple-500/30">
+                            <label className="block text-xs text-purple-300 mb-1 font-semibold">Generation Stage</label>
+                            <select
+                                value={currentStep.generationStage || 'young'}
+                                onChange={(e) => updateStep('generationStage', e.target.value)}
+                                className="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 text-xs text-white"
+                            >
+                                <option value="young">🐣 Young (Baby)</option>
+                                <option value="adult">🦕 Adult (Mature)</option>
+                            </select>
+                        </div>
+                    )}
+
+                    <div className="space-y-2">
+                      <label className="text-xs text-slate-400 uppercase font-semibold">Reveal Monster (Display)</label>
+                      <select
+                          value={currentStep.displayStage || ''}
+                          onChange={(e) => updateStep('displayStage', e.target.value || undefined)}
+                          className="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 text-xs text-white"
+                      >
+                          <option value="">Auto (Timeline History)</option>
+                          <option value="egg">🥚 Force Egg (Incubating)</option>
+                          <option value="young">🐣 Force Young (2D)</option>
+                          <option value="adult">🦕 Force Adult (3D)</option>
+                      </select>
+                      <p className="text-[10px] text-slate-500">
+                        "Auto" shows the highest unlocked stage. "Force" overrides it (e.g. for flashbacks).
+                      </p>
+                    </div>
                   </div>
 
                   <div>
@@ -662,36 +764,72 @@ export default function LessonEditorPage() {
             </div>
 
             {/* Code Preview */}
-            <div className="w-1/2 border-l border-slate-700 bg-slate-900">
-              {currentStep?.code !== undefined ? (
-                <div className="h-full flex flex-col">
-                  <div className="border-b border-slate-700 p-4 bg-slate-800/50">
-                    <div className="flex items-center space-x-3">
-                      <span className="text-xl">🧪</span>
-                      <h3 className="text-lg font-semibold">Creature DNA Editor</h3>
+            <div className="w-1/2 border-l border-slate-700 bg-slate-900 flex flex-col">
+              {/* Monster Asset Preview */}
+              <div className="h-1/3 border-b border-slate-700 relative bg-slate-950/50">
+                 {currentChapter && selectedStep !== null ? (
+                    <CreatureStageDisplay
+                        stage={(() => {
+                            const step = currentChapter.steps[selectedStep];
+                            // 1. Explicit Override
+                            if (step.displayStage) return step.displayStage as 'egg' | 'young' | 'adult';
+                            
+                            // 2. History (Auto)
+                            const hatchIndex = currentChapter.steps.findIndex(s => s.displayStage === 'young');
+                            const evoIndex = currentChapter.steps.findIndex(s => s.displayStage === 'adult');
+                            
+                            if (evoIndex !== -1 && selectedStep >= evoIndex && asset.isModelReady) return 'adult';
+                            if (hatchIndex !== -1 && selectedStep >= hatchIndex && asset.isImageReady) return 'young';
+                            
+                            return 'egg';
+                        })()}
+                        imageUrl={asset.imageUrl}
+                        modelUrl={asset.modelUrl}
+                        isRevealing={false}
+                        isLoading={asset.isGenerating}
+                        error={asset.error}
+                        onRetry={asset.forceRefresh}
+                    />
+                 ) : (
+                    <div className="flex items-center justify-center h-full text-slate-600 text-xs">Asset Preview</div>
+                 )}
+                 <div className="absolute top-2 right-2 bg-black/50 px-2 py-1 rounded text-[10px] text-white pointer-events-none">
+                      Live Asset Preview
+                 </div>
+              </div>
+
+              {/* Code Editor Container */}
+              <div className="flex-1 flex flex-col min-h-0">
+                {currentStep?.code !== undefined ? (
+                  <div className="h-full flex flex-col">
+                    <div className="border-b border-slate-700 p-4 bg-slate-800/50">
+                      <div className="flex items-center space-x-3">
+                        <span className="text-xl">🧪</span>
+                        <h3 className="text-lg font-semibold">Creature DNA Editor</h3>
+                      </div>
+                    </div>
+                    <div className="flex-1 min-h-0">
+                      <CodeEditor
+                        value={currentStep.code}
+                        onChange={() => {}}
+                        language="rust"
+                      />
                     </div>
                   </div>
-                  <div className="flex-1">
-                    <CodeEditor
-                      value={currentStep.code}
-                      onChange={() => {}}
-                      language="rust"
-                    />
+                ) : (
+                  <div className="h-full flex items-center justify-center">
+                    <div className="text-center text-slate-500">
+                      <div className="text-6xl mb-4">📖</div>
+                      <h3 className="text-xl font-semibold text-purple-400 mb-2">
+                        No coding needed!
+                      </h3>
+                      <p className="text-slate-400">
+                        Just read and continue to the next step.
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <div className="h-full flex items-center justify-center">
-                  <div className="text-center text-slate-500">
-                    <div className="text-6xl mb-4">📖</div>
-                    <h3 className="text-xl font-semibold text-purple-400 mb-2">
-                      No coding needed!
-                    </h3>
-                    <p className="text-slate-400">
-                      Just read and continue to the next step.
-                    </p>
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
         )}

@@ -26,6 +26,8 @@ const StepSchema = z.object({
   image: z.string().optional(),
   requiresAuth: z.boolean().optional(),
   triggersGeneration: z.boolean().optional(),
+  generationStage: z.enum(['young', 'adult']).optional(),
+  displayStage: z.enum(['egg', 'young', 'adult']).optional(),
   difficulty: z.enum(['easy', 'medium', 'hard']).optional(),
   estimatedTime: z.number().int().positive().optional(),
 });

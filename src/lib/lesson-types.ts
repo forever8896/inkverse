@@ -6,18 +6,23 @@ export interface ValidationRule {
 
 export interface Step {
   id: number;
-  chapterId: number;
+  chapterId?: number; // Added for Editor compatibility
   title: string;
-  content: string;
-  order: number;
-  code?: string;
-  expectedCode?: string;
-  codeTemplate?: string;
+  description?: string; // Made optional as Editor uses 'content'
+  content: string;      // Added for Editor
+  code?: string;        // Optional initial code
+  initialCode?: string; // Alias for code? Editor uses code/expectedCode
+  expectedCode?: string; // Added for Editor
+  validation?: string; // Regex string
   hint?: string;
-  validation?: ValidationRule[];
-  image?: string; // Optional image URL or import for this step
-  requiresAuth?: boolean; // Whether this step requires authentication
-  triggersGeneration?: boolean; // Whether completing this step triggers AI monster generation
+  image?: string;
+  order?: number;      // Added for Editor
+  requiresAuth?: boolean; // Added for Editor
+  
+  // Asset Lifecycle Flags
+  triggersGeneration?: boolean; 
+  generationStage?: 'young' | 'adult'; 
+  displayStage?: 'egg' | 'young' | 'adult'; // Explicit display override
 }
 
 // Chapter structure for lessons that include multiple chapters
@@ -75,5 +80,9 @@ export interface LessonStep {
   validation?: ValidationRule[];
   image?: string;
   requiresAuth?: boolean;
-  triggersGeneration?: boolean; // Whether completing this step triggers AI monster generation
+  
+  // Asset Lifecycle Flags (Added to LessonStep as well)
+  triggersGeneration?: boolean; 
+  generationStage?: 'young' | 'adult'; 
+  displayStage?: 'egg' | 'young' | 'adult'; 
 }

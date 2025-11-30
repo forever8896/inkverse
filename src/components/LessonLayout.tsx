@@ -14,6 +14,8 @@ import { MintCreatureNFT } from './MintCreatureNFT';
 import GitHubAuthModal from '@/components/GitHubAuthModal';
 import { useSession } from '@/lib/auth-client';
 import '@/styles/lesson-content.css';
+import { useMonsterAsset } from '@/hooks/useMonsterAsset';
+import { CreatureStageDisplay } from '@/components/CreatureStageDisplay';
 
 // wallet stuff
 import { ReactiveDotProvider, ChainProvider, SignerProvider, useAccounts } from '@reactive-dot/react';
@@ -76,10 +78,84 @@ function LessonLayoutInner({ lesson }: LessonLayoutProps) {
   // GitHub authentication session
   const { data: session, isPending: isAuthLoading } = useSession();
 
+  // Monster Asset Management
+  const asset = useMonsterAsset(session?.user?.id, lesson?.id || 0);
+
   // (Hydration guard moved to a wrapper component to preserve hook order)
 
   const currentChapterData = lesson?.chapters?.[currentChapter];
   const currentStepData = currentChapterData?.steps[currentStep];
+
+  // Progressive Disclosure Logic
+  // 1. Explicit Override from current step
+  const displayStageOverride = currentStepData?.displayStage;
+
+  // 2. History Calculation (Auto Mode) - find where we are in the timeline
+  const hatchStepIndex = currentChapterData?.steps.findIndex(s => s.displayStage === 'young') ?? -1;
+  const evolutionStepIndex = currentChapterData?.steps.findIndex(s => s.displayStage === 'adult') ?? -1;
+
+  // If no override, use history (highest unlocked stage)
+  // Note: We only show if asset is actually ready to avoid flashing broken state in Auto mode
+  const historyStage = (evolutionStepIndex !== -1 && currentStep >= evolutionStepIndex && asset.isModelReady) ? 'adult'
+                     : (hatchStepIndex !== -1 && currentStep >= hatchStepIndex && asset.isImageReady) ? 'young'
+                     : 'egg';
+
+  // 3. Final Decision
+  // If override exists (even 'egg'), use it. Otherwise use history.
+  const targetStage = displayStageOverride || historyStage;
+
+  // 4. Blocking Calculation
+  // We block IF:
+  // - We are forcing 'young' but image not ready
+  // - We are forcing 'adult' but model not ready
+  // - We are in 'auto' mode, but we are ON the specific reveal step and it's not ready
+  const isAtRevealStep = (hatchStepIndex !== -1 && currentStep === hatchStepIndex) || 
+                         (evolutionStepIndex !== -1 && currentStep === evolutionStepIndex);
+
+  const isDisplayLoading = asset.isLoadingInitialState || 
+                  (!!asset.jobId && displayStageOverride === 'adult' && !asset.isModelReady) ||
+                  (!!asset.jobId && displayStageOverride === 'young' && !asset.isImageReady) ||
+                  (!!asset.jobId && !displayStageOverride && isAtRevealStep && targetStage === 'egg'); 
+                  // If Auto mode and we are at reveal step but forced to 'egg' due to missing asset, we should block?
+                  // Actually, if targetStage is egg because asset missing, we might want to block if we SHOULD be showing something.
+                  // Let's simplify: If we are at reveal step, we BLOCK until ready.
+                  
+  // Simplified Blocking: If we are effectively asking for X, do we have X?
+  // Exception: 'egg' is always ready.
+  // FAIL OPEN: If there is an error, we stop blocking so the user can see the error state.
+  
+  const effectiveLoading = !asset.error && (
+      asset.isLoadingInitialState ||
+      (!!asset.jobId && displayStageOverride === 'adult' && !asset.isModelReady) ||
+      (!!asset.jobId && displayStageOverride === 'young' && !asset.isImageReady) ||
+      // Auto mode blocking on the specific trigger step
+      (!!asset.jobId && !displayStageOverride && currentStep === evolutionStepIndex && !asset.isModelReady) ||
+      (!!asset.jobId && !displayStageOverride && currentStep === hatchStepIndex && !asset.isImageReady)
+  );
+
+  const isDisplayRevealing = (displayStageOverride === 'young' || displayStageOverride === 'adult');
+
+  // Retry Logic: Force a new generation attempt if the previous one failed
+  const handleRetry = useCallback(() => {
+      if (!currentChapterData || !currentStepData) return;
+
+      // Determine appropriate stage based on target
+      const stageToRetry = targetStage === 'adult' ? 'adult' : 'young';
+      
+      asset.triggerGeneration(
+          currentChapterData.id,
+          currentStepData.id,
+          stageToRetry,
+          true // Force new job
+      );
+  }, [asset, currentChapterData, currentStepData, targetStage]);
+
+  // Force refresh when entering a reveal step to minimize lag
+  useEffect(() => {
+    if (currentStepData?.displayStage === 'young' || currentStepData?.displayStage === 'adult') {
+      asset.forceRefresh();
+    }
+  }, [currentStep, currentStepData?.displayStage, asset.forceRefresh]);
 
   useEffect(() => {
     // Initialize code editor with step's initial code
@@ -178,14 +254,27 @@ function LessonLayoutInner({ lesson }: LessonLayoutProps) {
       if (validationResult.isValid) {
         setIsValidated(true);
 
-        // Check if this step triggers NFT generation - show modal immediately
-        if (currentStepData?.triggersGeneration) {
-          addToast({
-            type: 'success',
-            title: '🎉 Perfect!',
-            message: 'Your creature is ready to be minted as an NFT!',
-          });
-          setTimeout(() => setShowNFTMinting(true), 800);
+        // Check if this step triggers generation
+        if (currentStepData?.triggersGeneration && currentChapterData) {
+           if (!session?.user) {
+             addToast({
+               type: 'info',
+               title: '🔐 Authentication Required',
+               message: 'Please sign in to generate your unique creature.',
+             });
+             setShowAuthModal(true);
+           } else {
+             asset.triggerGeneration(
+                 currentChapterData.id, 
+                 currentStepData.id, 
+                 currentStepData.generationStage || 'young'
+             );
+             addToast({
+               type: 'info', 
+               title: '🧬 DNA Synthesis Started',
+               message: 'Your creature is being generated in the background...',
+             });
+           }
         } else {
           addToast({
             type: 'success',
@@ -193,6 +282,9 @@ function LessonLayoutInner({ lesson }: LessonLayoutProps) {
             message: 'Your creature responds beautifully to the code!',
           });
         }
+
+        // Legacy NFT check (disabled for new flow to prevent double modals)
+        // if (currentStepData?.triggersGeneration) { ... }
 
         // Check if we should show auth modal after completing step 3 of lesson 1
         checkAuthRequirement();
@@ -874,41 +966,21 @@ function LessonLayoutInner({ lesson }: LessonLayoutProps) {
             <div className="absolute inset-0 flex items-center justify-center">
               <div
                 ref={creatureDisplayRef}
-                className={`relative transition-all duration-300 ease-out ${
+                className={`relative transition-all duration-300 ease-out w-full h-full p-8 ${
                   isTransitioning
                     ? 'opacity-0 scale-95 translate-y-4'
                     : 'opacity-100 scale-100 translate-y-0'
                 }`}
               >
-                {lesson.id === 1 ? (
-                  currentStepData?.image ? (
-                    <img
-                      src={currentStepData.image}
-                      alt="Creature"
-                      className="object-contain transition-all duration-500 w-[28rem] h-[28rem]"
-                      style={{
-                        filter: getImageFilter(),
-                      }}
-                    />
-                  ) : (
-                    <div className="bg-slate-800/30 rounded-full flex items-center justify-center backdrop-blur-sm transition-all duration-500 w-96 h-96">
-                      <span className="transition-all duration-500 text-9xl">
-                        🔬
-                      </span>
-                    </div>
-                  )
-                ) : (
-                  <div className="bg-slate-800/30 rounded-full flex items-center justify-center backdrop-blur-sm transition-all duration-500 w-96 h-96">
-                    <span
-                      className="transition-all duration-500 text-9xl"
-                      style={{
-                        filter: getImageFilter(),
-                      }}
-                    >
-                      🔬
-                    </span>
-                  </div>
-                )}
+                <CreatureStageDisplay
+                  stage={targetStage}
+                  imageUrl={asset.imageUrl}
+                  modelUrl={asset.modelUrl}
+                  isRevealing={isDisplayRevealing}
+                  isLoading={effectiveLoading}
+                  error={asset.error}
+                  onRetry={handleRetry}
+                />
               </div>
             </div>
 
