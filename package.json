@@ -17,7 +17,8 @@
     "storage:setup": "node scripts/setup-minio.js",
     "db:migrate": "node scripts/migrate.js",
     "db:reset": "node scripts/reset-db.js",
-    "db:setup": "npm run db:migrate"
+    "db:setup": "npm run db:migrate",
+    "workflow:web": "node scripts/workflow-web.js"
   },
   "dependencies": {
     "@fal-ai/client": "^1.6.2",

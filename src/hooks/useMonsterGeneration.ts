@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   useMonsterGenerationStore,
@@ -26,12 +26,15 @@ export function useMonsterGeneration() {
   const store = useMonsterGenerationStore();
   const router = useRouter();
 
-  // Cleanup on unmount
+  // Cleanup on unmount - use ref to avoid dependency issues
+  const cleanupRef = useRef(store.cleanup);
+  cleanupRef.current = store.cleanup;
+
   useEffect(() => {
     return () => {
-      store.cleanup();
+      cleanupRef.current();
     };
-  }, [store]);
+  }, []);
 
   const handleAuthenticationError = useCallback(() => {
     router.push('/login');

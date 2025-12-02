@@ -19,18 +19,18 @@
   "locked": false,
   "chapters": [
     {
-      "id": 0,
+      "id": 1,
       "lessonId": 1,
       "title": "Welcome to Monsters Ink!",
       "description": "Discover what you're building, how this platform works, and the basics of smart contracts",
-      "order": 0,
+      "order": 1,
       "concept": "introduction",
       "estimatedTime": 10,
       "requiresPreviousChapter": false,
       "steps": [
         {
           "id": 1,
-          "chapterId": 0,
+          "chapterId": 5,
           "order": 1,
           "title": "🎮 Welcome, Bio-Engineer!",
           "image": "/lessons/1/1.png",
@@ -40,7 +40,7 @@
         },
         {
           "id": 2,
-          "chapterId": 0,
+          "chapterId": 5,
           "order": 2,
           "title": "🤔 What Are Smart Contracts?",
           "image": "/lessons/1/2.png",
@@ -50,7 +50,7 @@
         },
         {
           "id": 3,
-          "chapterId": 0,
+          "chapterId": 5,
           "order": 3,
           "title": "🦑 What is ink!?",
           "image": "/lessons/1/3.png",
@@ -61,18 +61,18 @@
       ]
     },
     {
-      "id": 1,
+      "id": 2,
       "lessonId": 1,
       "title": "ink! Contract Anatomy",
       "description": "Learn the building blocks of every ink! contract: storage, constructors, and messages",
-      "order": 1,
+      "order": 2,
       "concept": "syntax",
       "estimatedTime": 15,
       "requiresPreviousChapter": true,
       "steps": [
         {
           "id": 4,
-          "chapterId": 1,
+          "chapterId": 5,
           "order": 1,
           "title": "📦 The Contract Module",
           "image": "/lessons/1/4.png",
@@ -85,7 +85,7 @@
         },
         {
           "id": 5,
-          "chapterId": 1,
+          "chapterId": 5,
           "order": 2,
           "title": "💾 Storage: Your Contract's Memory",
           "image": "/lessons/1/5.png",
@@ -95,7 +95,7 @@
         },
         {
           "id": 6,
-          "chapterId": 1,
+          "chapterId": 5,
           "order": 3,
           "title": "🏗️ Constructors: Birthing Contracts",
           "image": "/lessons/1/6.png",
@@ -105,7 +105,7 @@
         },
         {
           "id": 7,
-          "chapterId": 1,
+          "chapterId": 5,
           "order": 4,
           "title": "📨 Messages: Contract Functions",
           "image": "/lessons/1/7.png",
@@ -116,18 +116,18 @@
       ]
     },
     {
-      "id": 2,
+      "id": 3,
       "lessonId": 1,
       "title": "Building Your Creature Contract",
       "description": "Write your first complete ink! smart contract step-by-step",
-      "order": 2,
+      "order": 3,
       "concept": "implementation",
       "estimatedTime": 20,
       "requiresPreviousChapter": true,
       "steps": [
         {
           "id": 8,
-          "chapterId": 2,
+          "chapterId": 5,
           "order": 1,
           "title": "🥚 Let's Build Your Creature!",
           "image": "/creatures/first_egg.png",
@@ -140,7 +140,7 @@
         },
         {
           "id": 9,
-          "chapterId": 2,
+          "chapterId": 5,
           "order": 2,
           "title": "🧠 Give Your Creature Memory",
           "image": "/creatures/egg_cracks.png",
@@ -169,11 +169,13 @@
             }
           ],
           "difficulty": "easy",
-          "estimatedTime": 3
+          "estimatedTime": 3,
+          "triggersGeneration": true,
+          "generationStage": "young"
         },
         {
           "id": 10,
-          "chapterId": 2,
+          "chapterId": 5,
           "order": 3,
           "title": "🏗️ Create Implementation Block",
           "image": "/creatures/first_sleeping.png",
@@ -194,7 +196,7 @@
         },
         {
           "id": 11,
-          "chapterId": 2,
+          "chapterId": 5,
           "order": 4,
           "title": "🐣 Birth Your Creature",
           "image": "/creatures/first_sleeping.png",
@@ -223,13 +225,11 @@
             }
           ],
           "difficulty": "medium",
-          "estimatedTime": 3,
-          "triggersGeneration": true,
-          "generationStage": "young"
+          "estimatedTime": 3
         },
         {
           "id": 12,
-          "chapterId": 2,
+          "chapterId": 5,
           "order": 5,
           "title": "📖 Add Default Birth Method",
           "image": "/creatures/first_sleeping.png",
@@ -262,7 +262,7 @@
         },
         {
           "id": 13,
-          "chapterId": 2,
+          "chapterId": 5,
           "order": 6,
           "title": "👁️ Let Your Creature Speak",
           "image": "/creatures/first_sleeping.png",
@@ -292,11 +292,12 @@
           ],
           "difficulty": "medium",
           "estimatedTime": 3,
-          "requiresAuth": true
+          "requiresAuth": true,
+          "displayStage": "young"
         },
         {
           "id": 14,
-          "chapterId": 2,
+          "chapterId": 5,
           "order": 7,
           "title": "🔄 The Final Power: Wake Up!",
           "image": "/creatures/first_awake.png",
@@ -337,18 +338,18 @@
       ]
     },
     {
-      "id": 3,
+      "id": 4,
       "lessonId": 1,
       "title": "Testing & Deployment",
       "description": "Compile, test, and deploy your Flipper contract to the blockchain",
-      "order": 3,
+      "order": 4,
       "concept": "deployment",
       "estimatedTime": 10,
       "requiresPreviousChapter": true,
       "steps": [
         {
           "id": 15,
-          "chapterId": 3,
+          "chapterId": 5,
           "order": 1,
           "title": "🔨 Understanding Compilation",
           "image": "/creatures/first_awake.png",
@@ -358,7 +359,7 @@
         },
         {
           "id": 16,
-          "chapterId": 3,
+          "chapterId": 5,
           "order": 2,
           "title": "🚀 Deploying Your Contract",
           "image": "/creatures/first_awake.png",
@@ -368,7 +369,7 @@
         },
         {
           "id": 17,
-          "chapterId": 3,
+          "chapterId": 5,
           "order": 3,
           "title": "🎮 Interacting with Your Contract",
           "image": "/creatures/first_awake.png",
@@ -379,18 +380,18 @@
       ]
     },
     {
-      "id": 4,
+      "id": 5,
       "lessonId": 1,
       "title": "Claim Your Creature!",
       "description": "Generate your personalized NFT as proof of completion",
-      "order": 4,
+      "order": 5,
       "concept": "completion",
       "estimatedTime": 5,
       "requiresPreviousChapter": true,
       "steps": [
         {
           "id": 18,
-          "chapterId": 4,
+          "chapterId": 5,
           "order": 1,
           "title": "🎨 Generate Your Creature NFT",
           "image": "/creatures/first_awake.png",

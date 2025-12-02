@@ -150,13 +150,13 @@ export const CreatureStageDisplay: React.FC<CreatureStageDisplayProps> = ({
 
   // Default: The Egg (Placeholder)
   return (
-    <motion.div 
+    <motion.div
       layoutId="creature-display"
       className="w-full h-full flex items-center justify-center bg-slate-900 rounded-xl border border-slate-800 relative overflow-hidden"
     >
       {/* Placeholder visuals */}
       <div className="absolute inset-0 opacity-30 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-purple-900/40 via-slate-900 to-slate-900" />
-      
+
       <div className="relative z-10 flex flex-col items-center">
         <div className="w-24 h-24 bg-slate-800 rounded-full flex items-center justify-center mb-4 shadow-[0_0_30px_rgba(148,163,184,0.1)] border border-slate-700">
            <span className="text-4xl">🥚</span>

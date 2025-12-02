@@ -71,7 +71,8 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// GET /api/progress/trigger-generation?lessonId=1&chapterId=5&stepId=12 - Check if generation triggered
+// GET /api/progress/trigger-generation?lessonId=1 - Get latest trigger for lesson
+// GET /api/progress/trigger-generation?lessonId=1&chapterId=5&stepId=12 - Check specific step
 export async function GET(request: NextRequest) {
   try {
     const session = await getSessionFromRequest(request);
@@ -88,15 +89,39 @@ export async function GET(request: NextRequest) {
     const chapterId = searchParams.get('chapterId');
     const stepId = searchParams.get('stepId');
 
-    if (!lessonId || !chapterId || !stepId) {
+    if (!lessonId) {
       return NextResponse.json(
-        { error: 'Missing required query params: lessonId, chapterId, stepId' },
+        { error: 'Missing required query param: lessonId' },
         { status: 400 }
       );
     }
 
     const userId = session.user.id;
 
+    // If all params provided, query specific step
+    if (chapterId && stepId) {
+      const result = await query(`
+        SELECT
+          lgt.*,
+          mg.status as generation_status,
+          mg.image_url,
+          mg.glb_url,
+          mg.progress as generation_progress
+        FROM lesson_generation_triggers lgt
+        LEFT JOIN monster_generations mg ON lgt.generation_job_id = mg.id
+        WHERE lgt.user_id = $1
+          AND lgt.lesson_id = $2
+          AND lgt.chapter_id = $3
+          AND lgt.step_id = $4
+      `, [userId, parseInt(lessonId), parseInt(chapterId), parseInt(stepId)]);
+
+      return NextResponse.json({
+        triggered: result.length > 0,
+        trigger: result[0] || null,
+      });
+    }
+
+    // If only lessonId provided, return the most recent trigger for this lesson
     const result = await query(`
       SELECT
         lgt.*,
@@ -108,9 +133,9 @@ export async function GET(request: NextRequest) {
       LEFT JOIN monster_generations mg ON lgt.generation_job_id = mg.id
       WHERE lgt.user_id = $1
         AND lgt.lesson_id = $2
-        AND lgt.chapter_id = $3
-        AND lgt.step_id = $4
-    `, [userId, parseInt(lessonId), parseInt(chapterId), parseInt(stepId)]);
+      ORDER BY lgt.triggered_at DESC
+      LIMIT 1
+    `, [userId, parseInt(lessonId)]);
 
     return NextResponse.json({
       triggered: result.length > 0,

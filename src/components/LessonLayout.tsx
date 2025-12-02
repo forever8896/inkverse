@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Lesson, validateCode, ValidationRule } from '@/lib/lessons';
 import MonacoCodeEditor from '@/components/MonacoCodeEditor';
 import ShaderBackground from '@/components/ShaderBackground';
@@ -30,6 +31,8 @@ interface LessonLayoutProps {
   lesson?: Lesson;
   authRequired?: boolean;
   authError?: string;
+  initialChapter?: number; // 1-based from URL
+  initialStep?: number;    // 1-based from URL
 }
 
 interface Toast {
@@ -43,9 +46,16 @@ interface Toast {
   };
 }
 
-function LessonLayoutInner({ lesson }: LessonLayoutProps) {
-  const [currentChapter, setCurrentChapter] = useState(0);
-  const [currentStep, setCurrentStep] = useState(0);
+function LessonLayoutInner({ lesson, initialChapter: propChapter, initialStep: propStep }: LessonLayoutProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Initialize from props (1-based from URL route) or fallback to query params
+  const initChapter = propChapter ? propChapter - 1 : Math.max(0, parseInt(searchParams.get('c') || '1', 10) - 1);
+  const initStep = propStep ? propStep - 1 : Math.max(0, parseInt(searchParams.get('s') || '1', 10) - 1);
+
+  const [currentChapter, setCurrentChapter] = useState(initChapter);
+  const [currentStep, setCurrentStep] = useState(initStep);
   const [balance, setBalance] = useState<string>('0');
   const [isLoadingBalance, setIsLoadingBalance] = useState(true);
   const accounts = useAccounts();
@@ -80,6 +90,14 @@ function LessonLayoutInner({ lesson }: LessonLayoutProps) {
 
   // Monster Asset Management
   const asset = useMonsterAsset(session?.user?.id, lesson?.id || 0);
+
+  // Sync URL with chapter/step state using path-based routing
+  // Format: /lesson/{lessonId}/{chapterId}/{stepId}
+  useEffect(() => {
+    if (!lesson?.id) return;
+    const newUrl = `/lesson/${lesson.id}/${currentChapter + 1}/${currentStep + 1}`;
+    window.history.replaceState(null, '', newUrl);
+  }, [currentChapter, currentStep, lesson?.id]);
 
   // (Hydration guard moved to a wrapper component to preserve hook order)
 
@@ -136,26 +154,34 @@ function LessonLayoutInner({ lesson }: LessonLayoutProps) {
   const isDisplayRevealing = (displayStageOverride === 'young' || displayStageOverride === 'adult');
 
   // Retry Logic: Force a new generation attempt if the previous one failed
+  // Use ref for triggerGeneration to avoid infinite loops from unstable object references
+  const triggerGenerationRef = useRef(asset.triggerGeneration);
+  triggerGenerationRef.current = asset.triggerGeneration;
+
   const handleRetry = useCallback(() => {
       if (!currentChapterData || !currentStepData) return;
 
       // Determine appropriate stage based on target
       const stageToRetry = targetStage === 'adult' ? 'adult' : 'young';
-      
-      asset.triggerGeneration(
+
+      triggerGenerationRef.current(
           currentChapterData.id,
           currentStepData.id,
           stageToRetry,
           true // Force new job
       );
-  }, [asset, currentChapterData, currentStepData, targetStage]);
+  }, [currentChapterData, currentStepData, targetStage]);
 
   // Force refresh when entering a reveal step to minimize lag
+  // Note: Using a ref to avoid infinite loops from unstable callback references
+  const forceRefreshRef = useRef(asset.forceRefresh);
+  forceRefreshRef.current = asset.forceRefresh;
+
   useEffect(() => {
     if (currentStepData?.displayStage === 'young' || currentStepData?.displayStage === 'adult') {
-      asset.forceRefresh();
+      forceRefreshRef.current();
     }
-  }, [currentStep, currentStepData?.displayStage, asset.forceRefresh]);
+  }, [currentStep, currentStepData?.displayStage]);
 
   useEffect(() => {
     // Initialize code editor with step's initial code
@@ -198,9 +224,10 @@ function LessonLayoutInner({ lesson }: LessonLayoutProps) {
           const chapterIndex = lesson.chapters.findIndex(
             ch => ch.id === data.lesson.current_chapter_id
           );
-          if (chapterIndex >= 0) {
-            setCurrentChapter(chapterIndex);
-          }
+          // Disable auto-navigation to saved progress to respect deep linking
+          // if (chapterIndex >= 0) {
+          //   setCurrentChapter(chapterIndex);
+          // }
         }
       } catch (error) {
         console.error('Failed to load progress:', error);
@@ -264,13 +291,13 @@ function LessonLayoutInner({ lesson }: LessonLayoutProps) {
              });
              setShowAuthModal(true);
            } else {
-             asset.triggerGeneration(
-                 currentChapterData.id, 
-                 currentStepData.id, 
+             triggerGenerationRef.current(
+                 currentChapterData.id,
+                 currentStepData.id,
                  currentStepData.generationStage || 'young'
              );
              addToast({
-               type: 'info', 
+               type: 'info',
                title: '🧬 DNA Synthesis Started',
                message: 'Your creature is being generated in the background...',
              });
@@ -984,6 +1011,22 @@ function LessonLayoutInner({ lesson }: LessonLayoutProps) {
               </div>
             </div>
 
+            {/* Generation Notification Toast */}
+            {(asset.isGenerating || (asset.status && ['pending', 'generating_image', 'converting_3d'].includes(asset.status))) && (
+              <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-30 w-full max-w-sm px-4 pointer-events-none">
+                <div className="bg-slate-900/90 backdrop-blur-md border border-purple-500/30 rounded-xl p-4 shadow-xl animate-fade-in-up flex items-center space-x-3">
+                  <div className="relative flex-shrink-0">
+                    <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                    <div className="absolute inset-0 w-3 h-3 bg-green-500 rounded-full animate-ping opacity-75"></div>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-white">Creating your unique monster...</p>
+                    <p className="text-xs text-slate-400">Standby, it will be ready soon.</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Camera Shutter Effect */}
             {showShutter && (
               <div className="absolute inset-0 z-50 pointer-events-none">
@@ -1578,7 +1621,7 @@ function LessonLayoutInner({ lesson }: LessonLayoutProps) {
   );
 }
 
-export default function LessonLayout({ lesson }: LessonLayoutProps) {
+export default function LessonLayout({ lesson, initialChapter, initialStep }: LessonLayoutProps) {
   return (
     // Type assertion due to duplicate @reactive-dot/core versions in node_modules
     // Note: ReactiveDotProvider handles SSR internally
@@ -1586,11 +1629,24 @@ export default function LessonLayout({ lesson }: LessonLayoutProps) {
       <ChainProvider chainId={"pop" as any}>
         <WithSigner>
           <HydrationGuard>
-            <LessonLayoutInner lesson={lesson} />
+            <Suspense fallback={<LessonLayoutLoading />}>
+              <LessonLayoutInner lesson={lesson} initialChapter={initialChapter} initialStep={initialStep} />
+            </Suspense>
           </HydrationGuard>
         </WithSigner>
       </ChainProvider>
     </ReactiveDotProvider>
+  );
+}
+
+function LessonLayoutLoading() {
+  return (
+    <div className="min-h-screen relative overflow-hidden">
+      <ShaderBackground />
+      <div className="relative z-10 container mx-auto px-4 py-8">
+        <div className="text-center text-white">Loading lesson...</div>
+      </div>
+    </div>
   );
 }
 

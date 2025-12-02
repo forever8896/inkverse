@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**MonstersInk!** is an interactive learning platform that teaches Polkadot and ink! smart contract development through creature creation. Users progress through lessons and chapters by writing ink! contract code that brings digital creatures to life.
+**Monsters Ink!** is an interactive learning platform that teaches Polkadot and ink! smart contract development through creature creation. Users progress through lessons and chapters by writing ink! contract code that brings digital creatures to life.
 
 **🚀 Deployment Context: Vercel Serverless Functions**
 
@@ -134,7 +134,7 @@ Educational content is structured as a gamified bio-engineering experience where
 
 ## Design Language
 
-**MonstersInk! Design System** - A retro-futuristic game aesthetic for creature creation
+**Monsters Ink! Design System** - A retro-futuristic game aesthetic for creature creation
 
 ### Visual Identity
 
@@ -154,16 +154,16 @@ The design language evokes a bio-engineering laboratory in a retro gaming univer
 
 ### Color Palette
 
-**Foundation**: Dark slate backgrounds (slate-900/slate-950) with semi-transparent overlays
+**Foundation**: Dark slate backgrounds (slate-900/slate-950) with semi-transparent overlays (no blur effects)
 
-**Accent Colors** (all with transparency and glow effects):
+**Accent Colors** (use for actions, states, and emphasis):
 
-- **Purple/Violet** (`purple-500/600`): Primary actions, creation, magic
-- **Cyan** (`cyan-500/600`): View/inspect actions, information
-- **Emerald** (`emerald-500/600`): Live/active states, success
-- **Orange** (`orange-500/600`): Warnings, retries, alerts
-- **Red** (`red-500/600`): Destructive actions, errors, deletion
-- **Slate** (`slate-500/600`): Secondary actions, neutral states
+- **Cobalt Blue** (`#1E4CDD`): Primary actions, creation
+- **Neon Mint** (`#4FFFB0`): View/inspect actions, information, success
+- **Soft Peach** (`#FFDAB9`): Neutral states, secondary information
+- **Deep Space Violet** (`#240B4D`): Background elements, depth
+- **Sunset Orange** (`#FF9F1C`): Warnings, retries, alerts
+- **Lush Grass Green** (`#2ECC71`): Live/active states, success (alternative to Neon Mint for variety)
 
 ### Button Architecture
 
@@ -172,14 +172,14 @@ The design language evokes a bio-engineering laboratory in a retro gaming univer
 ```
 bg-{color}-600/20           // Semi-transparent background
 hover:bg-{color}-600/40     // Stronger on hover
-border border-{color}-500/50 // Glowing border
+border border-{color}-500/50 // Glowing border (use with caution, if applicable to new palette)
 hover:border-{color}-400    // Brighter border on hover
 text-{color}-300            // Readable text color
 hover:text-{color}-100      // Lighter on hover
 font-pixel text-[8px-10px]  // Pixelated font, tiny size
 uppercase                   // Always uppercase
 transition-all              // Smooth transitions
-hover:shadow-lg hover:shadow-{color}-500/20 // Colored glow effect
+hover:shadow-lg hover:shadow-{color}-500/20 // Colored glow effect (use with caution, if applicable to new palette)
 ```
 
 **No icons in action buttons** - Pure text for clean, game-like aesthetic
@@ -188,18 +188,18 @@ hover:shadow-lg hover:shadow-{color}-500/20 // Colored glow effect
 
 Use emoji + colored badges for job/creature states:
 
-- 🥚 Pending (yellow)
-- 🎨 Generating (blue)
-- 🏗️ Converting (purple)
-- ✅ Completed (green)
-- 🔄 Retrying (orange)
-- ❌ Failed (red)
+- 🥚 Pending (Soft Peach)
+- 🎨 Generating (Cobalt Blue)
+- 🏗️ Converting (Deep Space Violet)
+- ✅ Completed (Neon Mint)
+- 🔄 Retrying (Sunset Orange)
+- ❌ Failed (Red - assuming red is still an acceptable error color, otherwise specify from new palette)
 
 ### Design Principles
 
 1. **Retro Gaming First**: Everything should feel like an interface from a creature creation game
-2. **Glowing Effects**: Borders and shadows create depth and sci-fi atmosphere
-3. **Transparency Layers**: Semi-transparent backgrounds maintain dark aesthetic while adding depth
+2. **Defined Color Roles**: Each color from the new palette has a clear purpose.
+3. **Transparency Layers**: Semi-transparent backgrounds maintain dark aesthetic while adding depth (no blur effects).
 4. **Consistent Spacing**: Generous padding, comfortable hit targets despite small text
 5. **Color-Coded Actions**: Each action type has a consistent color across the entire interface
 
@@ -369,4 +369,6 @@ The monster generation pipeline is a **durable workflow** designed to handle lon
 
 ### Development Commands
 *   **Start Dev Server:** `vercel dev --listen 3004 --yes` (Required for Workflows to function correctly locally)
+*   **Start MinIO Storage:** `npm run storage:start`
+*   **Workflow Web UI:** `npm run workflow:web` (Opens browser with correct config to inspect workflow runs)
 *   **Database Setup:** `npm run db:migrate`
