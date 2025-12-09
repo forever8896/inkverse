@@ -36,6 +36,31 @@ export function useMonsterGeneration() {
     };
   }, []);
 
+  // Handle visibility changes for polling optimization
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      // Access store directly to avoid stale closure
+      const state = useMonsterGenerationStore.getState();
+      
+      if (document.hidden) {
+        // Pause all active polling
+        Object.keys(state.pollingStates).forEach(jobId => {
+          state.pausePolling(jobId);
+        });
+      } else {
+        // Resume paused polling
+        Object.keys(state.pollingStates).forEach(jobId => {
+          if (state.pollingStates[jobId]?.paused) {
+            state.resumePolling(jobId);
+          }
+        });
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+
   const handleAuthenticationError = useCallback(() => {
     router.push('/login');
   }, [router]);

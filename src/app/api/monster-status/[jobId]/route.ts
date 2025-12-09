@@ -13,6 +13,10 @@ export interface MonsterStatusResponse {
   processing?: boolean;
   retryInSeconds?: number;
   error?: string;
+  urlFreshness?: {
+    imageUrl: { fresh: boolean; expiresIn: number; canRefresh: boolean };
+    glbUrl: { fresh: boolean; expiresIn: number; canRefresh: boolean };
+  };
 }
 
 export async function GET(
@@ -97,11 +101,31 @@ export async function GET(
       }
     }
 
+    // Recalculate freshness for response
+    // Use lastUrlRefresh if available, otherwise fall back to updatedAt (Fix #5)
+    const refreshBaseTime = job.lastUrlRefresh || job.updatedAt;
+    const finalUpdatedAt = new Date(refreshBaseTime);
+    const finalAge = (Date.now() - finalUpdatedAt.getTime()) / (1000 * 60 * 60);
+    
+    const urlFreshness = {
+      imageUrl: {
+        fresh: finalAge < 1,
+        expiresIn: Math.max(0, Math.round((2 - finalAge) * 60)), // Minutes
+        canRefresh: !!job.imageS3Key
+      },
+      glbUrl: {
+        fresh: finalAge < 1,
+        expiresIn: Math.max(0, Math.round((2 - finalAge) * 60)),
+        canRefresh: !!job.glbS3Key
+      }
+    };
+
     // Return job data with processing status
     const response: MonsterStatusResponse = {
       success: true,
       job: job.toJSON(),
       processing: isProcessing,
+      urlFreshness
     };
 
     return NextResponse.json(response);

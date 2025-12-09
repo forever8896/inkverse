@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { lessonId, chapterId, stepId, generationJobId } = body;
+    const { lessonId, chapterId, stepId, generationJobId, stage } = body;
 
     if (!lessonId || !chapterId || !stepId) {
       return NextResponse.json(
@@ -26,24 +26,8 @@ export async function POST(request: NextRequest) {
 
     const userId = session.user.id;
 
-    // Check if generation already triggered for this step
-    const existing = await query(`
-      SELECT *
-      FROM lesson_generation_triggers
-      WHERE user_id = $1
-        AND lesson_id = $2
-        AND chapter_id = $3
-        AND step_id = $4
-    `, [userId, lessonId, chapterId, stepId]);
-
-    if (existing.length > 0) {
-      return NextResponse.json(
-        { error: 'Generation already triggered for this step', trigger: existing[0] },
-        { status: 409 }
-      );
-    }
-
-    // Create generation trigger record
+    // Atomic insert or update
+    // Uses xmax = 0 check to distinguish between insert and update
     const result = await query(`
       INSERT INTO lesson_generation_triggers (
         user_id,
@@ -51,16 +35,33 @@ export async function POST(request: NextRequest) {
         chapter_id,
         step_id,
         generation_job_id,
+        stage,
         completed
       )
-      VALUES ($1, $2, $3, $4, $5, $6)
-      RETURNING *
-    `, [userId, lessonId, chapterId, stepId, generationJobId || null, false]);
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      ON CONFLICT (user_id, lesson_id, chapter_id, step_id)
+      DO UPDATE SET
+        generation_job_id = COALESCE(lesson_generation_triggers.generation_job_id, EXCLUDED.generation_job_id),
+        stage = COALESCE(lesson_generation_triggers.stage, EXCLUDED.stage)
+      RETURNING *, (xmax = 0) AS was_inserted
+    `, [userId, lessonId, chapterId, stepId, generationJobId || null, stage || null, false]);
+
+    const trigger = result[0];
+    const wasInserted = trigger.was_inserted;
+    
+    // If updated (not inserted) and job ID didn't change (was already set), then it's a duplicate
+    if (!wasInserted && trigger.generation_job_id && generationJobId && trigger.generation_job_id === generationJobId) {
+      return NextResponse.json(
+        { error: 'Generation already triggered for this step', trigger },
+        { status: 409 }
+      );
+    }
 
     return NextResponse.json({
       success: true,
-      trigger: result[0],
-    });
+      trigger: trigger,
+      isNew: wasInserted
+    }, { status: wasInserted ? 201 : 200 });
 
   } catch (error) {
     console.error('[Progress API] Error triggering generation:', error);
@@ -88,6 +89,7 @@ export async function GET(request: NextRequest) {
     const lessonId = searchParams.get('lessonId');
     const chapterId = searchParams.get('chapterId');
     const stepId = searchParams.get('stepId');
+    const stage = searchParams.get('stage');
 
     if (!lessonId) {
       return NextResponse.json(
@@ -122,7 +124,8 @@ export async function GET(request: NextRequest) {
     }
 
     // If only lessonId provided, return the most recent trigger for this lesson
-    const result = await query(`
+    // If stage is provided, filter by it (Fix #3)
+    let queryText = `
       SELECT
         lgt.*,
         mg.status as generation_status,
@@ -133,9 +136,18 @@ export async function GET(request: NextRequest) {
       LEFT JOIN monster_generations mg ON lgt.generation_job_id = mg.id
       WHERE lgt.user_id = $1
         AND lgt.lesson_id = $2
-      ORDER BY lgt.triggered_at DESC
-      LIMIT 1
-    `, [userId, parseInt(lessonId)]);
+    `;
+    
+    const queryParams: any[] = [userId, parseInt(lessonId)];
+    
+    if (stage) {
+      queryText += ` AND lgt.stage = $3`;
+      queryParams.push(stage);
+    }
+    
+    queryText += ` ORDER BY lgt.triggered_at DESC LIMIT 1`;
+    
+    const result = await query(queryText, queryParams);
 
     return NextResponse.json({
       triggered: result.length > 0,

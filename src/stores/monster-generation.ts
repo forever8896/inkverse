@@ -9,7 +9,19 @@ export interface GenerationJobData {
   style: 'cute' | 'fierce' | 'mysterious' | 'playful' | 'cosmic';
   stage: 'egg' | 'young' | 'adult';
   generationType: 'full' | 'image_only';
-  status: 'pending' | 'generating_image' | 'converting_3d' | 'completed' | 'failed' | 'waiting_on_storage';
+  status: 
+    | 'pending' 
+    | 'generating_image' 
+    | 'image_generation_failed'
+    | 'image_generation_retrying'
+    | 'converting_3d' 
+    | 'conversion_failed'
+    | 'conversion_retrying'
+    | 'completed' 
+    | 'failed_permanent'
+    | 'failed' // Legacy/General
+    | 'waiting_on_storage';
+
   progress: number;
   errorMessage?: string;
   imageS3Key?: string;
@@ -32,18 +44,28 @@ export interface MonsterStatusResponse {
 export const statusMessages = {
   pending: '🥚 Initializing your monster...',
   generating_image: '🎨 AI is painting your creature...',
+  image_generation_retrying: '🎨 Retrying image generation...',
+  image_generation_failed: '❌ Image generation failed',
   converting_3d: '🏗️ Building your monster in 3D...',
+  conversion_retrying: '🏗️ Retrying 3D conversion...',
+  conversion_failed: '❌ 3D conversion failed',
   completed: '✨ Your monster is ready!',
   failed: '💥 Something went wrong...',
+  failed_permanent: '💥 Generation failed permanently',
   waiting_on_storage: '🧰 Waiting for storage to come online...',
 };
 
 export const statusEmojis = {
   pending: '🥚',
   generating_image: '🎨',
+  image_generation_retrying: '🎨',
+  image_generation_failed: '❌',
   converting_3d: '🏗️',
+  conversion_retrying: '🏗️',
+  conversion_failed: '❌',
   completed: '✨',
   failed: '💥',
+  failed_permanent: '💥',
   waiting_on_storage: '🧰',
 };
 
@@ -55,6 +77,21 @@ export const progressSteps = [
   { threshold: 90, label: '3D model created', emoji: '🏗️' },
   { threshold: 100, label: 'Monster ready!', emoji: '🎉' },
 ];
+
+const POLLING_CONFIG = {
+  initialInterval: 2000,      // 2 seconds
+  maxInterval: 30000,         // 30 seconds max
+  backoffMultiplier: 1.5,     // Increase by 50% each failure
+  jitterPercent: 0.2,         // +/- 20% randomness
+  maxConsecutiveFailures: 10, // Stop after 10 failures
+};
+
+interface PollingState {
+  interval: number;
+  consecutiveFailures: number;
+  paused: boolean;
+  timeoutId: NodeJS.Timeout | null;
+}
 
 // Store state interface
 interface MonsterGenerationState {
@@ -69,7 +106,7 @@ interface MonsterGenerationState {
   error: string | null;
   
   // Polling state
-  pollingIntervals: Record<string, NodeJS.Timeout>;
+  pollingStates: Record<string, PollingState>;
   pollCounts: Record<string, number>;
   
   // Actions
@@ -82,8 +119,11 @@ interface MonsterGenerationState {
   
   // Job operations
   fetchJobStatus: (jobId: string) => Promise<GenerationJobData | null>;
-  startPolling: (jobId: string, interval?: number) => void;
+  refreshUrls: (jobId: string) => Promise<void>;
+  startPolling: (jobId: string) => void;
   stopPolling: (jobId: string) => void;
+  pausePolling: (jobId: string) => void;
+  resumePolling: (jobId: string) => void;
   stopAllPolling: () => void;
   
   // Computed getters
@@ -105,7 +145,7 @@ export const useMonsterGenerationStore = create<MonsterGenerationState>()(
       activeJobId: null,
       loading: false,
       error: null,
-      pollingIntervals: {},
+      pollingStates: {},
       pollCounts: {},
 
       // Basic setters
@@ -144,7 +184,7 @@ export const useMonsterGenerationStore = create<MonsterGenerationState>()(
           state.clearError();
           
           const response = await fetch(`/api/monster-status/${jobId}`);
-          const data: MonsterStatusResponse = await response.json();
+          const data: any = await response.json(); // Use any to access urlFreshness
 
           if (!response.ok) {
             if (response.status === 401) {
@@ -161,6 +201,13 @@ export const useMonsterGenerationStore = create<MonsterGenerationState>()(
           // Update the job in store
           state.setJob(data.job);
           
+          // Check freshness and trigger explicit refresh if needed
+          if (data.urlFreshness && 
+             (data.urlFreshness.imageUrl?.fresh === false || data.urlFreshness.glbUrl?.fresh === false)) {
+             console.log(`[Store] Detected stale URLs for job ${jobId}, triggering refresh...`);
+             get().refreshUrls(jobId);
+          }
+          
           // Update poll count
           const currentCount = state.pollCounts[jobId] || 0;
           set((state) => ({
@@ -170,58 +217,175 @@ export const useMonsterGenerationStore = create<MonsterGenerationState>()(
           return data.job;
         } catch (error: any) {
           console.error('Failed to fetch job status:', error);
-          state.setError(error.message);
+          // Don't set global error on poll failure to avoid UI flicker, unless it's persistent
+          // state.setError(error.message); 
           return null;
         }
       },
 
-      startPolling: (jobId: string, interval = 3000) => {
+      refreshUrls: async (jobId: string) => {
+        const state = get();
+        try {
+          const response = await fetch(`/api/jobs/${jobId}/refresh-urls`, { method: 'POST' });
+          const data = await response.json();
+          
+          if (data.success) {
+            state.updateJob(jobId, {
+              imageUrl: data.imageUrl,
+              glbUrl: data.glbUrl,
+              updatedAt: new Date().toISOString()
+            });
+            console.log(`[Store] URLs refreshed for job ${jobId}`);
+          }
+        } catch (error) {
+          console.error('[Store] Failed to refresh URLs:', error);
+        }
+      },
+
+      startPolling: (jobId: string) => {
         const state = get();
         
-        // Clear existing polling for this job
+        // Stop existing polling
         state.stopPolling(jobId);
 
-        // Initial fetch
-        state.fetchJobStatus(jobId);
+        // Initialize polling state
+        const initialPollingState: PollingState = {
+          interval: POLLING_CONFIG.initialInterval,
+          consecutiveFailures: 0,
+          paused: false,
+          timeoutId: null
+        };
 
-        // Set up polling
-        const intervalId = setInterval(async () => {
-          const job = await state.fetchJobStatus(jobId);
+        // Set initial state immediately
+        set(s => ({
+          pollingStates: { ...s.pollingStates, [jobId]: initialPollingState }
+        }), false, 'initPolling');
+
+        const poll = async () => {
+          const currentState = get().pollingStates[jobId];
           
-          // Stop polling if job is completed or failed
-          if (job && (job.status === 'completed' || job.status === 'failed')) {
-            state.stopPolling(jobId);
-          }
-        }, interval);
+          if (!currentState) return; // Polling stopped
+          if (currentState.paused) return; // Polling paused
 
-        // Store the interval ID
-        set((state) => ({
-          pollingIntervals: { ...state.pollingIntervals, [jobId]: intervalId }
-        }), false, 'startPolling');
+          const job = await get().fetchJobStatus(jobId);
+          
+          // Get fresh state after async op
+          const freshState = get().pollingStates[jobId];
+          if (!freshState) return; 
+
+          let nextInterval = freshState.interval;
+          let failures = freshState.consecutiveFailures;
+
+          if (job) {
+            // Success - reset backoff
+            failures = 0;
+            nextInterval = POLLING_CONFIG.initialInterval;
+
+            // Check for completion
+            if (job.status === 'completed' || job.status === 'failed' || job.status === 'failed_permanent') {
+              get().stopPolling(jobId);
+              return;
+            }
+          } else {
+            // Failure - apply backoff
+            failures++;
+            nextInterval = Math.min(
+              nextInterval * POLLING_CONFIG.backoffMultiplier,
+              POLLING_CONFIG.maxInterval
+            );
+
+            if (failures >= POLLING_CONFIG.maxConsecutiveFailures) {
+              get().setError('Connection lost - stopped polling. Please refresh.');
+              get().stopPolling(jobId);
+              return;
+            }
+          }
+
+          // Calculate jitter
+          const jitter = nextInterval * POLLING_CONFIG.jitterPercent * (Math.random() - 0.5);
+          const finalInterval = Math.max(1000, nextInterval + jitter); // Min 1s
+
+          // Schedule next poll
+          const timeoutId = setTimeout(poll, finalInterval);
+          
+          // Update state
+          set(s => ({
+            pollingStates: {
+              ...s.pollingStates,
+              [jobId]: {
+                ...freshState,
+                interval: nextInterval,
+                consecutiveFailures: failures,
+                timeoutId
+              }
+            }
+          }), false, 'scheduleNextPoll');
+        };
+
+        // Start first poll immediately
+        poll();
       },
 
       stopPolling: (jobId: string) => {
         const state = get();
-        const intervalId = state.pollingIntervals[jobId];
+        const pollingState = state.pollingStates[jobId];
         
-        if (intervalId) {
-          clearInterval(intervalId);
-          
+        if (pollingState?.timeoutId) {
+          clearTimeout(pollingState.timeoutId);
+        }
+        
+        if (pollingState) {
           set((state) => {
-            const { [jobId]: removed, ...rest } = state.pollingIntervals;
-            return { pollingIntervals: rest };
+            const { [jobId]: removed, ...rest } = state.pollingStates;
+            return { pollingStates: rest };
           }, false, 'stopPolling');
+        }
+      },
+
+      pausePolling: (jobId: string) => {
+        const state = get();
+        const pollingState = state.pollingStates[jobId];
+        
+        if (pollingState) {
+          if (pollingState.timeoutId) clearTimeout(pollingState.timeoutId);
+          
+          set(s => ({
+            pollingStates: {
+              ...s.pollingStates,
+              [jobId]: { ...pollingState, paused: true, timeoutId: null }
+            }
+          }), false, 'pausePolling');
+        }
+      },
+
+      resumePolling: (jobId: string) => {
+        const state = get();
+        const pollingState = state.pollingStates[jobId];
+        
+        if (pollingState && pollingState.paused) {
+          set(s => ({
+            pollingStates: {
+              ...s.pollingStates,
+              [jobId]: { ...pollingState, paused: false }
+            }
+          }), false, 'resumePolling');
+          
+          // Restart loop
+          get().startPolling(jobId); 
+          // Note: calling startPolling resets backoff, which is usually fine for resume
+          // Or we could extract the 'poll' function to be reusable without reset
+          // But reset is safer for "I'm back" scenario
         }
       },
 
       stopAllPolling: () => {
         const state = get();
         
-        Object.values(state.pollingIntervals).forEach(intervalId => {
-          clearInterval(intervalId);
+        Object.values(state.pollingStates).forEach(ps => {
+          if (ps.timeoutId) clearTimeout(ps.timeoutId);
         });
         
-        set({ pollingIntervals: {} }, false, 'stopAllPolling');
+        set({ pollingStates: {} }, false, 'stopAllPolling');
       },
 
       // Computed getters

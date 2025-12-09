@@ -17,6 +17,7 @@ import { useSession } from '@/lib/auth-client';
 import '@/styles/lesson-content.css';
 import { useMonsterAsset } from '@/hooks/useMonsterAsset';
 import { CreatureStageDisplay } from '@/components/CreatureStageDisplay';
+import { useCreatureDisplayStage } from '@/hooks/useCreatureDisplayStage';
 
 // wallet stuff
 import { ReactiveDotProvider, ChainProvider, SignerProvider, useAccounts } from '@reactive-dot/react';
@@ -88,8 +89,18 @@ function LessonLayoutInner({ lesson, initialChapter: propChapter, initialStep: p
   // GitHub authentication session
   const { data: session, isPending: isAuthLoading } = useSession();
 
+  const currentChapterData = lesson?.chapters?.[currentChapter];
+  const currentStepData = currentChapterData?.steps[currentStep];
+
+  // History Calculation (Auto Mode) - find where we are in the timeline
+  const hatchStepIndex = currentChapterData?.steps.findIndex(s => s.displayStage === 'young') ?? -1;
+  const evolutionStepIndex = currentChapterData?.steps.findIndex(s => s.displayStage === 'adult') ?? -1;
+
   // Monster Asset Management
-  const asset = useMonsterAsset(session?.user?.id, lesson?.id || 0);
+  // Pass displayStage (or generationStage) to help resume check find the right generation
+  // If we are on a generation step (like step 9), displayStage might be undefined, but generationStage will be set.
+  const effectiveStage = currentStepData?.displayStage || currentStepData?.generationStage;
+  const asset = useMonsterAsset(session?.user?.id, lesson?.id || 0, effectiveStage as any);
 
   // Sync URL with chapter/step state using path-based routing
   // Format: /lesson/{lessonId}/{chapterId}/{stepId}
@@ -101,57 +112,25 @@ function LessonLayoutInner({ lesson, initialChapter: propChapter, initialStep: p
 
   // (Hydration guard moved to a wrapper component to preserve hook order)
 
-  const currentChapterData = lesson?.chapters?.[currentChapter];
-  const currentStepData = currentChapterData?.steps[currentStep];
-
-  // Progressive Disclosure Logic
-  // 1. Explicit Override from current step
-  const displayStageOverride = currentStepData?.displayStage;
-
-  // 2. History Calculation (Auto Mode) - find where we are in the timeline
-  const hatchStepIndex = currentChapterData?.steps.findIndex(s => s.displayStage === 'young') ?? -1;
-  const evolutionStepIndex = currentChapterData?.steps.findIndex(s => s.displayStage === 'adult') ?? -1;
-
-  // If no override, use history (highest unlocked stage)
-  // Note: We only show if asset is actually ready to avoid flashing broken state in Auto mode
-  const historyStage = (evolutionStepIndex !== -1 && currentStep >= evolutionStepIndex && asset.isModelReady) ? 'adult'
-                     : (hatchStepIndex !== -1 && currentStep >= hatchStepIndex && asset.isImageReady) ? 'young'
-                     : 'egg';
-
-  // 3. Final Decision
-  // If override exists (even 'egg'), use it. Otherwise use history.
-  const targetStage = displayStageOverride || historyStage;
-
-  // 4. Blocking Calculation
-  // We block IF:
-  // - We are forcing 'young' but image not ready
-  // - We are forcing 'adult' but model not ready
-  // - We are in 'auto' mode, but we are ON the specific reveal step and it's not ready
-  const isAtRevealStep = (hatchStepIndex !== -1 && currentStep === hatchStepIndex) || 
-                         (evolutionStepIndex !== -1 && currentStep === evolutionStepIndex);
-
-  const isDisplayLoading = asset.isLoadingInitialState || 
-                  (!!asset.jobId && displayStageOverride === 'adult' && !asset.isModelReady) ||
-                  (!!asset.jobId && displayStageOverride === 'young' && !asset.isImageReady) ||
-                  (!!asset.jobId && !displayStageOverride && isAtRevealStep && targetStage === 'egg'); 
-                  // If Auto mode and we are at reveal step but forced to 'egg' due to missing asset, we should block?
-                  // Actually, if targetStage is egg because asset missing, we might want to block if we SHOULD be showing something.
-                  // Let's simplify: If we are at reveal step, we BLOCK until ready.
-                  
-  // Simplified Blocking: If we are effectively asking for X, do we have X?
-  // Exception: 'egg' is always ready.
-  // FAIL OPEN: If there is an error, we stop blocking so the user can see the error state.
-  
-  const effectiveLoading = !asset.error && (
-      asset.isLoadingInitialState ||
-      (!!asset.jobId && displayStageOverride === 'adult' && !asset.isModelReady) ||
-      (!!asset.jobId && displayStageOverride === 'young' && !asset.isImageReady) ||
-      // Auto mode blocking on the specific trigger step
-      (!!asset.jobId && !displayStageOverride && currentStep === evolutionStepIndex && !asset.isModelReady) ||
-      (!!asset.jobId && !displayStageOverride && currentStep === hatchStepIndex && !asset.isImageReady)
+  // Progressive Disclosure Logic - Simplified with Hook (Fix #7)
+  // We need to pass the narrative indices to enforce gating
+  const targetStage = useCreatureDisplayStage(
+    currentStepData as any, 
+    asset,
+    currentStep,
+    hatchStepIndex,
+    evolutionStepIndex
   );
 
-  const isDisplayRevealing = (displayStageOverride === 'young' || displayStageOverride === 'adult');
+  // Blocking Calculation
+  // We block IF we are explicitly expecting a stage that isn't ready yet
+  const effectiveLoading = !asset.error && (
+      asset.isLoadingInitialState ||
+      (currentStepData?.displayStage === 'adult' && !asset.isModelReady) ||
+      (currentStepData?.displayStage === 'young' && !asset.isImageReady)
+  );
+
+  const isDisplayRevealing = (currentStepData?.displayStage === 'young' || currentStepData?.displayStage === 'adult');
 
   // Retry Logic: Force a new generation attempt if the previous one failed
   // Use ref for triggerGeneration to avoid infinite loops from unstable object references

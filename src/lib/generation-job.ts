@@ -3,9 +3,15 @@
  * Handles job state transitions, progress tracking, and S3 file management
  */
 
-import { getPool } from './postgres';
+import { getPool, transaction } from './postgres';
 import { S3Service } from '../services/s3-service';
 import { v4 as uuidv4 } from 'uuid';
+
+export interface LessonContext {
+  lessonId: number;
+  chapterId: number;
+  stepId: number;
+}
 
 // Error handling configuration
 export const ERROR_HANDLERS: Record<ErrorType, Omit<JobError, 'currentRetries' | 'lastRetryAt' | 'technicalMessage'>> = {
@@ -189,6 +195,7 @@ export interface GenerationJobData {
   falEstimatedCost: number;
   costCalculationMethod: string;
   lastCostUpdate: Date;
+  lastUrlRefresh: Date;
 }
 
 export interface CreateJobParams {
@@ -222,6 +229,7 @@ export interface UpdateJobParams {
   falEstimatedCost?: number;
   costCalculationMethod?: string;
   lastCostUpdate?: Date;
+  lastUrlRefresh?: Date;
 }
 
 // Interface for logging cost tracking data
@@ -293,6 +301,9 @@ export class GenerationJob {
   get updatedAt(): Date { return this.data.updatedAt; }
   get completedAt(): Date | undefined { return this.data.completedAt; }
 
+  get lastCostUpdate(): Date { return this.data.lastCostUpdate; }
+  get lastUrlRefresh(): Date { return this.data.lastUrlRefresh; }
+
   /**
    * Create a new generation job in the database
    */
@@ -363,12 +374,172 @@ export class GenerationJob {
         falEstimatedCost: parseFloat(row.fal_estimated_cost) || 0.0,
         costCalculationMethod: row.cost_calculation_method || 'token_based',
         lastCostUpdate: row.last_cost_update || row.created_at,
+        lastUrlRefresh: row.last_url_refresh || row.updated_at || row.created_at,
       });
 
     } catch (error) {
       console.error('[GenerationJob] Failed to create job:', error);
       throw error;
     }
+  }
+
+  /**
+   * Create a job and link it to a lesson trigger atomically
+   */
+  static async createWithTrigger(
+    params: CreateJobParams,
+    lessonContext?: LessonContext
+  ): Promise<GenerationJob> {
+    // If no lesson context, just use standard create
+    if (!lessonContext) {
+      return GenerationJob.create(params);
+    }
+
+    return await transaction(async (client) => {
+      // 1. Check for existing trigger
+      // Lock the row if it exists to prevent race conditions
+      const triggerResult = await client.query(`
+        SELECT * FROM lesson_generation_triggers
+        WHERE user_id = $1
+          AND lesson_id = $2
+          AND chapter_id = $3
+          AND step_id = $4
+        FOR UPDATE
+      `, [params.userId, lessonContext.lessonId, lessonContext.chapterId, lessonContext.stepId]);
+
+      // If trigger exists and has a job ID, return that job instead
+      if (triggerResult.rows.length > 0) {
+        const trigger = triggerResult.rows[0];
+        if (trigger.generation_job_id) {
+          console.log(`[GenerationJob] Found existing trigger with job ${trigger.generation_job_id}`);
+          const existingJob = await GenerationJob.findById(trigger.generation_job_id);
+          
+          // Check if existing job is in a recoverable failed state
+          // If failed permanent, we should allow creating a new one (retry)
+          if (existingJob) {
+            // Cast to any to avoid TS union check (failed vs failed_permanent overlap)
+            const status = existingJob.status as any;
+            if (status === 'failed_permanent' || status === 'failed') {
+               console.log(`[GenerationJob] Existing job ${existingJob.id} is failed. Creating new job for retry.`);
+               // Proceed to create new job below...
+            } else {
+               console.log(`[GenerationJob] Existing job ${existingJob.id} is active/completed. Returning it.`);
+               return existingJob;
+            }
+          }
+          // If job not found (deleted?), we'll create a new one and update the trigger
+        }
+      }
+
+      // 2. Create the job
+      const jobId = uuidv4();
+      const jobResult = await client.query(`
+        INSERT INTO monster_generations (
+          id,
+          user_id,
+          workflow_run_id,
+          prompt,
+          style,
+          stage,
+          generation_type,
+          status,
+          progress,
+          total_cost,
+          retry_count
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        RETURNING *
+      `, [
+        jobId,
+        params.userId,
+        null,
+        params.prompt,
+        params.style,
+        params.stage,
+        params.generationType,
+        'pending',
+        0,
+        0.00,
+        0
+      ]);
+
+      const row = jobResult.rows[0];
+      const job = new GenerationJob({
+        id: row.id,
+        userId: row.user_id,
+        workflowRunId: row.workflow_run_id,
+        prompt: row.prompt,
+        style: row.style,
+        stage: row.stage,
+        generationType: row.generation_type,
+        status: row.status,
+        progress: row.progress,
+        errorMessage: row.error_message,
+        userMessage: row.user_message,
+        imageS3Key: row.image_s3_key,
+        imageUrl: row.image_url,
+        glbS3Key: row.glb_s3_key,
+        glbUrl: row.glb_url,
+        totalCost: parseFloat(row.total_cost),
+        retryCount: row.retry_count || 0,
+        lastError: row.last_error ? GenerationJob.safeParseJSON(row.last_error) : undefined,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+        completedAt: row.completed_at,
+        openaiTextTokens: row.openai_text_tokens || 0,
+        openaiImageTokens: row.openai_image_tokens || 0,
+        openaiTotalTokens: row.openai_total_tokens || 0,
+        openaiEstimatedCost: parseFloat(row.openai_estimated_cost) || 0.0,
+        falEstimatedCost: parseFloat(row.fal_estimated_cost) || 0.0,
+        costCalculationMethod: row.cost_calculation_method || 'token_based',
+        lastCostUpdate: row.last_cost_update || row.created_at,
+        lastUrlRefresh: row.last_url_refresh || row.updated_at || row.created_at,
+      });
+
+      // 3. Create or update trigger
+      // Note: We include 'stage' column here for Fix #3
+      if (triggerResult.rows.length > 0) {
+        // Update existing trigger
+        await client.query(`
+          UPDATE lesson_generation_triggers
+          SET generation_job_id = $1, stage = $2
+          WHERE user_id = $3
+            AND lesson_id = $4
+            AND chapter_id = $5
+            AND step_id = $6
+        `, [
+          jobId,
+          params.stage,
+          params.userId,
+          lessonContext.lessonId,
+          lessonContext.chapterId,
+          lessonContext.stepId
+        ]);
+      } else {
+        // Insert new trigger
+        await client.query(`
+          INSERT INTO lesson_generation_triggers (
+            user_id,
+            lesson_id,
+            chapter_id,
+            step_id,
+            generation_job_id,
+            stage,
+            completed
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+        `, [
+          params.userId,
+          lessonContext.lessonId,
+          lessonContext.chapterId,
+          lessonContext.stepId,
+          jobId,
+          params.stage,
+          false
+        ]);
+      }
+
+      console.log(`[GenerationJob] Created job ${jobId} with trigger for user ${params.userId}`);
+      return job;
+    });
   }
 
   /**
@@ -417,6 +588,7 @@ export class GenerationJob {
         falEstimatedCost: parseFloat(row.fal_estimated_cost) || 0.0,
         costCalculationMethod: row.cost_calculation_method || 'token_based',
         lastCostUpdate: row.last_cost_update || row.created_at,
+        lastUrlRefresh: row.last_url_refresh || row.updated_at || row.created_at,
       });
 
     } catch (error) {
@@ -473,6 +645,7 @@ export class GenerationJob {
         falEstimatedCost: parseFloat(row.fal_estimated_cost) || 0.0,
         costCalculationMethod: row.cost_calculation_method || 'token_based',
         lastCostUpdate: row.last_cost_update || row.created_at,
+        lastUrlRefresh: row.last_url_refresh || row.updated_at || row.created_at,
       }));
 
     } catch (error) {
@@ -620,6 +793,12 @@ export class GenerationJob {
         this.data.lastCostUpdate = params.lastCostUpdate;
       }
 
+      if (params.lastUrlRefresh !== undefined) {
+        updates.push(`last_url_refresh = $${paramIndex++}`);
+        values.push(params.lastUrlRefresh);
+        this.data.lastUrlRefresh = params.lastUrlRefresh;
+      }
+
       if (updates.length === 0) {
         return; // No updates to make
       }
@@ -749,7 +928,9 @@ export class GenerationJob {
    * Refresh presigned URLs (call when URLs expire)
    */
   async refreshUrls(): Promise<void> {
-    const updates: UpdateJobParams = {};
+    const updates: UpdateJobParams = {
+      lastUrlRefresh: new Date(),
+    };
 
     if (this.data.imageS3Key) {
       updates.imageUrl = await this.s3Service.getPresignedUrl(this.data.imageS3Key, { expiresIn: 7200 });
@@ -1009,6 +1190,7 @@ export class GenerationJob {
         falEstimatedCost: parseFloat(row.fal_estimated_cost) || 0.0,
         costCalculationMethod: row.cost_calculation_method || 'token_based',
         lastCostUpdate: row.last_cost_update || row.created_at,
+        lastUrlRefresh: row.last_url_refresh || row.updated_at || row.created_at,
       });
 
     } catch (error) {
@@ -1114,6 +1296,7 @@ export class GenerationJob {
       falEstimatedCost: this.data.falEstimatedCost,
       costCalculationMethod: this.data.costCalculationMethod,
       lastCostUpdate: this.data.lastCostUpdate,
+      lastUrlRefresh: this.data.lastUrlRefresh,
     };
   }
 
@@ -1166,6 +1349,7 @@ export class GenerationJob {
         falEstimatedCost: row.fal_estimated_cost || 0,
         costCalculationMethod: row.cost_calculation_method || 'token_based',
         lastCostUpdate: row.last_cost_update || new Date(),
+        lastUrlRefresh: row.last_url_refresh || row.updated_at || new Date(),
       }));
 
     } catch (error) {
@@ -1269,6 +1453,7 @@ export class GenerationJob {
         falEstimatedCost: parseFloat(row.fal_estimated_cost) || 0.0,
         costCalculationMethod: row.cost_calculation_method || 'token_based',
         lastCostUpdate: row.last_cost_update || row.created_at,
+        lastUrlRefresh: row.last_url_refresh || row.updated_at || row.created_at,
       });
 
     } catch (error) {

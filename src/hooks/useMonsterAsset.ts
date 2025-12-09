@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useMonsterGeneration } from './useMonsterGeneration';
 import { GenerationJobData } from '@/stores/monster-generation';
+import { MonsterStage } from '@/lib/generation-job';
 import { generateRandomMonsterRequest } from '@/lib/monster-prompts';
 
 interface UseMonsterAssetReturn {
@@ -26,7 +27,7 @@ interface UseMonsterAssetReturn {
   forceRefresh: () => Promise<void>;
 }
 
-export function useMonsterAsset(userId: string | undefined, lessonId: number): UseMonsterAssetReturn {
+export function useMonsterAsset(userId: string | undefined, lessonId: number, currentStage?: MonsterStage): UseMonsterAssetReturn {
   const [jobId, setJobId] = useState<string | null>(null);
   const [isLoadingInitialState, setIsLoadingInitialState] = useState(true);
   
@@ -52,27 +53,19 @@ export function useMonsterAsset(userId: string | undefined, lessonId: number): U
         return;
       }
 
-      // Avoid re-checking the same lesson multiple times
-      const checkKey = `${userId}-${lessonId}`;
+      // Avoid re-checking the same lesson/stage multiple times
+      const checkKey = `${userId}-${lessonId}-${currentStage || 'any'}`;
       if (resumeCheckedRef.current === checkKey) return;
       resumeCheckedRef.current = checkKey;
 
       try {
-        // Query the trigger endpoint. 
-        // NOTE: The current API requires chapterId/stepId. 
-        // We might need to modify the backend to support "get latest trigger for lesson".
-        // For now, we'll try to query without specific step if the API supports it, 
-        // OR we scan the store if we have data.
-        
-        // Since we can't easily scan "all triggers" with the current API (based on previous file reads),
-        // We will rely on the layout to manage state or use a broader query if we build it.
-        // FALLBACK STRATEGY for this implementation:
-        // We won't block indefinitely on "LoadingInitialState" if we can't find a job.
-        // We'll set it to false.
-        // Ideally, the Backend API /api/progress/trigger-generation should allow query by lessonId only.
-        
-        // Let's attempt a fetch. If 400, we abort.
-        const res = await fetch(`/api/progress/trigger-generation?lessonId=${lessonId}`);
+        // Query the trigger endpoint with stage filter if available
+        let url = `/api/progress/trigger-generation?lessonId=${lessonId}`;
+        if (currentStage) {
+          url += `&stage=${currentStage}`;
+        }
+
+        const res = await fetch(url);
         if (res.ok) {
           const data = await res.json();
           // Assuming the API might return a list or the latest if we relax params
@@ -90,7 +83,7 @@ export function useMonsterAsset(userId: string | undefined, lessonId: number): U
     };
 
     checkResume();
-  }, [userId, lessonId, fetchJobStatus]);
+  }, [userId, lessonId, currentStage, fetchJobStatus]);
 
   const refreshAssets = useCallback(async () => {
     if (!jobId) return;
@@ -142,20 +135,7 @@ export function useMonsterAsset(userId: string | undefined, lessonId: number): U
     localTriggerPending.current.add(triggerKey);
 
     try {
-      // 1. Check if already triggered (Double check with backend) - SKIP IF FORCE
-      if (!force) {
-        const checkRes = await fetch(`/api/progress/trigger-generation?lessonId=${lessonId}&chapterId=${chapterId}&stepId=${stepId}`);
-        const checkData = await checkRes.json();
-
-        if (checkData.triggered && checkData.trigger?.generation_job_id) {
-          console.log('[useMonsterAsset] Found existing trigger:', checkData.trigger.generation_job_id);
-          setJobId(checkData.trigger.generation_job_id);
-          await fetchJobStatus(checkData.trigger.generation_job_id);
-          return;
-        }
-      }
-
-      // 2. Create new generation job
+      // Atomic creation/check handled by the API
       const randomMonster = generateRandomMonsterRequest();
       
       const generateRes = await fetch('/api/generate-monster', {
@@ -164,7 +144,10 @@ export function useMonsterAsset(userId: string | undefined, lessonId: number): U
         body: JSON.stringify({
           ...randomMonster,
           stage: stage, 
-          generationType: 'full'
+          generationType: 'full',
+          lessonId,
+          chapterId,
+          stepId
         })
       });
       
@@ -178,30 +161,12 @@ export function useMonsterAsset(userId: string | undefined, lessonId: number): U
       const newJobId = generateData.jobId;
       setJobId(newJobId);
 
-      // 3. Link trigger to job
-      await fetch('/api/progress/trigger-generation', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          lessonId,
-          chapterId,
-          stepId,
-          generationJobId: newJobId
-        })
-      });
-
       // Start polling immediately
       await fetchJobStatus(newJobId);
       startPolling(newJobId);
 
     } catch (err) {
       console.error('[useMonsterAsset] Error triggering generation:', err);
-      // Final race condition check
-      const retryCheck = await fetch(`/api/progress/trigger-generation?lessonId=${lessonId}&chapterId=${chapterId}&stepId=${stepId}`);
-      const retryData = await retryCheck.json();
-      if (retryData.triggered && retryData.trigger?.generation_job_id) {
-        setJobId(retryData.trigger.generation_job_id);
-      }
     } finally {
       localTriggerPending.current.delete(triggerKey);
     }

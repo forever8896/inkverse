@@ -265,6 +265,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Helper to safely check workflow status (Fix #6)
+    const verifyJobWorkflow = async (job: GenerationJob): Promise<boolean> => {
+      if (!job.workflowRunId) return true;
+      
+      try {
+        const { getRun } = await import('workflow/api');
+        const run = await getRun(job.workflowRunId);
+        const status = await run.status;
+        
+        if (status === 'running') {
+          return true;
+        } else {
+          // Workflow stopped but job thinks it's active -> Failed
+          console.log(`⚠️ Job ${job.id} is ${job.status} but workflow is ${status}. Marking failed.`);
+          await job.fail(`Workflow stopped unexpectedly: ${status}`);
+          return false;
+        }
+      } catch (error) {
+        console.warn(`Unable to verify workflow ${job.workflowRunId}:`, error);
+        // Network error - assume it's running (don't fail job)
+        return true; 
+      }
+    };
+
     // Check for existing active job (duplicate prevention)
     const existingJob = await GenerationJob.findActive({
       userId: session.user.id
@@ -272,43 +296,42 @@ export async function POST(request: NextRequest) {
 
     if (existingJob && existingJob.workflowRunId) {
       // Verify workflow run actually exists before resuming
-      try {
-        const { getRun } = await import('workflow/api');
-        const run = await getRun(existingJob.workflowRunId);
-        const status = await run.status;
+      const isRunning = await verifyJobWorkflow(existingJob);
 
-        if (status === 'running') {
-          console.log(`♻️  [API] Resuming existing job ${existingJob.id} with run ${existingJob.workflowRunId}`);
-          return NextResponse.json({
-            success: true,
-            jobId: existingJob.id,
-            runId: existingJob.workflowRunId,
-            resumed: true
-          }, { status: 200 });
-        } else {
-          console.log(`⚠️  [API] Existing job ${existingJob.id} workflow is ${status}, marking as failed`);
-          await existingJob.update({ status: 'failed_permanent', errorMessage: 'Workflow no longer running' });
-        }
-      } catch (error) {
-        console.log(`❌ [API] Workflow run ${existingJob.workflowRunId} not found, marking job as failed`);
-        await existingJob.update({ status: 'failed_permanent', errorMessage: 'Workflow run not found' });
+      if (isRunning) {
+        console.log(`♻️  [API] Resuming existing job ${existingJob.id} with run ${existingJob.workflowRunId}`);
+        return NextResponse.json({
+          success: true,
+          jobId: existingJob.id,
+          runId: existingJob.workflowRunId,
+          resumed: true
+        }, { status: 200 });
       }
+      // If not running, verifyJobWorkflow marked it as failed.
+      // We proceed to create a new job below.
     }
 
     // Generate AI prompt server-side from structured data
     const aiPrompt = generatePromptFromStructuredData(body);
     console.log(`[API] Creating monster generation job - userId: ${session.user.id}, stage: ${body.stage}, style: ${body.style}`);
 
+    // Prepare lesson context
+    const lessonContext = (body.lessonId && body.chapterId && body.stepId) ? {
+      lessonId: body.lessonId,
+      chapterId: body.chapterId,
+      stepId: body.stepId
+    } : undefined;
+
     // Create the generation job
     let job;
     try {
-      job = await GenerationJob.create({
+      job = await GenerationJob.createWithTrigger({
         userId: session.user.id,
         prompt: aiPrompt,
         style: body.style,
         stage: body.stage,
         generationType,
-      });
+      }, lessonContext);
     } catch (error: any) {
       // Handle race condition (unique constraint violation)
       if (error?.code === '23505') {
@@ -316,16 +339,40 @@ export async function POST(request: NextRequest) {
         const existingActiveJob = await GenerationJob.findActive({ userId: session.user.id });
         
         if (existingActiveJob) {
-          return NextResponse.json({
-            success: true,
-            jobId: existingActiveJob.id,
-            runId: existingActiveJob.workflowRunId,
-            resumed: true,
-            message: 'Existing active job found'
-          }, { status: 200 });
+          // Verify it's actually running (Fix #6)
+          const isRunning = await verifyJobWorkflow(existingActiveJob);
+          
+          if (isRunning) {
+            return NextResponse.json({
+              success: true,
+              jobId: existingActiveJob.id,
+              runId: existingActiveJob.workflowRunId,
+              resumed: true,
+              message: 'Existing active job found'
+            }, { status: 200 });
+          }
+          // If not running (and now marked failed), we can't easily retry here without recursion.
+          // Let the client handle the failed state or retry.
         }
       }
       throw error;
+    }
+
+    // Check if we resumed an existing job (Atomic Trigger Fix)
+    if (job.workflowRunId) {
+      console.log(`♻️  [API] Atomic trigger found existing job ${job.id} with run ${job.workflowRunId}`);
+      
+      // Verify workflow status (Fix #6)
+      await verifyJobWorkflow(job);
+      
+      // Always return the job, even if we just marked it failed. 
+      // Client will see status 'failed' and can handle it.
+      return NextResponse.json({
+        success: true,
+        jobId: job.id,
+        runId: job.workflowRunId,
+        resumed: true
+      }, { status: 200 });
     }
 
     console.log(

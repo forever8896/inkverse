@@ -63,6 +63,11 @@ export interface GenerateMonsterRequest {
   style?: 'cute' | 'fierce' | 'mysterious' | 'playful' | 'cosmic'; // Legacy - defaults to 'cute'
   stage: 'egg' | 'young' | 'adult';
   generationType?: 'full' | 'image_only';
+  
+  // Lesson Context (Optional)
+  lessonId?: number;
+  chapterId?: number;
+  stepId?: number;
 }
 
 // Option Constants
