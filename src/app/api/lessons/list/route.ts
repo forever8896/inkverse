@@ -1,6 +1,6 @@
-import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
+import { successResponse, internalErrorResponse } from '@/lib/api-response';
 
 export async function GET() {
   try {
@@ -21,8 +21,8 @@ export async function GET() {
         };
       });
 
-    return NextResponse.json({ lessons });
+    return successResponse({ lessons });
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to load lessons' }, { status: 500 });
+    return internalErrorResponse(error, 'Failed to load lessons');
   }
 }

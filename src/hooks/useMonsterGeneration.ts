@@ -75,8 +75,8 @@ export function useMonsterGeneration() {
   const fetchJobWithAuth = useCallback(async (jobId: string): Promise<GenerationJobData | null> => {
     try {
       return await store.fetchJobStatus(jobId);
-    } catch (error: any) {
-      if (error.message === 'Authentication required') {
+    } catch (error) {
+      if (error instanceof Error && error.message === 'Authentication required') {
         handleAuthenticationError();
         return null;
       }

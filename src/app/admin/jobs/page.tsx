@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import Link from 'next/link';
+import { getErrorMessage } from '@/types/errors';
 
 interface GenerationJob {
   id: string;
@@ -117,9 +118,9 @@ export default function AdminJobs() {
       setJobs(data.jobs || []);
       setTotalJobs(data.total || 0);
       setError(null);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Failed to fetch jobs:', err);
-      setError(err.message);
+      setError(getErrorMessage(err, 'Failed to fetch jobs'));
     } finally {
       setLoading(false);
     }
@@ -160,9 +161,9 @@ export default function AdminJobs() {
 
       // Refresh jobs list
       fetchJobs();
-    } catch (err: any) {
+    } catch (err) {
       console.error('Failed to delete job:', err);
-      alert(`Failed to delete job: ${err.message}`);
+      alert(`Failed to delete job: ${getErrorMessage(err)}`);
     } finally {
       setDeletingJobId(null);
     }

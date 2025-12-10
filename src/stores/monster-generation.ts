@@ -164,7 +164,7 @@ export const useMonsterGenerationStore = create<MonsterGenerationState>()(
           state.clearError();
           
           const response = await fetch(`/api/monster-status/${jobId}`);
-          const data: any = await response.json(); // Use any to access urlFreshness
+          const data = await response.json() as MonsterStatusResponse & { urlFreshness?: { imageUrl?: { fresh: boolean }, glbUrl?: { fresh: boolean } } };
 
           if (!response.ok) {
             if (response.status === 401) {

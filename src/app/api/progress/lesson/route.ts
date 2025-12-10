@@ -1,7 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { getSessionFromRequest } from '@/lib/auth-server';
 import { query } from '@/lib/postgres';
 import { parseIntSafe } from '@/lib/validation';
+import { successResponse, badRequestResponse, unauthorizedResponse, internalErrorResponse } from '@/lib/api-response';
+import { logError } from '@/types/errors';
 
 // POST /api/progress/lesson - Mark lesson as completed
 export async function POST(request: NextRequest) {
@@ -9,20 +11,14 @@ export async function POST(request: NextRequest) {
     const session = await getSessionFromRequest(request);
 
     if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return unauthorizedResponse();
     }
 
     const body = await request.json();
     const { lessonId, evolutionStage } = body;
 
     if (!lessonId) {
-      return NextResponse.json(
-        { error: 'Missing required field: lessonId' },
-        { status: 400 }
-      );
+      return badRequestResponse('Missing required field: lessonId');
     }
 
     const userId = session.user.id;
@@ -44,17 +40,11 @@ export async function POST(request: NextRequest) {
       RETURNING *
     `, [userId, lessonId, evolutionStage || 'creature']);
 
-    return NextResponse.json({
-      success: true,
-      progress: rows[0],
-    });
+    return successResponse({ progress: rows[0] });
 
   } catch (error) {
-    console.error('[Progress API] Error completing lesson:', error);
-    return NextResponse.json(
-      { error: 'Failed to complete lesson' },
-      { status: 500 }
-    );
+    logError('Progress Lesson API POST', error);
+    return internalErrorResponse(error, 'Failed to complete lesson');
   }
 }
 
@@ -64,10 +54,7 @@ export async function GET(request: NextRequest) {
     const session = await getSessionFromRequest(request);
 
     if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return unauthorizedResponse();
     }
 
     const { searchParams } = new URL(request.url);
@@ -75,10 +62,7 @@ export async function GET(request: NextRequest) {
     const lessonId = parseIntSafe(lessonIdParam);
 
     if (lessonId === null) {
-      return NextResponse.json(
-        { error: 'Missing or invalid query param: lessonId' },
-        { status: 400 }
-      );
+      return badRequestResponse('Missing or invalid query param: lessonId');
     }
 
     const userId = session.user.id;
@@ -109,17 +93,14 @@ export async function GET(request: NextRequest) {
       ORDER BY chapter_id ASC, step_id ASC
     `, [userId, lessonId]);
 
-    return NextResponse.json({
+    return successResponse({
       lesson: lessonRows[0] || null,
       chapters: chaptersRows,
       steps: stepsRows,
     });
 
   } catch (error) {
-    console.error('[Progress API] Error fetching lesson progress:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch lesson progress' },
-      { status: 500 }
-    );
+    logError('Progress Lesson API GET', error);
+    return internalErrorResponse(error, 'Failed to fetch lesson progress');
   }
 }

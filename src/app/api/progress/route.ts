@@ -1,6 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { getSessionFromRequest } from '@/lib/auth-server';
 import { query } from '@/lib/postgres';
+import { successResponse, unauthorizedResponse, internalErrorResponse } from '@/lib/api-response';
+import { logError } from '@/types/errors';
 
 // GET /api/progress - Get user's overall progress
 export async function GET(request: NextRequest) {
@@ -8,10 +10,7 @@ export async function GET(request: NextRequest) {
     const session = await getSessionFromRequest(request);
 
     if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return unauthorizedResponse();
     }
 
     const userId = session.user.id;
@@ -54,17 +53,14 @@ export async function GET(request: NextRequest) {
       LIMIT 1
     `, [userId]);
 
-    return NextResponse.json({
+    return successResponse({
       lessonProgress,
       chapterProgress,
       currentPosition: currentPositionRows[0] || null,
     });
 
   } catch (error) {
-    console.error('[Progress API] Error fetching progress:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch progress' },
-      { status: 500 }
-    );
+    logError('Progress API', error);
+    return internalErrorResponse(error, 'Failed to fetch progress');
   }
 }

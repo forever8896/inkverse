@@ -1,6 +1,7 @@
-import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
+import { successResponse, notFoundResponse, internalErrorResponse } from '@/lib/api-response';
+import { logError } from '@/types/errors';
 
 export async function GET(
   request: Request,
@@ -11,14 +12,15 @@ export async function GET(
     const lessonPath = path.join(process.cwd(), 'src/content/lessons', `${id}.json`);
 
     if (!fs.existsSync(lessonPath)) {
-      return NextResponse.json({ error: 'Lesson not found' }, { status: 404 });
+      return notFoundResponse('Lesson');
     }
 
     const content = fs.readFileSync(lessonPath, 'utf-8');
     const lesson = JSON.parse(content);
 
-    return NextResponse.json({ lesson });
+    return successResponse({ lesson });
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to load lesson' }, { status: 500 });
+    logError('Lessons API', error);
+    return internalErrorResponse(error, 'Failed to load lesson');
   }
 }

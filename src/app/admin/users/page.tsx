@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import Link from 'next/link';
+import { getErrorMessage } from '@/types/errors';
 
 interface User {
   id: string;
@@ -60,9 +61,9 @@ export default function AdminUsers() {
       setUsers(data.users || []);
       setTotalUsers(data.total || 0);
       setError(null);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Failed to fetch users:', err);
-      setError(err.message);
+      setError(getErrorMessage(err, 'Failed to fetch users'));
     } finally {
       setLoading(false);
     }

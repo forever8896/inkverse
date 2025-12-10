@@ -1,7 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { getSessionFromRequest } from '@/lib/auth-server';
 import { query } from '@/lib/postgres';
 import { parseIntSafe } from '@/lib/validation';
+import { successResponse, badRequestResponse, unauthorizedResponse, internalErrorResponse } from '@/lib/api-response';
+import { logError } from '@/types/errors';
 
 // POST /api/progress/step - Save step progress
 export async function POST(request: NextRequest) {
@@ -9,10 +11,7 @@ export async function POST(request: NextRequest) {
     const session = await getSessionFromRequest(request);
 
     if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return unauthorizedResponse();
     }
 
     const body = await request.json();
@@ -27,10 +26,7 @@ export async function POST(request: NextRequest) {
 
     // Validate required fields
     if (!lessonId || !chapterId || !stepId) {
-      return NextResponse.json(
-        { error: 'Missing required fields: lessonId, chapterId, stepId' },
-        { status: 400 }
-      );
+      return badRequestResponse('Missing required fields: lessonId, chapterId, stepId');
     }
 
     const userId = session.user.id;
@@ -100,17 +96,11 @@ export async function POST(request: NextRequest) {
       `, [userId, lessonId, chapterId]);
     }
 
-    return NextResponse.json({
-      success: true,
-      progress: rows[0],
-    });
+    return successResponse({ progress: rows[0] });
 
   } catch (error) {
-    console.error('[Progress API] Error saving step progress:', error);
-    return NextResponse.json(
-      { error: 'Failed to save step progress' },
-      { status: 500 }
-    );
+    logError('Progress Step API POST', error);
+    return internalErrorResponse(error, 'Failed to save step progress');
   }
 }
 
@@ -120,10 +110,7 @@ export async function GET(request: NextRequest) {
     const session = await getSessionFromRequest(request);
 
     if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return unauthorizedResponse();
     }
 
     const { searchParams } = new URL(request.url);
@@ -132,10 +119,7 @@ export async function GET(request: NextRequest) {
     const stepId = parseIntSafe(searchParams.get('stepId'));
 
     if (lessonId === null || chapterId === null || stepId === null) {
-      return NextResponse.json(
-        { error: 'Missing or invalid query params: lessonId, chapterId, stepId' },
-        { status: 400 }
-      );
+      return badRequestResponse('Missing or invalid query params: lessonId, chapterId, stepId');
     }
 
     const userId = session.user.id;
@@ -149,15 +133,10 @@ export async function GET(request: NextRequest) {
         AND step_id = $4
     `, [userId, lessonId, chapterId, stepId]);
 
-    return NextResponse.json({
-      progress: rows[0] || null,
-    });
+    return successResponse({ progress: rows[0] || null });
 
   } catch (error) {
-    console.error('[Progress API] Error fetching step progress:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch step progress' },
-      { status: 500 }
-    );
+    logError('Progress Step API GET', error);
+    return internalErrorResponse(error, 'Failed to fetch step progress');
   }
 }

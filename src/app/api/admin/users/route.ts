@@ -3,9 +3,18 @@
  * Returns paginated list of users with job statistics
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { getPool } from '@/lib/postgres';
 import { requireAdminApi } from '@/lib/admin-auth';
+import { successResponse, internalErrorResponse } from '@/lib/api-response';
+import { logError } from '@/types/errors';
+import {
+  extractPaginationParams,
+  buildSearchCondition,
+  buildSortClause,
+  buildLimitOffsetClause,
+  type SortFieldMapping,
+} from '@/lib/admin-query-builder';
 
 export interface AdminUser {
   id: string;
@@ -19,11 +28,28 @@ export interface AdminUser {
   lastActive?: string;
 }
 
-export interface AdminUsersResponse {
-  success: boolean;
-  users?: AdminUser[];
-  total?: number;
-  error?: string;
+// Define allowed sort fields with their SQL mappings
+const USER_SORT_FIELDS: Record<string, SortFieldMapping> = {
+  createdAt: { column: 'u."createdAt"' },
+  jobCount: { column: 'job_count', secondary: 'u."createdAt" DESC' },
+  totalSpent: { column: 'total_spent', secondary: 'u."createdAt" DESC' },
+  lastActive: { column: 'last_active', secondary: 'u."createdAt" DESC', nullsLast: true },
+};
+
+// Define searchable fields
+const USER_SEARCH_FIELDS = ['u.name', 'u.email', 'u.id::text'];
+
+// Row type from database query
+interface UserRow {
+  id: string;
+  name: string | null;
+  email: string | null;
+  image: string | null;
+  createdAt: Date;
+  emailVerified: Date | null;
+  job_count: string;
+  total_spent: string | null;
+  last_active: Date | null;
 }
 
 export async function GET(request: NextRequest) {
@@ -34,60 +60,44 @@ export async function GET(request: NextRequest) {
   try {
     const pool = getPool();
     const { searchParams } = new URL(request.url);
-    
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '20');
-    const sortBy = searchParams.get('sortBy') || 'createdAt';
-    const sortOrder = searchParams.get('sortOrder') || 'desc';
-    const search = searchParams.get('search');
 
-    const offset = (page - 1) * limit;
+    // Extract pagination params using shared utility
+    const params = extractPaginationParams(searchParams, {
+      defaultLimit: 20,
+      defaultSortBy: 'createdAt',
+    });
 
-    // Build search condition
-    let searchCondition = '';
-    let searchParams_values: any[] = [];
-    
-    if (search) {
-      searchCondition = `WHERE (
-        u.name ILIKE $${searchParams_values.length + 1} OR 
-        u.email ILIKE $${searchParams_values.length + 1} OR 
-        u.id::text ILIKE $${searchParams_values.length + 1}
-      )`;
-      searchParams_values.push(`%${search}%`);
-    }
+    // Build search condition using shared utility
+    const searchResult = buildSearchCondition(
+      USER_SEARCH_FIELDS,
+      params.search,
+      params.queryParams
+    );
 
-    // Build sort condition
-    let sortCondition = '';
-    switch (sortBy) {
-      case 'createdAt':
-        sortCondition = `ORDER BY u."createdAt" ${sortOrder.toUpperCase()}`;
-        break;
-      case 'jobCount':
-        sortCondition = `ORDER BY job_count ${sortOrder.toUpperCase()}, u."createdAt" DESC`;
-        break;
-      case 'totalSpent':
-        sortCondition = `ORDER BY total_spent ${sortOrder.toUpperCase()}, u."createdAt" DESC`;
-        break;
-      case 'lastActive':
-        sortCondition = `ORDER BY last_active ${sortOrder.toUpperCase()} NULLS LAST, u."createdAt" DESC`;
-        break;
-      default:
-        sortCondition = `ORDER BY u."createdAt" ${sortOrder.toUpperCase()}`;
-    }
+    // Build sort clause using shared utility
+    const sortClause = buildSortClause(
+      params.sortBy,
+      params.sortOrder,
+      USER_SORT_FIELDS,
+      'createdAt'
+    );
 
     // Get total count
     const countQuery = `
       SELECT COUNT(*) as total
       FROM "user" u
-      ${searchCondition}
+      ${searchResult.clause}
     `;
-    
-    const countResult = await pool.query(countQuery, searchParams_values);
+
+    const countResult = await pool.query(countQuery, params.queryParams);
     const total = parseInt(countResult.rows[0].total);
+
+    // Build LIMIT/OFFSET clause
+    const limitOffsetClause = buildLimitOffsetClause(params, params.queryParams);
 
     // Get users with job statistics
     const usersQuery = `
-      SELECT 
+      SELECT
         u.id,
         u.name,
         u.email,
@@ -99,48 +109,37 @@ export async function GET(request: NextRequest) {
         mg.last_active
       FROM "user" u
       LEFT JOIN (
-        SELECT 
+        SELECT
           user_id,
           COUNT(*) as job_count,
           SUM(total_cost) as total_spent,
           MAX(updated_at) as last_active
-        FROM monster_generations 
+        FROM monster_generations
         GROUP BY user_id
       ) mg ON u.id = mg.user_id
-      ${searchCondition}
-      ${sortCondition}
-      LIMIT $${searchParams_values.length + 1} OFFSET $${searchParams_values.length + 2}
+      ${searchResult.clause}
+      ${sortClause}
+      ${limitOffsetClause}
     `;
 
-    const queryParams = [...searchParams_values, limit, offset];
-    const usersResult = await pool.query(usersQuery, queryParams);
+    const usersResult = await pool.query(usersQuery, params.queryParams);
 
-    const users: AdminUser[] = usersResult.rows.map((row: any) => ({
+    const users: AdminUser[] = usersResult.rows.map((row: UserRow) => ({
       id: row.id,
-      name: row.name,
-      email: row.email,
-      image: row.image,
+      name: row.name ?? undefined,
+      email: row.email ?? undefined,
+      image: row.image ?? undefined,
       createdAt: row.createdAt.toISOString(),
       emailVerified: row.emailVerified?.toISOString(),
       jobCount: parseInt(row.job_count),
-      totalSpent: parseFloat(row.total_spent || 0),
-      lastActive: row.last_active?.toISOString()
+      totalSpent: parseFloat(row.total_spent || '0'),
+      lastActive: row.last_active?.toISOString(),
     }));
 
-    const response: AdminUsersResponse = {
-      success: true,
-      users,
-      total
-    };
-
-    return NextResponse.json(response);
+    return successResponse({ users, total });
 
   } catch (error) {
-    console.error('[API] Admin users error:', error);
-    
-    return NextResponse.json(
-      { success: false, error: 'Internal server error' },
-      { status: 500 }
-    );
+    logError('Admin Users API', error);
+    return internalErrorResponse(error, 'Failed to fetch users');
   }
 }

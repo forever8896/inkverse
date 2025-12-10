@@ -1,7 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { getSessionFromRequest } from '@/lib/auth-server';
 import { query } from '@/lib/postgres';
 import { parseIntSafe } from '@/lib/validation';
+import { successResponse, badRequestResponse, unauthorizedResponse, internalErrorResponse } from '@/lib/api-response';
+import { logError } from '@/types/errors';
 
 // POST /api/progress/chapter - Mark chapter as completed
 export async function POST(request: NextRequest) {
@@ -9,20 +11,14 @@ export async function POST(request: NextRequest) {
     const session = await getSessionFromRequest(request);
 
     if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return unauthorizedResponse();
     }
 
     const body = await request.json();
     const { lessonId, chapterId } = body;
 
     if (!lessonId || !chapterId) {
-      return NextResponse.json(
-        { error: 'Missing required fields: lessonId, chapterId' },
-        { status: 400 }
-      );
+      return badRequestResponse('Missing required fields: lessonId, chapterId');
     }
 
     const userId = session.user.id;
@@ -43,17 +39,11 @@ export async function POST(request: NextRequest) {
       RETURNING *
     `, [userId, lessonId, chapterId]);
 
-    return NextResponse.json({
-      success: true,
-      progress: rows[0],
-    });
+    return successResponse({ progress: rows[0] });
 
   } catch (error) {
-    console.error('[Progress API] Error completing chapter:', error);
-    return NextResponse.json(
-      { error: 'Failed to complete chapter' },
-      { status: 500 }
-    );
+    logError('Progress Chapter API POST', error);
+    return internalErrorResponse(error, 'Failed to complete chapter');
   }
 }
 
@@ -63,10 +53,7 @@ export async function GET(request: NextRequest) {
     const session = await getSessionFromRequest(request);
 
     if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return unauthorizedResponse();
     }
 
     const { searchParams } = new URL(request.url);
@@ -74,10 +61,7 @@ export async function GET(request: NextRequest) {
     const chapterId = parseIntSafe(searchParams.get('chapterId'));
 
     if (lessonId === null || chapterId === null) {
-      return NextResponse.json(
-        { error: 'Missing or invalid query params: lessonId, chapterId' },
-        { status: 400 }
-      );
+      return badRequestResponse('Missing or invalid query params: lessonId, chapterId');
     }
 
     const userId = session.user.id;
@@ -101,16 +85,13 @@ export async function GET(request: NextRequest) {
       ORDER BY step_id ASC
     `, [userId, lessonId, chapterId]);
 
-    return NextResponse.json({
+    return successResponse({
       chapter: chapterRows[0] || null,
       steps: stepsRows,
     });
 
   } catch (error) {
-    console.error('[Progress API] Error fetching chapter progress:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch chapter progress' },
-      { status: 500 }
-    );
+    logError('Progress Chapter API GET', error);
+    return internalErrorResponse(error, 'Failed to fetch chapter progress');
   }
 }
