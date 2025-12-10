@@ -8,9 +8,7 @@ import MonacoCodeEditor from '@/components/MonacoCodeEditor';
 import ShaderBackground from '@/components/ShaderBackground';
 import LessonContent from '@/components/LessonContent';
 import dynamic from 'next/dynamic';
-import Confetti from 'react-confetti';
 import { Camera, Loader2 } from 'lucide-react';
-import { MintCreatureNFT } from './MintCreatureNFT';
 import GitHubAuthModal from '@/components/GitHubAuthModal';
 import { useSession } from '@/lib/auth-client';
 import '@/styles/lesson-content.css';
@@ -19,10 +17,11 @@ import { useMonsterAsset } from '@/hooks/useMonsterAsset';
 import { CreatureStageDisplay } from '@/components/CreatureStageDisplay';
 import { useCreatureDisplayStage } from '@/hooks/useCreatureDisplayStage';
 import { useToastNotifications, ToastContainer } from '@/hooks/useToastNotifications';
+import { useNFTCapture } from '@/hooks/useNFTCapture';
+import { CompletionModals } from '@/components/lesson/CompletionModals';
 
 // wallet stuff
 import { ReactiveDotProvider, ChainProvider, SignerProvider, useAccounts } from '@reactive-dot/react';
-import { ConnectButton } from '@/components/web3/connect-button';
 import { config } from '@/lib/reactive-dot/config';
 
 const ConsolePanel = dynamic(() => import('@/app/ConsolePanel'), {
@@ -60,9 +59,6 @@ function LessonLayoutInner({ lesson, initialChapter: propChapter, initialStep: p
     height: 0,
   });
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const [isCapturing, setIsCapturing] = useState(false);
-  const [showShutter, setShowShutter] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showCodeEditor, setShowCodeEditor] = useState(true);
   const [showChapterComplete, setShowChapterComplete] = useState(false);
@@ -70,6 +66,12 @@ function LessonLayoutInner({ lesson, initialChapter: propChapter, initialStep: p
   const [showNFTMinting, setShowNFTMinting] = useState(false);
   const creatureDisplayRef = useRef<HTMLDivElement>(null);
   const lessonContentRef = useRef<HTMLDivElement>(null);
+
+  // NFT capture functionality (extracted hook)
+  const { captureNFT, isCapturing, showShutter, showSuccess } = useNFTCapture({
+    creatureDisplayRef,
+    addToast,
+  });
 
   // GitHub authentication session
   const { data: session, isPending: isAuthLoading } = useSession();
@@ -401,125 +403,6 @@ function LessonLayoutInner({ lesson, initialChapter: propChapter, initialStep: p
       setIsValidated(true);
     }
   };
-
-  // NFT capture functionality
-  const captureNFT = useCallback(async () => {
-    if (!creatureDisplayRef.current) return;
-
-    setIsCapturing(true);
-    setShowShutter(true);
-
-    // Shutter effect timing
-    setTimeout(() => setShowShutter(false), 800);
-
-    try {
-      // Create a new canvas for the NFT with square dimensions
-      const nftCanvas = document.createElement('canvas');
-      const nftSize = 1024;
-      nftCanvas.width = nftSize;
-      nftCanvas.height = nftSize;
-
-      const ctx = nftCanvas.getContext('2d');
-      if (!ctx) {
-        throw new Error('Could not get 2D context');
-      }
-
-      // Fill background with gradient
-      const gradient = ctx.createLinearGradient(0, 0, 0, nftSize);
-      gradient.addColorStop(0, '#1e293b'); // slate-800
-      gradient.addColorStop(1, '#0f172a'); // slate-900
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, nftSize, nftSize);
-
-      // Get creature element
-      const creatureElement = creatureDisplayRef.current.querySelector('img, span');
-      if (creatureElement) {
-        if (creatureElement.tagName === 'IMG') {
-          // Handle image elements
-          const img = creatureElement as HTMLImageElement;
-          await new Promise((resolve) => {
-            if (img.complete) {
-              resolve(undefined);
-            } else {
-              img.onload = () => resolve(undefined);
-            }
-          });
-
-          // Draw the creature image centered with padding
-          const padding = nftSize * 0.1;
-          const targetSize = nftSize - padding * 2;
-          
-          ctx.drawImage(
-            img,
-            padding,
-            padding,
-            targetSize,
-            targetSize
-          );
-        } else {
-          // Handle emoji/text elements
-          const span = creatureElement as HTMLSpanElement;
-          const fontSize = nftSize * 0.4; // 40% of canvas size
-          ctx.font = `${fontSize}px system-ui`;
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillStyle = window.getComputedStyle(span).color || '#ffffff';
-          
-          // Apply any filters if present
-          const filter = window.getComputedStyle(span).filter;
-          if (filter && filter !== 'none') {
-            ctx.filter = filter;
-          }
-          
-          ctx.fillText(
-            span.textContent || '🔬',
-            nftSize / 2,
-            nftSize / 2
-          );
-        }
-      }
-
-      // Convert to blob
-      const blob = await new Promise<Blob>((resolve) => {
-        nftCanvas.toBlob((blob) => {
-          if (blob) resolve(blob);
-        }, 'image/png');
-      });
-
-      // Send to backend
-      const formData = new FormData();
-      formData.append('image', blob, 'creature-nft.png');
-
-      const response = await fetch('/api/nft-snapshot', {
-        method: 'POST',
-        body: formData,
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        // Show success overlay
-        setShowSuccess(true);
-        setTimeout(() => setShowSuccess(false), 2000);
-        addToast({
-          type: 'success',
-          title: '📸 NFT Created!',
-          message: 'Your creature has been captured successfully',
-        });
-      } else {
-        throw new Error(result.error || 'Failed to save NFT');
-      }
-    } catch (error) {
-      console.error('Error creating NFT:', error);
-      addToast({
-        type: 'error',
-        title: '❌ Capture Failed',
-        message: 'Failed to create NFT snapshot. Please try again.',
-      });
-    } finally {
-      setIsCapturing(false);
-    }
-  }, [addToast]);
 
   if (!lesson) {
     return (
@@ -1079,91 +962,25 @@ function LessonLayoutInner({ lesson, initialChapter: propChapter, initialStep: p
             </div>
           </div>
         </div>
-        {/* Chapter Completion Modal */}
-        {showChapterComplete && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-            <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl shadow-2xl p-10 flex flex-col items-center max-w-md border border-purple-500/30">
-              <div className="text-6xl mb-6 animate-bounce">🎉</div>
-              <h2 className="text-3xl font-bold text-white mb-3 text-center">
-                Chapter Complete!
-              </h2>
-              <p className="text-xl text-purple-300 mb-6 text-center font-semibold">
-                {completedChapterTitle}
-              </p>
-              <div className="bg-purple-600/20 border border-purple-500/50 rounded-lg p-4 mb-6 text-center">
-                <p className="text-slate-200">
-                  Your progress has been saved! ✨
-                </p>
-              </div>
-              <button
-                onClick={moveToNextChapter}
-                className="px-8 py-3 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 rounded-lg text-white font-semibold shadow-lg transition-all duration-200 hover:scale-105"
-              >
-                Continue to Next Chapter →
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Lesson Completion Modal */}
-        {showCompletionModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
-            <div className="bg-slate-900 rounded-lg shadow-2xl p-8 flex flex-col items-center max-w-[90vw] max-h-[90vh] relative">
-              <button
-                onClick={() => setShowCompletionModal(false)}
-                className="absolute top-4 right-4 text-slate-400 hover:text-white text-2xl font-bold focus:outline-none"
-                aria-label="Close"
-              >
-                ×
-              </button>
-              <video
-                src="/creatures/video.mp4"
-                autoPlay
-                loop
-                controls
-                className="w-[min(480px,70vw)] h-[min(270px,40vw)] mx-auto rounded-lg shadow-lg mb-6 bg-black"
-                style={{ objectFit: 'contain' }}
-              />
-              <h2 className="text-3xl font-bold text-white mb-2 text-center">
-                Congratulations!
-              </h2>
-              <p className="text-lg text-slate-200 text-center mb-6">
-                You just wrote your first ever contract.
-                <br />
-                Welcome to the world of ink! smart contracts!
-              </p>
-              
-              {/* Wallet Connection & NFT Minting Section - Only in completion modal */}
-              <div className="mb-6">
-                <div className="mb-4 flex justify-center">
-                  <ConnectButton />
-                </div>
-                <MintCreatureNFT
-                  lessonId={lesson.id}
-                />
-              </div>
-              
-              <div className="flex space-x-4">
-                <a
-                  href="https://use.ink/docs/v6/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-6 py-2 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 rounded-lg text-white font-semibold shadow-md transition-all duration-200 flex items-center space-x-2"
-                >
-                  <span>📚</span>
-                  <span>View ink! Docs</span>
-                </a>
-                <Link
-                  href="/playground"
-                  className="px-6 py-2 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 rounded-lg text-white font-semibold shadow-md transition-all duration-200 flex items-center space-x-2"
-                >
-                  <span>🚀</span>
-                  <span>What&apos;s Next</span>
-                </Link>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Completion Modals (Chapter, Lesson, NFT Minting) + Confetti */}
+        <CompletionModals
+          chapterComplete={{
+            isOpen: showChapterComplete,
+            title: completedChapterTitle,
+            onContinue: moveToNextChapter,
+          }}
+          lessonComplete={{
+            isOpen: showCompletionModal,
+            lessonId: lesson.id,
+            onClose: () => setShowCompletionModal(false),
+          }}
+          nftMinting={{
+            isOpen: showNFTMinting,
+            lessonId: lesson.id,
+            onClose: () => setShowNFTMinting(false),
+          }}
+          windowDimensions={windowDimensions}
+        />
 
         {/* GitHub Authentication Modal */}
         <GitHubAuthModal
@@ -1178,58 +995,6 @@ function LessonLayoutInner({ lesson, initialChapter: propChapter, initialStep: p
             });
           }}
         />
-
-        {/* NFT Minting Modal (triggered by step completion) */}
-        {showNFTMinting && lesson && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-            <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl shadow-2xl p-10 flex flex-col items-center max-w-md border border-purple-500/30 relative">
-              <div className="text-6xl mb-6 animate-bounce">🎨</div>
-              <h2 className="text-3xl font-bold text-white mb-3 text-center">
-                Mint Your Creature NFT!
-              </h2>
-              <p className="text-lg text-purple-300 mb-6 text-center">
-                You've completed a major milestone! Mint your creature NFT as proof of your progress.
-              </p>
-
-              {/* Wallet Connection & NFT Minting */}
-              <div className="w-full mb-6">
-                <div className="mb-4 flex justify-center">
-                  <ConnectButton />
-                </div>
-                <MintCreatureNFT
-                  lessonId={lesson.id}
-                />
-              </div>
-
-              <button
-                onClick={() => setShowNFTMinting(false)}
-                className="px-6 py-3 bg-gradient-to-r from-slate-700 to-slate-600 hover:from-slate-600 hover:to-slate-500 rounded-lg text-white font-semibold shadow-md transition-all duration-200"
-              >
-                Continue Without Minting →
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Confetti */}
-        {(showCompletionModal || showChapterComplete) && (
-          <Confetti
-            width={windowDimensions.width}
-            height={windowDimensions.height}
-            recycle={false}
-            numberOfPieces={showChapterComplete ? 150 : 200}
-            gravity={0.1}
-            colors={[
-              '#9333ea',
-              '#06b6d4',
-              '#ec4899',
-              '#10b981',
-              '#f59e0b',
-              '#ef4444',
-            ]}
-            style={{ position: 'fixed', top: 0, left: 0, zIndex: 60 }}
-          />
-        )}
       </div>
     </>
   );
