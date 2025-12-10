@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionFromRequest } from '@/lib/auth-server';
-import { query } from '@/lib/db';
+import { query } from '@/lib/postgres';
+import { parseIntSafe } from '@/lib/validation';
 
 // POST /api/progress/trigger-generation - Trigger NFT generation for a completed step
 export async function POST(request: NextRequest) {
@@ -28,7 +29,7 @@ export async function POST(request: NextRequest) {
 
     // Atomic insert or update
     // Uses xmax = 0 check to distinguish between insert and update
-    const result = await query(`
+    const { rows } = await query(`
       INSERT INTO lesson_generation_triggers (
         user_id,
         lesson_id,
@@ -46,7 +47,7 @@ export async function POST(request: NextRequest) {
       RETURNING *, (xmax = 0) AS was_inserted
     `, [userId, lessonId, chapterId, stepId, generationJobId || null, stage || null, false]);
 
-    const trigger = result[0];
+    const trigger = rows[0];
     const wasInserted = trigger.was_inserted;
     
     // If updated (not inserted) and job ID didn't change (was already set), then it's a duplicate
@@ -86,14 +87,14 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const lessonId = searchParams.get('lessonId');
-    const chapterId = searchParams.get('chapterId');
-    const stepId = searchParams.get('stepId');
+    const lessonId = parseIntSafe(searchParams.get('lessonId'));
+    const chapterId = parseIntSafe(searchParams.get('chapterId'));
+    const stepId = parseIntSafe(searchParams.get('stepId'));
     const stage = searchParams.get('stage');
 
-    if (!lessonId) {
+    if (lessonId === null) {
       return NextResponse.json(
-        { error: 'Missing required query param: lessonId' },
+        { error: 'Missing or invalid query param: lessonId' },
         { status: 400 }
       );
     }
@@ -101,8 +102,8 @@ export async function GET(request: NextRequest) {
     const userId = session.user.id;
 
     // If all params provided, query specific step
-    if (chapterId && stepId) {
-      const result = await query(`
+    if (chapterId !== null && stepId !== null) {
+      const { rows } = await query(`
         SELECT
           lgt.*,
           mg.status as generation_status,
@@ -115,11 +116,11 @@ export async function GET(request: NextRequest) {
           AND lgt.lesson_id = $2
           AND lgt.chapter_id = $3
           AND lgt.step_id = $4
-      `, [userId, parseInt(lessonId), parseInt(chapterId), parseInt(stepId)]);
+      `, [userId, lessonId, chapterId, stepId]);
 
       return NextResponse.json({
-        triggered: result.length > 0,
-        trigger: result[0] || null,
+        triggered: rows.length > 0,
+        trigger: rows[0] || null,
       });
     }
 
@@ -137,8 +138,8 @@ export async function GET(request: NextRequest) {
       WHERE lgt.user_id = $1
         AND lgt.lesson_id = $2
     `;
-    
-    const queryParams: any[] = [userId, parseInt(lessonId)];
+
+    const queryParams: (string | number)[] = [userId, lessonId];
     
     if (stage) {
       queryText += ` AND lgt.stage = $3`;
@@ -146,12 +147,12 @@ export async function GET(request: NextRequest) {
     }
     
     queryText += ` ORDER BY lgt.triggered_at DESC LIMIT 1`;
-    
-    const result = await query(queryText, queryParams);
+
+    const { rows } = await query(queryText, queryParams);
 
     return NextResponse.json({
-      triggered: result.length > 0,
-      trigger: result[0] || null,
+      triggered: rows.length > 0,
+      trigger: rows[0] || null,
     });
 
   } catch (error) {
@@ -187,7 +188,7 @@ export async function PATCH(request: NextRequest) {
 
     const userId = session.user.id;
 
-    const result = await query(`
+    const { rows } = await query(`
       UPDATE lesson_generation_triggers
       SET
         generation_job_id = COALESCE($5, generation_job_id),
@@ -199,7 +200,7 @@ export async function PATCH(request: NextRequest) {
       RETURNING *
     `, [userId, lessonId, chapterId, stepId, generationJobId || null, completed]);
 
-    if (result.length === 0) {
+    if (rows.length === 0) {
       return NextResponse.json(
         { error: 'Generation trigger not found' },
         { status: 404 }
@@ -208,7 +209,7 @@ export async function PATCH(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      trigger: result[0],
+      trigger: rows[0],
     });
 
   } catch (error) {

@@ -85,13 +85,14 @@ export async function GET(
     }
 
     // Check if URLs need refreshing (expired presigned URLs)
+    // Use lastUrlRefresh (not updatedAt) to accurately track URL age
     const now = new Date();
-    const updatedAt = new Date(job.updatedAt);
-    const hoursSinceUpdate =
-      (now.getTime() - updatedAt.getTime()) / (1000 * 60 * 60);
+    const urlRefreshTime = new Date(job.lastUrlRefresh || job.updatedAt);
+    const hoursSinceRefresh =
+      (now.getTime() - urlRefreshTime.getTime()) / (1000 * 60 * 60);
 
     // Refresh URLs if they're older than 1 hour (presigned URLs expire in 2 hours)
-    if (hoursSinceUpdate > 1 && (job.imageUrl || job.glbUrl)) {
+    if (hoursSinceRefresh > 1 && (job.imageUrl || job.glbUrl)) {
       try {
         await job.refreshUrls();
         console.log(`[API] Refreshed URLs for job ${jobId}`);

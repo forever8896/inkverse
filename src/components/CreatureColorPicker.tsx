@@ -2,12 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
+import { HSLValues } from '@/lib/image-filters';
 
-interface HSLValues {
-  hue: number;
-  saturation: number;
-  lightness: number;
-}
+// Re-export for backward compatibility
+export type { HSLValues };
 
 interface CreatureColorPickerProps {
   onColorChange?: (hslValues: HSLValues) => void;
@@ -290,6 +288,3 @@ export default function CreatureColorPicker({
     </motion.div>
   );
 }
-
-// Export the HSL values type for reuse
-export type { HSLValues };

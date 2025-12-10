@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionFromRequest } from '@/lib/auth-server';
-import { query } from '@/lib/db';
+import { query } from '@/lib/postgres';
 
 // GET /api/progress - Get user's overall progress
 export async function GET(request: NextRequest) {
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     const userId = session.user.id;
 
     // Get all lesson progress
-    const lessonProgress = await query(`
+    const { rows: lessonProgress } = await query(`
       SELECT
         lesson_id,
         started_at,
@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
     `, [userId]);
 
     // Get all chapter progress
-    const chapterProgress = await query(`
+    const { rows: chapterProgress } = await query(`
       SELECT
         lesson_id,
         chapter_id,
@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
     `, [userId]);
 
     // Get current position (most recent incomplete step)
-    const currentPosition = await query(`
+    const { rows: currentPositionRows } = await query(`
       SELECT
         lesson_id,
         chapter_id,
@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       lessonProgress,
       chapterProgress,
-      currentPosition: currentPosition[0] || null,
+      currentPosition: currentPositionRows[0] || null,
     });
 
   } catch (error) {

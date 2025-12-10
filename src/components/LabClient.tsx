@@ -3,9 +3,8 @@
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
 import { useState, useEffect, useCallback } from 'react';
-import CreatureColorPicker, {
-  HSLValues,
-} from '@/components/CreatureColorPicker';
+import CreatureColorPicker from '@/components/CreatureColorPicker';
+import { HSLValues, createHSLFilter } from '@/lib/image-filters';
 import Image from 'next/image';
 import { Lesson } from '@/lib/lesson-types';
 
@@ -239,11 +238,6 @@ export default function LabClient({ chapters }: { chapters: Lesson[] }) {
     setCreatureColor(hslValues);
   }, []);
 
-  const getImageFilter = () => {
-    const { hue, saturation, lightness } = creatureColor;
-    return `hue-rotate(${hue}deg) saturate(${100 + saturation}%) brightness(${100 + lightness}%)`;
-  };
-
   return (
     <div className="min-h-screen">
       <AnimatePresence mode="wait">
@@ -289,7 +283,7 @@ export default function LabClient({ chapters }: { chapters: Lesson[] }) {
                                 height={240}
                                 className="object-contain"
                                 style={{
-                                  filter: `${getImageFilter()} drop-shadow(0 0 20px rgba(147, 51, 234, 0.5))`,
+                                  filter: createHSLFilter(creatureColor, { includeGlow: true }),
                                 }}
                               />
                             </div>

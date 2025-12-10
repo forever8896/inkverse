@@ -21,6 +21,9 @@ interface UseMonsterAssetReturn {
   isModelReady: boolean;
   isLoadingInitialState: boolean; // True while checking for existing jobs on mount
 
+  // Resume indicator - true when reconnecting to an existing job
+  wasResumed: boolean;
+
   // Actions
   triggerGeneration: (chapterId: number, stepId: number, stage?: 'young' | 'adult', force?: boolean) => Promise<void>;
   refreshAssets: () => Promise<void>;
@@ -30,7 +33,8 @@ interface UseMonsterAssetReturn {
 export function useMonsterAsset(userId: string | undefined, lessonId: number, currentStage?: MonsterStage): UseMonsterAssetReturn {
   const [jobId, setJobId] = useState<string | null>(null);
   const [isLoadingInitialState, setIsLoadingInitialState] = useState(true);
-  
+  const [wasResumed, setWasResumed] = useState(false);
+
   // Refs for throttling and locking
   const localTriggerPending = useRef<Set<string>>(new Set());
   const lastRefreshRef = useRef<number>(0);
@@ -45,7 +49,20 @@ export function useMonsterAsset(userId: string | undefined, lessonId: number, cu
 
   const job = jobId ? jobs[jobId] : null;
 
-  // Resume on Mount: Check if generation was already triggered for this lesson
+  // ============================================================================
+  // MOUNT RESUME: DO NOT REMOVE THIS EFFECT
+  // ============================================================================
+  // This GET reconnects users to their existing job on page load/reload.
+  // Without it, users would see a blank state until clicking "Generate" again.
+  //
+  // Why this is NOT redundant:
+  // - The POST to /api/generate-monster only fires when user clicks "Generate"
+  // - This effect fires on mount, restoring state for users who refresh mid-generation
+  // - resumeCheckedRef prevents duplicate fetches, not this entire effect
+  //
+  // Race protection is handled by the atomic POST to /api/generate-monster,
+  // which uses createWithTrigger() with database row locks.
+  // ============================================================================
   useEffect(() => {
     const checkResume = async () => {
       if (!userId || !lessonId) {
@@ -72,6 +89,7 @@ export function useMonsterAsset(userId: string | undefined, lessonId: number, cu
           if (data.triggered && data.trigger?.generation_job_id) {
             console.log('[useMonsterAsset] Resuming job:', data.trigger.generation_job_id);
             setJobId(data.trigger.generation_job_id);
+            setWasResumed(true);
             await fetchJobStatus(data.trigger.generation_job_id);
           }
         }
@@ -85,20 +103,12 @@ export function useMonsterAsset(userId: string | undefined, lessonId: number, cu
     checkResume();
   }, [userId, lessonId, currentStage, fetchJobStatus]);
 
+  // Refresh assets - delegates to fetchJobStatus which handles URL freshness
+  // via urlFreshness metadata from the API (see monster-generation store)
   const refreshAssets = useCallback(async () => {
     if (!jobId) return;
-    
-    const job = await fetchJobStatus(jobId);
-    if (!job) return;
-
-    // Check URL expiry (approx 2 hours)
-    const updatedAt = new Date(job.updatedAt);
-    const ageMinutes = (Date.now() - updatedAt.getTime()) / 60000;
-    
-    if (ageMinutes > 110) {
-      // Force refresh logic here
-      await fetchJobStatus(jobId);
-    }
+    // fetchJobStatus checks urlFreshness and calls refreshUrls automatically if stale
+    await fetchJobStatus(jobId);
   }, [jobId, fetchJobStatus]);
 
   const forceRefresh = useCallback(async () => {
@@ -152,13 +162,29 @@ export function useMonsterAsset(userId: string | undefined, lessonId: number, cu
       });
       
       const generateData = await generateRes.json();
-      
+
       if (!generateRes.ok) {
+        // 403 with "already have" message is expected behavior, not an error
+        // User has already generated a monster at this stage - silently return
+        if (generateRes.status === 403 && generateData.error?.includes('already have')) {
+          return;
+        }
+
         console.error('[useMonsterAsset] Generation failed:', generateData.error);
         throw new Error(generateData.error || 'Generation failed');
       }
 
       const newJobId = generateData.jobId;
+
+      // Log whether we resumed an existing job or created a new one
+      if (generateData.resumed) {
+        console.log('[useMonsterAsset] Resumed existing job:', newJobId);
+        setWasResumed(true);
+      } else {
+        console.log('[useMonsterAsset] Created new job:', newJobId);
+        setWasResumed(false);
+      }
+
       setJobId(newJobId);
 
       // Start polling immediately
@@ -177,15 +203,16 @@ export function useMonsterAsset(userId: string | undefined, lessonId: number, cu
     status: job?.status || null,
     progress: job?.progress || 0,
     error: job?.errorMessage || null,
-    
+
     imageUrl: job?.imageUrl || null,
     modelUrl: job?.glbUrl || null,
-    
+
     isGenerating: job ? ['pending', 'generating_image', 'converting_3d'].includes(job.status) : false,
     isImageReady: !!job?.imageUrl,
     isModelReady: !!job?.glbUrl,
     isLoadingInitialState,
-    
+    wasResumed,
+
     triggerGeneration,
     refreshAssets,
     forceRefresh

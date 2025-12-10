@@ -208,10 +208,9 @@ export const useMonsterGenerationStore = create<MonsterGenerationState>()(
              get().refreshUrls(jobId);
           }
           
-          // Update poll count
-          const currentCount = state.pollCounts[jobId] || 0;
-          set((state) => ({
-            pollCounts: { ...state.pollCounts, [jobId]: currentCount + 1 }
+          // Update poll count (use fresh state inside setter to avoid stale reference)
+          set((freshState) => ({
+            pollCounts: { ...freshState.pollCounts, [jobId]: (freshState.pollCounts[jobId] || 0) + 1 }
           }), false, 'incrementPollCount');
 
           return data.job;
@@ -281,8 +280,9 @@ export const useMonsterGenerationStore = create<MonsterGenerationState>()(
             failures = 0;
             nextInterval = POLLING_CONFIG.initialInterval;
 
-            // Check for completion
-            if (job.status === 'completed' || job.status === 'failed' || job.status === 'failed_permanent') {
+            // Check for terminal states (completed or any permanent failure)
+            const terminalStates = ['completed', 'failed', 'failed_permanent', 'image_generation_failed', 'conversion_failed'];
+            if (terminalStates.includes(job.status)) {
               get().stopPolling(jobId);
               return;
             }
@@ -405,12 +405,14 @@ export const useMonsterGenerationStore = create<MonsterGenerationState>()(
 
       isJobFailed: (jobId: string) => {
         const job = get().jobs[jobId];
-        return job?.status === 'failed';
+        // Check ALL failure statuses, not just legacy 'failed'
+        return job ? ['failed', 'failed_permanent', 'image_generation_failed', 'conversion_failed'].includes(job.status) : false;
       },
 
       isJobProcessing: (jobId: string) => {
         const job = get().jobs[jobId];
-        return job && ['pending', 'generating_image', 'converting_3d'].includes(job.status);
+        // Include retrying and waiting states - these are all "in progress"
+        return job && ['pending', 'generating_image', 'converting_3d', 'image_generation_retrying', 'conversion_retrying', 'waiting_on_storage'].includes(job.status);
       },
 
       // Cleanup

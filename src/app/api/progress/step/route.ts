@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionFromRequest } from '@/lib/auth-server';
-import { query } from '@/lib/db';
+import { query } from '@/lib/postgres';
+import { parseIntSafe } from '@/lib/validation';
 
 // POST /api/progress/step - Save step progress
 export async function POST(request: NextRequest) {
@@ -35,7 +36,7 @@ export async function POST(request: NextRequest) {
     const userId = session.user.id;
 
     // Upsert step progress
-    const result = await query(`
+    const { rows } = await query(`
       INSERT INTO user_step_progress (
         user_id,
         lesson_id,
@@ -101,7 +102,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      progress: result[0],
+      progress: rows[0],
     });
 
   } catch (error) {
@@ -126,30 +127,30 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const lessonId = searchParams.get('lessonId');
-    const chapterId = searchParams.get('chapterId');
-    const stepId = searchParams.get('stepId');
+    const lessonId = parseIntSafe(searchParams.get('lessonId'));
+    const chapterId = parseIntSafe(searchParams.get('chapterId'));
+    const stepId = parseIntSafe(searchParams.get('stepId'));
 
-    if (!lessonId || !chapterId || !stepId) {
+    if (lessonId === null || chapterId === null || stepId === null) {
       return NextResponse.json(
-        { error: 'Missing required query params: lessonId, chapterId, stepId' },
+        { error: 'Missing or invalid query params: lessonId, chapterId, stepId' },
         { status: 400 }
       );
     }
 
     const userId = session.user.id;
 
-    const result = await query(`
+    const { rows } = await query(`
       SELECT *
       FROM user_step_progress
       WHERE user_id = $1
         AND lesson_id = $2
         AND chapter_id = $3
         AND step_id = $4
-    `, [userId, parseInt(lessonId), parseInt(chapterId), parseInt(stepId)]);
+    `, [userId, lessonId, chapterId, stepId]);
 
     return NextResponse.json({
-      progress: result[0] || null,
+      progress: rows[0] || null,
     });
 
   } catch (error) {

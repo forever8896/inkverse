@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionFromRequest } from '@/lib/auth-server';
-import { query } from '@/lib/db';
+import { query } from '@/lib/postgres';
+import { parseIntSafe } from '@/lib/validation';
 
 // POST /api/progress/lesson - Mark lesson as completed
 export async function POST(request: NextRequest) {
@@ -27,7 +28,7 @@ export async function POST(request: NextRequest) {
     const userId = session.user.id;
 
     // Mark lesson as completed
-    const result = await query(`
+    const { rows } = await query(`
       INSERT INTO user_lesson_progress (
         user_id,
         lesson_id,
@@ -45,7 +46,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      progress: result[0],
+      progress: rows[0],
     });
 
   } catch (error) {
@@ -70,11 +71,12 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const lessonId = searchParams.get('lessonId');
+    const lessonIdParam = searchParams.get('lessonId');
+    const lessonId = parseIntSafe(lessonIdParam);
 
-    if (!lessonId) {
+    if (lessonId === null) {
       return NextResponse.json(
-        { error: 'Missing required query param: lessonId' },
+        { error: 'Missing or invalid query param: lessonId' },
         { status: 400 }
       );
     }
@@ -82,35 +84,35 @@ export async function GET(request: NextRequest) {
     const userId = session.user.id;
 
     // Get lesson progress
-    const lessonResult = await query(`
+    const { rows: lessonRows } = await query(`
       SELECT *
       FROM user_lesson_progress
       WHERE user_id = $1
         AND lesson_id = $2
-    `, [userId, parseInt(lessonId)]);
+    `, [userId, lessonId]);
 
     // Get all chapters progress
-    const chaptersResult = await query(`
+    const { rows: chaptersRows } = await query(`
       SELECT *
       FROM user_chapter_progress
       WHERE user_id = $1
         AND lesson_id = $2
       ORDER BY chapter_id ASC
-    `, [userId, parseInt(lessonId)]);
+    `, [userId, lessonId]);
 
     // Get all steps progress
-    const stepsResult = await query(`
+    const { rows: stepsRows } = await query(`
       SELECT *
       FROM user_step_progress
       WHERE user_id = $1
         AND lesson_id = $2
       ORDER BY chapter_id ASC, step_id ASC
-    `, [userId, parseInt(lessonId)]);
+    `, [userId, lessonId]);
 
     return NextResponse.json({
-      lesson: lessonResult[0] || null,
-      chapters: chaptersResult,
-      steps: stepsResult,
+      lesson: lessonRows[0] || null,
+      chapters: chaptersRows,
+      steps: stepsRows,
     });
 
   } catch (error) {

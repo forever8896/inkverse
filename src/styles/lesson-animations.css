@@ -1,0 +1,218 @@
+/**
+ * Lesson Layout Animations
+ *
+ * Custom CSS animations used in the lesson layout component
+ * Including toast animations, modal effects, and camera shutter effects
+ */
+
+/* Toast fade-in animation */
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.4s cubic-bezier(.4,0,.2,1) both;
+}
+
+/* Pulse glow effect for buttons */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(147, 51, 234, 0.3), 0 0 40px rgba(6, 182, 212, 0.2);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(147, 51, 234, 0.5), 0 0 50px rgba(6, 182, 212, 0.3);
+    transform: scale(1.02);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Simple fade-in */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+/* Bounce-in for modals */
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3) translateY(20px);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1) translateY(-10px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0px);
+  }
+}
+
+.animate-bounce-in {
+  animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+/* Camera shutter effect container */
+.camera-shutter {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Shutter blade base styles */
+.shutter-blade {
+  position: absolute;
+  background: #1a1a1a;
+  border: 2px solid #333;
+  transform-origin: center;
+  opacity: 0.95;
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+/* Individual blade positioning and animations */
+.blade-1 {
+  width: 60vw;
+  height: 60vh;
+  top: 50%;
+  left: 50%;
+  clip-path: polygon(50% 50%, 100% 0%, 100% 25%);
+  transform: translate(-50%, -50%) rotate(0deg);
+  animation: shutterBlade1 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.blade-2 {
+  width: 60vw;
+  height: 60vh;
+  top: 50%;
+  left: 50%;
+  clip-path: polygon(50% 50%, 100% 25%, 100% 50%);
+  transform: translate(-50%, -50%) rotate(0deg);
+  animation: shutterBlade2 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.blade-3 {
+  width: 60vw;
+  height: 60vh;
+  top: 50%;
+  left: 50%;
+  clip-path: polygon(50% 50%, 100% 50%, 100% 75%);
+  transform: translate(-50%, -50%) rotate(0deg);
+  animation: shutterBlade3 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.blade-4 {
+  width: 60vw;
+  height: 60vh;
+  top: 50%;
+  left: 50%;
+  clip-path: polygon(50% 50%, 100% 75%, 100% 100%);
+  transform: translate(-50%, -50%) rotate(0deg);
+  animation: shutterBlade4 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.blade-5 {
+  width: 60vw;
+  height: 60vh;
+  top: 50%;
+  left: 50%;
+  clip-path: polygon(50% 50%, 75% 100%, 50% 100%);
+  transform: translate(-50%, -50%) rotate(0deg);
+  animation: shutterBlade5 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.blade-6 {
+  width: 60vw;
+  height: 60vh;
+  top: 50%;
+  left: 50%;
+  clip-path: polygon(50% 50%, 25% 100%, 0% 100%);
+  transform: translate(-50%, -50%) rotate(0deg);
+  animation: shutterBlade6 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.blade-7 {
+  width: 60vw;
+  height: 60vh;
+  top: 50%;
+  left: 50%;
+  clip-path: polygon(50% 50%, 0% 75%, 0% 25%);
+  transform: translate(-50%, -50%) rotate(0deg);
+  animation: shutterBlade7 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.blade-8 {
+  width: 60vw;
+  height: 60vh;
+  top: 50%;
+  left: 50%;
+  clip-path: polygon(50% 50%, 0% 25%, 0% 0%, 25% 0%);
+  transform: translate(-50%, -50%) rotate(0deg);
+  animation: shutterBlade8 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Blade animations - each closes and opens at slightly different times */
+@keyframes shutterBlade1 {
+  0% { transform: translate(-50%, -50%) rotate(0deg) scale(0); }
+  30% { transform: translate(-50%, -50%) rotate(5deg) scale(1.2); }
+  70% { transform: translate(-50%, -50%) rotate(-2deg) scale(1.2); }
+  100% { transform: translate(-50%, -50%) rotate(0deg) scale(0); }
+}
+
+@keyframes shutterBlade2 {
+  0% { transform: translate(-50%, -50%) rotate(0deg) scale(0); }
+  35% { transform: translate(-50%, -50%) rotate(-3deg) scale(1.2); }
+  65% { transform: translate(-50%, -50%) rotate(4deg) scale(1.2); }
+  100% { transform: translate(-50%, -50%) rotate(0deg) scale(0); }
+}
+
+@keyframes shutterBlade3 {
+  0% { transform: translate(-50%, -50%) rotate(0deg) scale(0); }
+  40% { transform: translate(-50%, -50%) rotate(2deg) scale(1.2); }
+  60% { transform: translate(-50%, -50%) rotate(-5deg) scale(1.2); }
+  100% { transform: translate(-50%, -50%) rotate(0deg) scale(0); }
+}
+
+@keyframes shutterBlade4 {
+  0% { transform: translate(-50%, -50%) rotate(0deg) scale(0); }
+  45% { transform: translate(-50%, -50%) rotate(-4deg) scale(1.2); }
+  55% { transform: translate(-50%, -50%) rotate(3deg) scale(1.2); }
+  100% { transform: translate(-50%, -50%) rotate(0deg) scale(0); }
+}
+
+@keyframes shutterBlade5 {
+  0% { transform: translate(-50%, -50%) rotate(0deg) scale(0); }
+  50% { transform: translate(-50%, -50%) rotate(1deg) scale(1.2); }
+  50% { transform: translate(-50%, -50%) rotate(-1deg) scale(1.2); }
+  100% { transform: translate(-50%, -50%) rotate(0deg) scale(0); }
+}
+
+@keyframes shutterBlade6 {
+  0% { transform: translate(-50%, -50%) rotate(0deg) scale(0); }
+  45% { transform: translate(-50%, -50%) rotate(4deg) scale(1.2); }
+  55% { transform: translate(-50%, -50%) rotate(-2deg) scale(1.2); }
+  100% { transform: translate(-50%, -50%) rotate(0deg) scale(0); }
+}
+
+@keyframes shutterBlade7 {
+  0% { transform: translate(-50%, -50%) rotate(0deg) scale(0); }
+  40% { transform: translate(-50%, -50%) rotate(-1deg) scale(1.2); }
+  60% { transform: translate(-50%, -50%) rotate(5deg) scale(1.2); }
+  100% { transform: translate(-50%, -50%) rotate(0deg) scale(0); }
+}
+
+@keyframes shutterBlade8 {
+  0% { transform: translate(-50%, -50%) rotate(0deg) scale(0); }
+  35% { transform: translate(-50%, -50%) rotate(3deg) scale(1.2); }
+  65% { transform: translate(-50%, -50%) rotate(-4deg) scale(1.2); }
+  100% { transform: translate(-50%, -50%) rotate(0deg) scale(0); }
+}

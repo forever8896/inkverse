@@ -38,7 +38,7 @@ export const CreatureStageDisplay: React.FC<CreatureStageDisplayProps> = ({
   // Blocking / Synthesizing State
   if (isLoading && isRevealing) {
     return (
-      <div className="relative w-full h-full flex flex-col items-center justify-center bg-slate-900/80 backdrop-blur-sm rounded-xl border border-purple-500/30 overflow-hidden">
+      <div className="relative w-full h-full flex flex-col items-center justify-center overflow-hidden">
         <div className="absolute inset-0 bg-grid-slate-800/[0.2] bg-[length:20px_20px]" />
         
         <motion.div 
@@ -74,10 +74,10 @@ export const CreatureStageDisplay: React.FC<CreatureStageDisplayProps> = ({
   // 3D Model (Adult / Evolution)
   if (stage === 'adult' && modelUrl) {
     return (
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="w-full h-full rounded-xl overflow-hidden border border-indigo-500/30 shadow-2xl relative group"
+        className="w-full h-full overflow-hidden relative group"
       >
          <div className="absolute inset-0 bg-gradient-to-b from-indigo-900/20 to-slate-900/80 z-0" />
          <MonsterViewer 
@@ -95,18 +95,20 @@ export const CreatureStageDisplay: React.FC<CreatureStageDisplayProps> = ({
   // 2D Image (Young / Hatch)
   if ((stage === 'young' || stage === 'adult') && imageUrl) {
     return (
-      <motion.div 
+      <motion.div
         layoutId="creature-display"
-        className="w-full h-full relative rounded-xl overflow-hidden border border-purple-500/30 shadow-lg bg-slate-900"
+        className="w-full h-full flex items-center justify-center p-4"
       >
-        <Image 
-          src={imageUrl} 
-          alt="Your Monster" 
-          fill 
-          className="object-cover"
-          priority
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent opacity-60" />
+        <div className="relative w-full h-full">
+          <Image
+            src={imageUrl}
+            alt="Your Monster"
+            fill
+            className="object-contain"
+            priority
+            unoptimized  // External presigned URLs bypass Next.js Image optimization
+          />
+        </div>
       </motion.div>
     );
   }
@@ -114,10 +116,10 @@ export const CreatureStageDisplay: React.FC<CreatureStageDisplayProps> = ({
   // Error State
   if (error) {
     return (
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="w-full h-full flex flex-col items-center justify-center bg-red-950/30 rounded-xl border border-red-500/30 relative overflow-hidden"
+        className="w-full h-full flex flex-col items-center justify-center bg-red-950/30 relative overflow-hidden"
       >
         <div className="absolute inset-0 bg-[url('/noise.png')] opacity-10 mix-blend-overlay" />
         
@@ -152,7 +154,7 @@ export const CreatureStageDisplay: React.FC<CreatureStageDisplayProps> = ({
   return (
     <motion.div
       layoutId="creature-display"
-      className="w-full h-full flex items-center justify-center bg-slate-900 rounded-xl border border-slate-800 relative overflow-hidden"
+      className="w-full h-full flex items-center justify-center relative overflow-hidden"
     >
       {/* Placeholder visuals */}
       <div className="absolute inset-0 opacity-30 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-purple-900/40 via-slate-900 to-slate-900" />

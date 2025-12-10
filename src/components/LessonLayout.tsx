@@ -3,21 +3,22 @@
 import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Lesson, validateCode, ValidationRule } from '@/lib/lessons';
+import { Lesson, validateCodeWithFeedback, ValidationRule } from '@/lib/lessons';
 import MonacoCodeEditor from '@/components/MonacoCodeEditor';
 import ShaderBackground from '@/components/ShaderBackground';
 import LessonContent from '@/components/LessonContent';
 import dynamic from 'next/dynamic';
-import { HSLValues } from '@/components/CreatureColorPicker';
 import Confetti from 'react-confetti';
 import { Camera, Loader2 } from 'lucide-react';
 import { MintCreatureNFT } from './MintCreatureNFT';
 import GitHubAuthModal from '@/components/GitHubAuthModal';
 import { useSession } from '@/lib/auth-client';
 import '@/styles/lesson-content.css';
+import '@/styles/lesson-animations.css';
 import { useMonsterAsset } from '@/hooks/useMonsterAsset';
 import { CreatureStageDisplay } from '@/components/CreatureStageDisplay';
 import { useCreatureDisplayStage } from '@/hooks/useCreatureDisplayStage';
+import { useToastNotifications, ToastContainer } from '@/hooks/useToastNotifications';
 
 // wallet stuff
 import { ReactiveDotProvider, ChainProvider, SignerProvider, useAccounts } from '@reactive-dot/react';
@@ -34,17 +35,6 @@ interface LessonLayoutProps {
   authError?: string;
   initialChapter?: number; // 1-based from URL
   initialStep?: number;    // 1-based from URL
-}
-
-interface Toast {
-  id: string;
-  type: 'success' | 'error' | 'info';
-  title: string;
-  message: string;
-  action?: {
-    label: string;
-    onClick: () => void;
-  };
 }
 
 function LessonLayoutInner({ lesson, initialChapter: propChapter, initialStep: propStep }: LessonLayoutProps) {
@@ -64,12 +54,7 @@ function LessonLayoutInner({ lesson, initialChapter: propChapter, initialStep: p
   const [userCode, setUserCode] = useState('');
   const [isValidated, setIsValidated] = useState(false);
   const [showHint, setShowHint] = useState(false);
-  const [toasts, setToasts] = useState<Toast[]>([]);
-  const [creatureColor, setCreatureColor] = useState<HSLValues>({
-    hue: 0,
-    saturation: 0,
-    lightness: 0,
-  });
+  const { toasts, addToast } = useToastNotifications();
   const [windowDimensions, setWindowDimensions] = useState({
     width: 0,
     height: 0,
@@ -177,19 +162,6 @@ function LessonLayoutInner({ lesson, initialChapter: propChapter, initialStep: p
     }
   }, [currentStep, currentStepData]);
 
-  // Load saved creature color from localStorage
-  useEffect(() => {
-    const savedColor = localStorage.getItem('creatureColor');
-    if (savedColor) {
-      try {
-        const parsedColor = JSON.parse(savedColor);
-        setCreatureColor(parsedColor);
-      } catch (error) {
-        console.error('Error parsing saved color:', error);
-      }
-    }
-  }, []);
-
   // Load saved progress on mount
   useEffect(() => {
     const loadProgress = async () => {
@@ -235,21 +207,6 @@ function LessonLayoutInner({ lesson, initialChapter: propChapter, initialStep: p
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const addToast = (toast: Omit<Toast, 'id'>) => {
-    const id = Math.random().toString(36).substr(2, 9);
-    const newToast = { ...toast, id };
-    setToasts((prev) => [...prev, newToast]);
-
-    // Auto remove after 5 seconds
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 5000);
-  };
-
-  const removeToast = (id: string) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
-  };
-
   const validateUserCode = () => {
     if (currentStepData?.validation) {
       const validationResult = validateCodeWithFeedback(
@@ -275,11 +232,7 @@ function LessonLayoutInner({ lesson, initialChapter: propChapter, initialStep: p
                  currentStepData.id,
                  currentStepData.generationStage || 'young'
              );
-             addToast({
-               type: 'info',
-               title: '🧬 DNA Synthesis Started',
-               message: 'Your creature is being generated in the background...',
-             });
+             // Note: Status notification is shown in the creature display area (bottom of screen)
            }
         } else {
           addToast({
@@ -329,87 +282,6 @@ function LessonLayoutInner({ lesson, initialChapter: propChapter, initialStep: p
     }
   };
 
-  // Enhanced validation with detailed feedback
-  const validateCodeWithFeedback = (code: string, rules: ValidationRule[]) => {
-    for (const rule of rules) {
-      switch (rule.type) {
-        case 'includes':
-          for (const pattern of rule.patterns) {
-            if (!code.includes(pattern)) {
-              return {
-                isValid: false,
-                feedback: getPatternFeedback(pattern, currentStep),
-              };
-            }
-          }
-          break;
-        case 'excludes':
-          for (const pattern of rule.patterns) {
-            if (code.includes(pattern)) {
-              return {
-                isValid: false,
-                feedback: `Remove "${pattern}" from your code.`,
-              };
-            }
-          }
-          break;
-        case 'regex':
-          for (const pattern of rule.patterns) {
-            if (!new RegExp(pattern).test(code)) {
-              return {
-                isValid: false,
-                feedback: `Make sure your code matches the required pattern.`,
-              };
-            }
-          }
-          break;
-        case 'custom':
-          // Handle custom validation rules if needed
-          break;
-      }
-    }
-    return { isValid: true, feedback: '' };
-  };
-
-  // Specific feedback for different patterns
-  const getPatternFeedback = (pattern: string, step: number): string => {
-    const feedbackMap: Record<string, string> = {
-      '#[ink(storage)]':
-        'Add the #[ink(storage)] attribute above your struct. This tells ink! that this struct will store data on the blockchain.',
-      'struct Creature':
-        "Create a struct called 'Creature' - this will be your creature's blueprint. Use 'pub struct Creature {' syntax.",
-      is_conscious:
-        "Add an 'is_conscious' field inside your struct. This should be of type 'bool' to track if your creature is awake.",
-      bool: "Make sure your is_conscious field is of type 'bool' (true/false values).",
-      'impl Creature':
-        "Create an implementation block with 'impl Creature {' - this is where your creature's abilities will live.",
-      '#[ink(constructor)]':
-        'Add the #[ink(constructor)] attribute above your constructor function. This tells ink! this function creates new creatures.',
-      birth_awake:
-        "Create a constructor function called 'birth_awake' that takes a 'conscious: bool' parameter.",
-      birth_sleeping:
-        "Create a second constructor called 'birth_sleeping' with no parameters. It should call 'Self::birth_awake(false)'.",
-      '#[ink(message)]':
-        'Add the #[ink(message)] attribute above your function. This makes it callable from outside the contract.',
-      'pub fn is_awake':
-        "Create a public function called 'is_awake' that takes '&self' and returns 'bool'.",
-      '&self':
-        "Your is_awake function should take '&self' as a parameter (read-only access to the creature).",
-      'self.is_conscious':
-        "Return 'self.is_conscious' from your function to tell others if the creature is awake.",
-      'pub fn toggle_consciousness':
-        "Create a function called 'toggle_consciousness' that takes '&mut self' (mutable access).",
-      '&mut self':
-        "Use '&mut self' because you're changing the creature's state. The 'mut' means mutable/changeable.",
-      'self.is_conscious = !self.is_conscious':
-        "Flip the consciousness state using 'self.is_conscious = !self.is_conscious;' - the ! operator flips true to false and vice versa.",
-    };
-
-    return (
-      feedbackMap[pattern] || `Make sure to include "${pattern}" in your code.`
-    );
-  };
-
   // Save progress to database
   const saveStepProgress = async (completed: boolean = false) => {
     if (!lesson || !currentChapterData || !currentStepData || !session?.user) return;
@@ -433,7 +305,27 @@ function LessonLayoutInner({ lesson, initialChapter: propChapter, initialStep: p
   };
 
   const nextStep = async () => {
-    if (!lesson || !currentChapterData) return;
+    if (!lesson || !currentChapterData || !currentStepData) return;
+
+    // Trigger generation if this step requires it (before moving to next step)
+    if (currentStepData.triggersGeneration) {
+      if (!session?.user) {
+        addToast({
+          type: 'info',
+          title: '🔐 Authentication Required',
+          message: 'Please sign in to generate your unique creature.',
+        });
+        setShowAuthModal(true);
+        return; // Don't proceed until authenticated
+      } else {
+        triggerGenerationRef.current(
+          currentChapterData.id,
+          currentStepData.id,
+          currentStepData.generationStage || 'young'
+        );
+        // Note: Status notification is shown in the creature display area (bottom of screen)
+      }
+    }
 
     // Save progress for current step before moving
     await saveStepProgress(true);
@@ -508,14 +400,6 @@ function LessonLayoutInner({ lesson, initialChapter: propChapter, initialStep: p
       setUserCode(currentStepData.expectedCode);
       setIsValidated(true);
     }
-  };
-
-  // Generate CSS filter string from HSL values
-  const getImageFilter = () => {
-    const { hue, saturation, lightness } = creatureColor;
-    return `hue-rotate(${hue}deg) saturate(${100 + saturation}%) brightness(${
-      100 + lightness
-    }%) drop-shadow(0 0 20px rgba(147, 51, 234, 0.5))`;
   };
 
   // NFT capture functionality
@@ -676,251 +560,7 @@ function LessonLayoutInner({ lesson, initialChapter: propChapter, initialStep: p
   return (
     <>
       {/* Toast Notifications */}
-      <div className="fixed top-6 left-1/2 transform -translate-x-1/2 z-1000 flex flex-col items-center space-y-3 pointer-events-none">
-        {toasts.map((toast) => (
-          <div
-            key={toast.id}
-            className={`
-              px-6 py-4 rounded-lg shadow-lg border
-              ${
-                toast.type === 'success'
-                  ? 'bg-pink-700/90 border-pink-400 text-white'
-                  : ''
-              }
-              ${
-                toast.type === 'error'
-                  ? 'bg-red-700/90 border-red-400 text-white'
-                  : ''
-              }
-              ${
-                toast.type === 'info'
-                  ? 'bg-blue-700/90 border-blue-400 text-white'
-                  : ''
-              }
-              animate-fade-in-up pointer-events-auto
-            `}
-            style={{ minWidth: 280, maxWidth: 400 }}
-            role="alert"
-            aria-live="polite"
-          >
-            <div className="font-semibold mb-1">{toast.title}</div>
-            <div className="text-sm mb-2">{toast.message}</div>
-            {toast.action && (
-              <button
-                onClick={toast.action.onClick}
-                className="mt-2 px-3 py-1 bg-white/20 hover:bg-white/30 rounded text-xs font-medium transition-colors duration-200 border border-white/30"
-              >
-                {toast.action.label}
-              </button>
-            )}
-          </div>
-        ))}
-      </div>
-
-      <style>{`
-        @keyframes fade-in-up {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fade-in-up {
-          animation: fade-in-up 0.4s cubic-bezier(.4,0,.2,1) both;
-        }
-        @keyframes pulse-glow {
-          0%, 100% { 
-            box-shadow: 0 0 20px rgba(147, 51, 234, 0.3), 0 0 40px rgba(6, 182, 212, 0.2);
-            transform: scale(1);
-          }
-          50% { 
-            box-shadow: 0 0 25px rgba(147, 51, 234, 0.5), 0 0 50px rgba(6, 182, 212, 0.3);
-            transform: scale(1.02);
-          }
-        }
-        .animate-pulse-glow {
-          animation: pulse-glow 2s ease-in-out infinite;
-        }
-        
-        .animate-fade-in {
-          animation: fadeIn 0.3s ease-out forwards;
-        }
-
-        .animate-bounce-in {
-          animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
-        }
-
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-
-        @keyframes bounceIn {
-          0% {
-            opacity: 0;
-            transform: scale(0.3) translateY(20px);
-          }
-          50% {
-            opacity: 1;
-            transform: scale(1.1) translateY(-10px);
-          }
-          100% {
-            opacity: 1;
-            transform: scale(1) translateY(0px);
-          }
-        }
-
-        .camera-shutter {
-          position: relative;
-          width: 100vw;
-          height: 100vh;
-          overflow: hidden;
-        }
-
-        .shutter-blade {
-          position: absolute;
-          background: #1a1a1a;
-          border: 2px solid #333;
-          transform-origin: center;
-          opacity: 0.95;
-          box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
-        }
-
-        /* Individual blade positioning and animations */
-        .blade-1 {
-          width: 60vw;
-          height: 60vh;
-          top: 50%;
-          left: 50%;
-          clip-path: polygon(50% 50%, 100% 0%, 100% 25%);
-          transform: translate(-50%, -50%) rotate(0deg);
-          animation: shutterBlade1 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        }
-
-        .blade-2 {
-          width: 60vw;
-          height: 60vh;
-          top: 50%;
-          left: 50%;
-          clip-path: polygon(50% 50%, 100% 25%, 100% 50%);
-          transform: translate(-50%, -50%) rotate(0deg);
-          animation: shutterBlade2 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        }
-
-        .blade-3 {
-          width: 60vw;
-          height: 60vh;
-          top: 50%;
-          left: 50%;
-          clip-path: polygon(50% 50%, 100% 50%, 100% 75%);
-          transform: translate(-50%, -50%) rotate(0deg);
-          animation: shutterBlade3 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        }
-
-        .blade-4 {
-          width: 60vw;
-          height: 60vh;
-          top: 50%;
-          left: 50%;
-          clip-path: polygon(50% 50%, 100% 75%, 100% 100%);
-          transform: translate(-50%, -50%) rotate(0deg);
-          animation: shutterBlade4 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        }
-
-        .blade-5 {
-          width: 60vw;
-          height: 60vh;
-          top: 50%;
-          left: 50%;
-          clip-path: polygon(50% 50%, 75% 100%, 50% 100%);
-          transform: translate(-50%, -50%) rotate(0deg);
-          animation: shutterBlade5 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        }
-
-        .blade-6 {
-          width: 60vw;
-          height: 60vh;
-          top: 50%;
-          left: 50%;
-          clip-path: polygon(50% 50%, 25% 100%, 0% 100%);
-          transform: translate(-50%, -50%) rotate(0deg);
-          animation: shutterBlade6 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        }
-
-        .blade-7 {
-          width: 60vw;
-          height: 60vh;
-          top: 50%;
-          left: 50%;
-          clip-path: polygon(50% 50%, 0% 75%, 0% 25%);
-          transform: translate(-50%, -50%) rotate(0deg);
-          animation: shutterBlade7 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        }
-
-        .blade-8 {
-          width: 60vw;
-          height: 60vh;
-          top: 50%;
-          left: 50%;
-          clip-path: polygon(50% 50%, 0% 25%, 0% 0%, 25% 0%);
-          transform: translate(-50%, -50%) rotate(0deg);
-          animation: shutterBlade8 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        }
-
-        /* Blade animations - each closes and opens at slightly different times */
-        @keyframes shutterBlade1 {
-          0% { transform: translate(-50%, -50%) rotate(0deg) scale(0); }
-          30% { transform: translate(-50%, -50%) rotate(5deg) scale(1.2); }
-          70% { transform: translate(-50%, -50%) rotate(-2deg) scale(1.2); }
-          100% { transform: translate(-50%, -50%) rotate(0deg) scale(0); }
-        }
-
-        @keyframes shutterBlade2 {
-          0% { transform: translate(-50%, -50%) rotate(0deg) scale(0); }
-          35% { transform: translate(-50%, -50%) rotate(-3deg) scale(1.2); }
-          65% { transform: translate(-50%, -50%) rotate(4deg) scale(1.2); }
-          100% { transform: translate(-50%, -50%) rotate(0deg) scale(0); }
-        }
-
-        @keyframes shutterBlade3 {
-          0% { transform: translate(-50%, -50%) rotate(0deg) scale(0); }
-          40% { transform: translate(-50%, -50%) rotate(2deg) scale(1.2); }
-          60% { transform: translate(-50%, -50%) rotate(-5deg) scale(1.2); }
-          100% { transform: translate(-50%, -50%) rotate(0deg) scale(0); }
-        }
-
-        @keyframes shutterBlade4 {
-          0% { transform: translate(-50%, -50%) rotate(0deg) scale(0); }
-          45% { transform: translate(-50%, -50%) rotate(-4deg) scale(1.2); }
-          55% { transform: translate(-50%, -50%) rotate(3deg) scale(1.2); }
-          100% { transform: translate(-50%, -50%) rotate(0deg) scale(0); }
-        }
-
-        @keyframes shutterBlade5 {
-          0% { transform: translate(-50%, -50%) rotate(0deg) scale(0); }
-          50% { transform: translate(-50%, -50%) rotate(1deg) scale(1.2); }
-          50% { transform: translate(-50%, -50%) rotate(-1deg) scale(1.2); }
-          100% { transform: translate(-50%, -50%) rotate(0deg) scale(0); }
-        }
-
-        @keyframes shutterBlade6 {
-          0% { transform: translate(-50%, -50%) rotate(0deg) scale(0); }
-          45% { transform: translate(-50%, -50%) rotate(4deg) scale(1.2); }
-          55% { transform: translate(-50%, -50%) rotate(-2deg) scale(1.2); }
-          100% { transform: translate(-50%, -50%) rotate(0deg) scale(0); }
-        }
-
-        @keyframes shutterBlade7 {
-          0% { transform: translate(-50%, -50%) rotate(0deg) scale(0); }
-          40% { transform: translate(-50%, -50%) rotate(-1deg) scale(1.2); }
-          60% { transform: translate(-50%, -50%) rotate(5deg) scale(1.2); }
-          100% { transform: translate(-50%, -50%) rotate(0deg) scale(0); }
-        }
-
-        @keyframes shutterBlade8 {
-          0% { transform: translate(-50%, -50%) rotate(0deg) scale(0); }
-          35% { transform: translate(-50%, -50%) rotate(3deg) scale(1.2); }
-          65% { transform: translate(-50%, -50%) rotate(-4deg) scale(1.2); }
-          100% { transform: translate(-50%, -50%) rotate(0deg) scale(0); }
-        }
-      `}</style>
+      <ToastContainer toasts={toasts} />
 
       <div className="h-screen w-screen bg-slate-900 flex flex-col overflow-hidden">
         {/* Full-screen Shader Background */}
@@ -928,51 +568,46 @@ function LessonLayoutInner({ lesson, initialChapter: propChapter, initialStep: p
 
         <div className="flex flex-1 overflow-hidden relative">
           {/* Left Panel: Creature Display */}
-          <div className={`relative overflow-hidden backdrop-blur-md transition-all duration-500 ${
+          <div className={`relative overflow-hidden transition-all duration-500 p-5 ${
             currentStepData?.code !== undefined ? 'w-1/2' : 'w-1/2'
           }`}>
-            <div className="absolute top-0 flex justify-between w-full z-20 ">
-              <div className="p-5">
+            {/* Single bordered container for logo, button, and creature */}
+            <div className="w-full h-full rounded-xl border border-purple-500/30 bg-slate-900 flex flex-col overflow-hidden">
+              {/* Header: Logo and Snapshot Button */}
+              <div className="flex justify-between items-start p-4 flex-shrink-0">
                 <Link href="/" className="flex items-center space-x-2">
                   <img
                     src="/logo.png"
                     alt="Monsters ink!"
-                    className="h-[120px]"
+                    className="h-[80px]"
                   />
                 </Link>
+
+                <div className="flex items-center space-x-3">
+                  {/* NFT Capture Button */}
+                  <button
+                    onClick={captureNFT}
+                    disabled={isCapturing}
+                    className={`flex items-center justify-center w-10 h-10 rounded-lg text-sm font-semibold transition-all duration-300 ${
+                      isCapturing
+                        ? 'bg-slate-600 text-slate-400 cursor-not-allowed'
+                        : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-lg hover:shadow-purple-500/30 hover:scale-105'
+                    }`}
+                    title="Create NFT"
+                  >
+                    {isCapturing ? (
+                      <Loader2 size={16} className="animate-spin" />
+                    ) : (
+                      <Camera size={16} />
+                    )}
+                  </button>
+                </div>
               </div>
 
-              <div className="p-5 flex items-center space-x-3">
-                {/* Wallet connection temporarily disabled - was causing loading issues */}
-                {/* <ReactiveDotProvider config={config}>
-                  <WalletConnection />
-                </ReactiveDotProvider> */}
-                
-                {/* NFT Capture Button */}
-                <button
-                  onClick={captureNFT}
-                  disabled={isCapturing}
-                  className={`flex items-center justify-center w-10 h-10 rounded-lg text-sm font-semibold transition-all duration-300 ${
-                    isCapturing
-                      ? 'bg-slate-600 text-slate-400 cursor-not-allowed'
-                      : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-lg hover:shadow-purple-500/30 hover:scale-105'
-                  }`}
-                  title="Create NFT"
-                >
-                  {isCapturing ? (
-                    <Loader2 size={16} className="animate-spin" />
-                  ) : (
-                    <Camera size={16} />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* Creature Display */}
-            <div className="absolute inset-0 flex items-center justify-center">
+              {/* Creature Display */}
               <div
                 ref={creatureDisplayRef}
-                className={`relative transition-all duration-300 ease-out w-full h-full p-8 ${
+                className={`relative flex-1 transition-all duration-300 ease-out ${
                   isTransitioning
                     ? 'opacity-0 scale-95 translate-y-4'
                     : 'opacity-100 scale-100 translate-y-0'

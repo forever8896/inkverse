@@ -282,10 +282,16 @@ export async function POST(request: NextRequest) {
           await job.fail(`Workflow stopped unexpectedly: ${status}`);
           return false;
         }
-      } catch (error) {
+      } catch (error: any) {
         console.warn(`Unable to verify workflow ${job.workflowRunId}:`, error);
-        // Network error - assume it's running (don't fail job)
-        return true; 
+        // If workflow run not found, mark job as failed so we can create a new one
+        if (error?.name === 'WorkflowRunNotFoundError' || error?.message?.includes('not found')) {
+          console.log(`⚠️ Workflow ${job.workflowRunId} not found. Marking job ${job.id} as failed.`);
+          await job.fail('Workflow run no longer exists');
+          return false;
+        }
+        // Other network errors - assume it's running (don't fail job)
+        return true;
       }
     };
 
@@ -361,18 +367,29 @@ export async function POST(request: NextRequest) {
     // Check if we resumed an existing job (Atomic Trigger Fix)
     if (job.workflowRunId) {
       console.log(`♻️  [API] Atomic trigger found existing job ${job.id} with run ${job.workflowRunId}`);
-      
+
       // Verify workflow status (Fix #6)
-      await verifyJobWorkflow(job);
-      
-      // Always return the job, even if we just marked it failed. 
-      // Client will see status 'failed' and can handle it.
+      const isRunning = await verifyJobWorkflow(job);
+
+      if (isRunning) {
+        // Job is actively running, return it for polling
+        return NextResponse.json({
+          success: true,
+          jobId: job.id,
+          runId: job.workflowRunId,
+          resumed: true
+        }, { status: 200 });
+      }
+
+      // Job was marked failed by verifyJobWorkflow
+      // Re-fetch to get the updated status and let client know
+      const updatedJob = await GenerationJob.findById(job.id);
       return NextResponse.json({
-        success: true,
+        success: false,
+        error: 'Previous generation failed. Please try again.',
         jobId: job.id,
-        runId: job.workflowRunId,
-        resumed: true
-      }, { status: 200 });
+        status: updatedJob?.status || 'failed_permanent'
+      }, { status: 409 });
     }
 
     console.log(

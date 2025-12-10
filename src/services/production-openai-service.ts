@@ -5,12 +5,14 @@
  */
 
 import OpenAI from 'openai';
+import { S3Service } from './s3-service';
 import { GenerationJob, CostTrackingData } from '../lib/generation-job';
 import { OPENAI_PRICING } from '../config/pricing';
 
 export interface GenerationResult {
   id: string;
   imageUrl?: string;
+  imageS3Key?: string;
   base64Image?: string;
   success: boolean;
   error?: string;
@@ -20,6 +22,8 @@ export interface GenerationResult {
 }
 
 export interface GenerationOptions {
+  saveToS3?: boolean;
+  s3KeyPrefix?: string;
   job?: GenerationJob; // Optional job for cost tracking
 }
 
@@ -28,12 +32,14 @@ export class ProductionOpenAIService {
   private requestCount = 0;
   private totalCost = 0;
   private openai: OpenAI | null = null;
+  private s3Service: S3Service;
 
   // Cost tracking - Updated September 2025
   // See src/config/pricing.ts for latest pricing information
   private readonly IMAGE_GENERATION_COST = OPENAI_PRICING.DEFAULT_IMAGE_COST; // $0.04 per 1024x1024 standard image
 
   private constructor() {
+    this.s3Service = S3Service.getInstance();
     this.validateConfig();
   }
 
@@ -115,6 +121,15 @@ export class ProductionOpenAIService {
       return { errorCode: 'openai_network_timeout' };
     }
 
+    // Handle S3 upload errors (including marked errors)
+    if (
+      (error as any).isS3Error ||
+      errorMessage.includes('s3 upload') ||
+      errorMessage.includes('upload failed')
+    ) {
+      return { errorCode: 's3_upload_error' };
+    }
+
     // Default fallback
     return { errorCode: 'openai_api_error' };
   }
@@ -136,7 +151,7 @@ export class ProductionOpenAIService {
   }
 
   /**
-   * Generate an image using GPT-Image-1 model
+   * Generate an image using GPT-Image-1 model with S3 integration
    */
   async generateImage(
     prompt: string,
@@ -170,7 +185,6 @@ export class ProductionOpenAIService {
         model: 'gpt-image-1',
         prompt,
         size: '1024x1024',
-        response_format: 'b64_json' // Ensure we request base64
       });
       const apiCallDuration = Date.now() - apiCallStart;
 
@@ -193,6 +207,9 @@ export class ProductionOpenAIService {
         console.log(
           `🎨 [ProductionOpenAI] Base64 data present: ${!!result.data[0].b64_json}`
         );
+        console.log(
+          `🎨 [ProductionOpenAI] Image URL: ${result.data[0].url || 'none'}`
+        );
       }
 
       if (!result.data || result.data.length === 0) {
@@ -204,6 +221,58 @@ export class ProductionOpenAIService {
       }
 
       const imageData = result.data[0];
+      let imageS3Key: string | undefined;
+
+      // Upload to S3 if requested and we have base64 data
+      if (options.saveToS3 && imageData.b64_json) {
+        const s3KeyPrefix = options.s3KeyPrefix || 'images';
+        imageS3Key = `${s3KeyPrefix}/${generationId}.png`;
+
+        console.log(`📤 [ProductionOpenAI] Uploading to S3: ${imageS3Key}`);
+
+        // Convert base64 to buffer
+        const imageBuffer = Buffer.from(imageData.b64_json, 'base64');
+        console.log(
+          `📤 [ProductionOpenAI] Image size: ${imageBuffer.length} bytes`
+        );
+
+        const uploadStartTime = Date.now();
+        try {
+          const uploadResult = await this.s3Service.uploadFile(
+            imageS3Key,
+            imageBuffer,
+            'image/png'
+          );
+          const uploadDuration = Date.now() - uploadStartTime;
+
+          if (!uploadResult.success) {
+            console.error(
+              `❌ [ProductionOpenAI] S3 upload failed: ${uploadResult.error}`
+            );
+            // Create specific S3 upload error
+            const s3Error = new Error(
+              `S3 upload failed: ${uploadResult.error}`
+            );
+            (s3Error as any).isS3Error = true;
+            throw s3Error;
+          }
+
+          console.log(
+            `✅ [ProductionOpenAI] S3 upload completed in ${uploadDuration}ms`
+          );
+          console.log(`✅ [ProductionOpenAI] S3 URL: ${uploadResult.url}`);
+        } catch (uploadError) {
+          console.error(
+            `❌ [ProductionOpenAI] S3 upload failed: ${uploadError}`
+          );
+          // Mark as S3 error for classification
+          const s3Error = new Error(
+            `S3 upload failed: ${uploadError instanceof Error ? uploadError.message : uploadError}`
+          );
+          (s3Error as any).isS3Error = true;
+          throw s3Error;
+        }
+      }
 
       // Log cost tracking to database if job is provided
       if (options.job && result.usage) {
@@ -231,6 +300,7 @@ export class ProductionOpenAIService {
       const generationResult: GenerationResult = {
         id: generationId,
         imageUrl: imageData.url,
+        imageS3Key,
         base64Image: imageData.b64_json,
         success: true,
         cost: this.IMAGE_GENERATION_COST,
@@ -240,6 +310,7 @@ export class ProductionOpenAIService {
         `✅ [ProductionOpenAI] Successfully generated image ${generationId}`
       );
       console.log(`✅ [ProductionOpenAI] Cost: $${this.IMAGE_GENERATION_COST}`);
+      console.log(`✅ [ProductionOpenAI] S3 Key: ${imageS3Key || 'none'}`);
 
       return generationResult;
     } catch (error) {
