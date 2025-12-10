@@ -147,11 +147,11 @@ export function WorkflowStepsTimeline({ steps, currentStepName }: WorkflowStepsT
                 {step.error && (
                   <div className="mt-3 bg-red-500/10 border border-red-500/30 rounded p-2">
                     <div className="text-xs text-red-200 font-mono break-words">
-                      {step.error}
+                      {step.error.message}
                     </div>
-                    {step.errorCode && (
+                    {step.error.code && (
                       <div className="text-[10px] text-red-300 mt-1">
-                        Code: {step.errorCode}
+                        Code: {step.error.code}
                       </div>
                     )}
                   </div>

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Chapter, validateCode } from '@/lib/chapters';
-import CodeEditor from '@/components/CodeEditor';
+import MonacoCodeEditor from '@/components/MonacoCodeEditor';
 
 interface CreatureCreationLabProps {
   chapter: Chapter;
@@ -354,7 +354,7 @@ export default function CreatureCreationLab({
 
               {/* Editor */}
               <div className="flex-1">
-                <CodeEditor
+                <MonacoCodeEditor
                   value={userCode}
                   onChange={setUserCode}
                   language="rust"

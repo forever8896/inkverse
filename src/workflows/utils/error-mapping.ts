@@ -62,11 +62,4 @@ export function getFailedStatus(stepName: string): GenerationStatus {
   }
 }
 
-/**
- * Calculate exponential backoff delay with jitter
- */
-export function calculateBackoffDelay(attempt: number, baseDelay: number = 10000): number {
-  const exponentialDelay = Math.min(baseDelay * Math.pow(2, attempt - 1), 600000); // Cap at 10 minutes
-  const jitter = Math.random() * 0.1 * exponentialDelay; // Add 0-10% jitter
-  return Math.floor(exponentialDelay + jitter);
-}
+// NOTE: calculateBackoffDelay was removed - use @/lib/pipeline-errors if needed

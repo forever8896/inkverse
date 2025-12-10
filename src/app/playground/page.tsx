@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import dynamic from 'next/dynamic';
 
 // Dynamically import to avoid SSR issues if any
-const CodeEditor = dynamic(() => import('../../components/CodeEditor'), {
+const MonacoCodeEditor = dynamic(() => import('../../components/MonacoCodeEditor'), {
   ssr: false,
 });
 const ConsolePanel = dynamic(() => import('../ConsolePanel'), { ssr: false });
@@ -147,7 +147,7 @@ export default function PlaygroundPage() {
           {/* Glow effect behind editor */}
           <div className="absolute inset-0 bg-gradient-to-r from-purple-400/20 to-cyan-400/20 rounded-lg blur-xl -z-10"></div>
 
-          <CodeEditor
+          <MonacoCodeEditor
             value={code}
             onChange={setCode}
             language="rust"

@@ -52,6 +52,7 @@ function createMockJobData(overrides: Partial<GenerationJobData> = {}): Generati
     falEstimatedCost: 0,
     costCalculationMethod: 'token_based',
     lastCostUpdate: new Date('2024-01-01T00:00:00Z'),
+    lastUrlRefresh: new Date('2024-01-01T00:00:00Z'),
     ...overrides
   };
 }

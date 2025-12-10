@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { authClient } from '@/lib/auth-client';
 import { Lesson, Chapter, Step } from '@/lib/lesson-types';
 import LessonContent from '@/components/LessonContent';
-import CodeEditor from '@/components/CodeEditor';
+import MonacoCodeEditor from '@/components/MonacoCodeEditor';
 import { CreatureStageDisplay } from '@/components/CreatureStageDisplay';
 import LessonEditorTutorial from '@/components/LessonEditorTutorial';
 import { validateLesson } from '@/lib/lesson-editor-validation';
@@ -809,7 +809,7 @@ export default function LessonEditorPage() {
                       </div>
                     </div>
                     <div className="flex-1 min-h-0">
-                      <CodeEditor
+                      <MonacoCodeEditor
                         value={currentStep.code}
                         onChange={() => {}}
                         language="rust"

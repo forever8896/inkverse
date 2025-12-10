@@ -1,5 +1,14 @@
 import { create } from 'zustand';
 import { devtools, subscribeWithSelector } from 'zustand/middleware';
+import {
+  isFailed as isFailedStatus,
+  isProcessing as isProcessingStatus,
+  isTerminal,
+  STATUS_MESSAGES,
+  STATUS_EMOJIS,
+  PROGRESS_STEPS,
+  type GenerationStatus
+} from '@/lib/status-constants';
 
 // Re-export types from the existing page for consistency
 export interface GenerationJobData {
@@ -40,43 +49,14 @@ export interface MonsterStatusResponse {
   error?: string;
 }
 
-// Status messages and emojis
-export const statusMessages = {
-  pending: '🥚 Initializing your monster...',
-  generating_image: '🎨 AI is painting your creature...',
-  image_generation_retrying: '🎨 Retrying image generation...',
-  image_generation_failed: '❌ Image generation failed',
-  converting_3d: '🏗️ Building your monster in 3D...',
-  conversion_retrying: '🏗️ Retrying 3D conversion...',
-  conversion_failed: '❌ 3D conversion failed',
-  completed: '✨ Your monster is ready!',
-  failed: '💥 Something went wrong...',
-  failed_permanent: '💥 Generation failed permanently',
-  waiting_on_storage: '🧰 Waiting for storage to come online...',
-};
+// Re-export status constants with emoji-prefixed messages for backward compatibility
+export const statusMessages: Record<string, string> = Object.fromEntries(
+  Object.entries(STATUS_MESSAGES).map(([key, msg]) => [key, `${STATUS_EMOJIS[key as GenerationStatus]} ${msg}`])
+);
 
-export const statusEmojis = {
-  pending: '🥚',
-  generating_image: '🎨',
-  image_generation_retrying: '🎨',
-  image_generation_failed: '❌',
-  converting_3d: '🏗️',
-  conversion_retrying: '🏗️',
-  conversion_failed: '❌',
-  completed: '✨',
-  failed: '💥',
-  failed_permanent: '💥',
-  waiting_on_storage: '🧰',
-};
+export const statusEmojis = STATUS_EMOJIS;
 
-export const progressSteps = [
-  { threshold: 0, label: 'Queuing creation request', emoji: '📋' },
-  { threshold: 5, label: 'Starting AI image generation', emoji: '🎨' },
-  { threshold: 40, label: 'Image generation complete', emoji: '🖼️' },
-  { threshold: 50, label: 'Beginning 3D conversion', emoji: '🔄' },
-  { threshold: 90, label: '3D model created', emoji: '🏗️' },
-  { threshold: 100, label: 'Monster ready!', emoji: '🎉' },
-];
+export const progressSteps = PROGRESS_STEPS;
 
 const POLLING_CONFIG = {
   initialInterval: 2000,      // 2 seconds
@@ -280,9 +260,8 @@ export const useMonsterGenerationStore = create<MonsterGenerationState>()(
             failures = 0;
             nextInterval = POLLING_CONFIG.initialInterval;
 
-            // Check for terminal states (completed or any permanent failure)
-            const terminalStates = ['completed', 'failed', 'failed_permanent', 'image_generation_failed', 'conversion_failed'];
-            if (terminalStates.includes(job.status)) {
+            // Check for terminal states using shared type guard
+            if (isTerminal(job.status)) {
               get().stopPolling(jobId);
               return;
             }
@@ -405,14 +384,12 @@ export const useMonsterGenerationStore = create<MonsterGenerationState>()(
 
       isJobFailed: (jobId: string) => {
         const job = get().jobs[jobId];
-        // Check ALL failure statuses, not just legacy 'failed'
-        return job ? ['failed', 'failed_permanent', 'image_generation_failed', 'conversion_failed'].includes(job.status) : false;
+        return isFailedStatus(job?.status);
       },
 
       isJobProcessing: (jobId: string) => {
         const job = get().jobs[jobId];
-        // Include retrying and waiting states - these are all "in progress"
-        return job && ['pending', 'generating_image', 'converting_3d', 'image_generation_retrying', 'conversion_retrying', 'waiting_on_storage'].includes(job.status);
+        return isProcessingStatus(job?.status);
       },
 
       // Cleanup

@@ -2,14 +2,22 @@ import type { NextConfig } from 'next';
 import { withWorkflow } from 'workflow/next';
 
 const nextConfig: NextConfig = {
-  /* Existing config options */
-  eslint: {
-    // Disable ESLint errors from blocking production builds.
-    ignoreDuringBuilds: true,
-  },
-  typescript: {
-    // Allow production builds to succeed even if there are type errors.
-    ignoreBuildErrors: true,
+  images: {
+    remotePatterns: [
+      {
+        // Dev: Local MinIO
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '9000',
+        pathname: '/monsters-dev/**',
+      },
+      {
+        // Prod: Cloudflare R2
+        protocol: 'https',
+        hostname: '*.r2.cloudflarestorage.com',
+        pathname: '/**',
+      },
+    ],
   },
 
   webpack: (config, { isServer }) => {

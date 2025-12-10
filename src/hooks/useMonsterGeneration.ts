@@ -9,11 +9,17 @@ import {
   useGenerationError,
   useGenerationLoading,
   usePollCount,
-  statusMessages,
-  statusEmojis,
-  progressSteps,
   type GenerationJobData
 } from '@/stores/monster-generation';
+import {
+  isFailed,
+  isProcessing,
+  isCompleted,
+  STATUS_MESSAGES,
+  STATUS_EMOJIS,
+  PROGRESS_STEPS,
+  type GenerationStatus
+} from '@/lib/status-constants';
 
 // Re-export commonly used store hooks
 export { useActiveJob, useJob, useJobStatus, useJobProgress, useGenerationError, useGenerationLoading, usePollCount };
@@ -166,13 +172,13 @@ export function useJobMonitor(jobId: string, autoStart = true) {
     refresh,
     startMonitoring,
     stopMonitoring,
-    
-    // Computed properties
-    isCompleted: status === 'completed',
-    isFailed: status ? ['failed', 'failed_permanent', 'image_generation_failed', 'conversion_failed'].includes(status) : false,
-    isProcessing: status ? ['pending', 'generating_image', 'converting_3d', 'image_generation_retrying', 'conversion_retrying', 'waiting_on_storage'].includes(status) : false,
-    statusMessage: status ? statusMessages[status] : '',
-    statusEmoji: status ? statusEmojis[status] : '',
+
+    // Computed properties using shared type guards
+    isCompleted: isCompleted(status),
+    isFailed: isFailed(status),
+    isProcessing: isProcessing(status),
+    statusMessage: status ? STATUS_MESSAGES[status as GenerationStatus] : '',
+    statusEmoji: status ? STATUS_EMOJIS[status as GenerationStatus] : '',
   };
 }
 
@@ -199,13 +205,13 @@ export function useJobProgressDisplay(jobId: string): {
   const status = useJobStatus(jobId);
 
   // Find current step based on progress
-  const currentStep = progressSteps.findIndex((step, index) => {
-    const nextStep = progressSteps[index + 1];
+  const currentStep = PROGRESS_STEPS.findIndex((step, index) => {
+    const nextStep = PROGRESS_STEPS[index + 1];
     return progress >= step.threshold && (!nextStep || progress < nextStep.threshold);
   });
 
   // Map steps to completion status
-  const steps = progressSteps.map((step, index) => ({
+  const steps = PROGRESS_STEPS.map((step, index) => ({
     ...step,
     isCompleted: progress >= step.threshold,
     isCurrent: index === currentStep,
@@ -216,9 +222,9 @@ export function useJobProgressDisplay(jobId: string): {
     status,
     currentStep: currentStep >= 0 ? currentStep : 0,
     steps,
-    isCompleted: status === 'completed',
-    isFailed: status ? ['failed', 'failed_permanent', 'image_generation_failed', 'conversion_failed'].includes(status) : false,
-    isProcessing: status ? ['pending', 'generating_image', 'converting_3d', 'image_generation_retrying', 'conversion_retrying', 'waiting_on_storage'].includes(status) : false,
+    isCompleted: isCompleted(status),
+    isFailed: isFailed(status),
+    isProcessing: isProcessing(status),
   };
 }
 
@@ -232,24 +238,24 @@ export function useJobStatusDisplay(jobId: string) {
 
   const statusInfo = {
     status,
-    message: status ? statusMessages[status] : '',
-    emoji: status ? statusEmojis[status] : '',
+    message: status ? STATUS_MESSAGES[status as GenerationStatus] : '',
+    emoji: status ? STATUS_EMOJIS[status as GenerationStatus] : '',
     progress,
-    
+
     // CSS classes for different states
-    containerClass: status === 'completed'
+    containerClass: isCompleted(status)
       ? 'bg-gradient-to-br from-green-500/10 to-purple-500/10 border border-green-500/30'
-      : status && ['failed', 'failed_permanent', 'image_generation_failed', 'conversion_failed'].includes(status)
+      : isFailed(status)
       ? 'bg-red-500/10 border border-red-500/30'
       : 'bg-slate-800/50 border border-slate-700',
 
-    textClass: status === 'completed'
+    textClass: isCompleted(status)
       ? 'text-green-200'
-      : status && ['failed', 'failed_permanent', 'image_generation_failed', 'conversion_failed'].includes(status)
+      : isFailed(status)
       ? 'text-red-200'
       : 'text-white',
 
-    isLoading: status && ['pending', 'generating_image', 'converting_3d', 'image_generation_retrying', 'conversion_retrying', 'waiting_on_storage'].includes(status),
+    isLoading: isProcessing(status),
   };
 
   return {
@@ -295,19 +301,15 @@ export function useJobCollection(jobIds: string[]) {
   }, [jobIds, fetchJobStatus]);
 
   const getCompletedJobs = useCallback(() => {
-    return collectionJobs.filter(job => job.status === 'completed');
+    return collectionJobs.filter(job => isCompleted(job.status));
   }, [collectionJobs]);
 
   const getProcessingJobs = useCallback(() => {
-    return collectionJobs.filter(job =>
-      ['pending', 'generating_image', 'converting_3d', 'image_generation_retrying', 'conversion_retrying', 'waiting_on_storage'].includes(job.status)
-    );
+    return collectionJobs.filter(job => isProcessing(job.status));
   }, [collectionJobs]);
 
   const getFailedJobs = useCallback(() => {
-    return collectionJobs.filter(job =>
-      ['failed', 'failed_permanent', 'image_generation_failed', 'conversion_failed'].includes(job.status)
-    );
+    return collectionJobs.filter(job => isFailed(job.status));
   }, [collectionJobs]);
 
   return {
