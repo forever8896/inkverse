@@ -138,10 +138,13 @@ npm run db:reset      # ⚠️  Drop all tables and re-run migrations (destructi
 npm run db:setup      # Alias for db:migrate
 
 # Development
-vercel dev --listen 3004 --yes  # Start development server with Vercel Workflows (REQUIRED for workflow testing)
-npm run dev                      # Alternative: Start Next.js dev server (workflows may not work locally)
+vercel dev --listen 3004 --yes  # Start dev server (REQUIRED for workflows)
+npm run dev                      # Alternative: Next.js only (workflows won't work)
 npm run build                    # Build for production
 npm start                        # Start production server
+
+# Workflows
+npm run workflow:web             # Open workflow debugger UI
 
 # Code Quality
 npm run lint          # Run ESLint
@@ -191,6 +194,24 @@ Each retry stores structured metadata (`retryCount`, `lastRetryAt`, `suggestedRe
 - **Styling:** Tailwind CSS v4
 - **Animation:** Motion library (Framer Motion successor)
 
+## 📚 Lesson System
+
+Lessons are JSON files in `src/content/lessons/`. Each lesson contains chapters, each chapter contains steps.
+
+**URLs:**
+- Lessons: `/lesson/[lessonId]/[chapterId]/[stepId]`
+- Lesson Editor: `/lesson-editor` (also accessible from `/admin`)
+
+**Key Files:**
+- `src/content/lessons/*.json` - Lesson content
+- `src/lib/lesson-types.ts` - TypeScript interfaces
+- `src/lib/lesson-editor-validation.ts` - Zod schema validation
+- `src/components/MonacoCodeEditor.tsx` - ink!/Rust code editor
+
+**Progress:** Stored in PostgreSQL (`user_lesson_progress`, `user_chapter_progress`, `user_step_progress`). APIs at `/api/progress/*`.
+
+**Generation Triggers:** Steps with `triggersGeneration: true` and `generationStage: "young" | "adult"` trigger monster generation at milestones.
+
 ## 🎨 Monster Generation Flow
 
 Monster generation is triggered automatically when users complete specific lesson milestones.
@@ -204,5 +225,4 @@ Monster generation is triggered automatically when users complete specific lesso
 
 ## 📝 Notes
 
-- Desktop/laptop/iPad browsers only (mobile not supported for optimal learning experience)
-- npx --yes @polkadot-api/cli Might have to get run in order for the app to compile correctly, to investigate.
+- Desktop/laptop/iPad browsers only (mobile not supported)

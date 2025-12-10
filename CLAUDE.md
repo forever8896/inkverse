@@ -206,7 +206,6 @@ Use emoji + colored badges for job/creature states:
 
 ### Core Documentation Files
 
-- **`/docs/LESSON_EVOLUTION_ARCHITECTURE.md`** - Complete architectural overview of the contract evolution system
 - **`/docs/IMPLEMENTATION_GUIDE.md`** - Technical implementation guide with code examples and migration steps
 - **`/docs/API_SCHEMA_CHANGES.md`** - Detailed API and schema changes required for evolution system
 - **`/docs/CONTRIBUTING_LESSONS.md`** - Contributor guide for creating evolution-based lesson content

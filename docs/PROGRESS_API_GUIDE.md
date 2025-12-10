@@ -255,12 +255,16 @@ The `triggersGeneration` field in the Step schema controls when NFT generation i
 2. **Frontend shows generation modal** with cost warning (~$0.70)
 3. **User clicks "Generate My Creature"**
 4. **Frontend calls:**
-   - `POST /api/generate-monster` → Creates monster generation job
-   - `POST /api/progress/trigger-generation` → Links job to step
-5. **User is redirected to** `/generate/[jobId]` to watch progress
-6. **On completion:**
-   - `PATCH /api/progress/trigger-generation` marks trigger as completed
-   - NFT minted and user can view their creature
+   - `POST /api/generate-monster` with `{ lessonId, chapterId, stepId, ...monsterParams }`
+   - Server atomically creates job AND links it to the lesson step via `createWithTrigger()`
+   - Returns `{ jobId, runId, resumed: true/false }`
+5. **Frontend polls** `/api/monster-status/[jobId]` until completion
+6. **On completion:** NFT minted and user can view their creature
+
+> **Note:** The separate `POST /api/progress/trigger-generation` endpoint is only used
+> for manual admin operations, direct API access, or legacy code paths. The primary
+> flow uses the atomic `POST /api/generate-monster` endpoint which handles both
+> job creation and trigger linking in a single database transaction.
 
 ---
 
@@ -304,25 +308,25 @@ async function checkGenerationTriggered(
   return data.triggered; // true if already generated
 }
 
-// Trigger NFT generation
+// Trigger NFT generation - NEW ATOMIC FLOW
 async function triggerGeneration(
   lessonId: number,
   chapterId: number,
   stepId: number,
-  jobId: string
+  monsterParams: any
 ) {
-  const response = await fetch('/api/progress/trigger-generation', {
+  const response = await fetch('/api/generate-monster', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       lessonId,
       chapterId,
       stepId,
-      generationJobId: jobId,
+      ...monsterParams
     }),
   });
 
-  return response.json();
+  return response.json(); // Returns { jobId, resumed: boolean }
 }
 ```
 
