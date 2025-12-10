@@ -3,9 +3,11 @@
  * Returns paginated list of generation jobs with user info
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { getPool } from '@/lib/postgres';
 import { requireAdminApi } from '@/lib/admin-auth';
+import { successResponse, internalErrorResponse } from '@/lib/api-response';
+import { logError } from '@/types/errors';
 
 export interface AdminGenerationJob {
   id: string;
@@ -221,20 +223,10 @@ export async function GET(request: NextRequest) {
       })
     );
 
-    const response: AdminJobsResponse = {
-      success: true,
-      jobs: enrichedJobs,
-      total
-    };
-
-    return NextResponse.json(response);
+    return successResponse({ jobs: enrichedJobs, total });
 
   } catch (error) {
-    console.error('[API] Admin jobs error:', error);
-    
-    return NextResponse.json(
-      { success: false, error: 'Internal server error' },
-      { status: 500 }
-    );
+    logError('Admin Jobs API', error);
+    return internalErrorResponse(error, 'Failed to fetch jobs');
   }
 }

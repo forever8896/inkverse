@@ -362,7 +362,7 @@ export default function LabClient({ chapters }: { chapters: Lesson[] }) {
                         </div>
                         {chapter.id === 1 || chapters[index - 1]?.completed ? (
                           <Link
-                            href={`/lab/chapter/${chapter.id}`}
+                            href={`/lesson/${chapter.id}/1/1`}
                             className={`w-full font-semibold py-4 px-6 rounded-xl transition-all duration-200 text-center block ${chapter.completed ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 text-white transform hover:scale-105'}`}
                           >
                             {chapter.completed
@@ -390,7 +390,7 @@ export default function LabClient({ chapters }: { chapters: Lesson[] }) {
                     bio-engineering a digital creature!
                   </p>
                   <Link
-                    href="/lab/chapter/1"
+                    href="/lesson/1/1/1"
                     className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 rounded-xl text-xl font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg"
                   >
                     🧪 Awaken Your First Creature →

@@ -43,18 +43,17 @@ The app uses Next.js 15 with React Server Components and implements a **Contract
 
 1. **Lessons** (`/src/lib/lessons.ts`) - Progressive ink! tutorials with contract evolution
 2. **Contract Evolution** (`/src/lib/contract-evolution.ts`) - System for building contracts across lessons
-3. **Chapters** (`/src/lib/chapters.ts`) - Story-driven creature creation labs [DEPRECATED - replaced by evolution system]
 
 ### Key Components
 
-- **CreatureCreationLab** (`/src/components/CreatureCreationLab.tsx`) - Interactive coding environment with split-panel design (content + code editor)
-- **CodeEditor** (`/src/components/CodeEditor.tsx`) - Monaco-based editor for ink! smart contracts
-- **LessonLayout** (`/src/components/LessonLayout.tsx`) - Layout wrapper for lesson progression
+- **MonacoCodeEditor** (`/src/components/MonacoCodeEditor.tsx`) - Monaco-based editor for ink! smart contracts
+- **LessonLayout** (`/src/components/LessonLayout.tsx`) - Main layout wrapper for lessons with integrated creature display
+- **LabClient** (`/src/components/LabClient.tsx`) - Landing page component showing lesson selection
 
 ### Content Structure
 
-- `/src/app/lessons/[id]/` - Individual lesson pages with contract evolution
-- `/src/app/lab/chapter/[id]/` - Chapter-based creature creation labs [DEPRECATED]
+- `/src/app/lesson/[lessonId]/[chapterId]/[stepId]/` - Lesson pages with deep linking to chapters/steps
+- `/src/app/lab/` - Landing page for lesson selection
 - `/public/creatures/` - Creature artwork and animations with evolution stages (PNG/WebM formats)
 - `/src/content/lessons/` - JSON lesson definitions with evolution metadata
 - `/src/lib/contract-templates.ts` - Contract templates for each evolution stage
@@ -326,7 +325,7 @@ A comprehensive server-side authentication system has been implemented using Bet
 ### Lesson Authentication Schema
 
 - **`requiresAuth` parameter** - Added to lesson JSON schema (`LessonStep` interface)
-- **Server-side checks** - Implemented in `/src/app/lab/chapter/[id]/page.tsx`
+- **Server-side checks** - Implemented in `/src/app/lesson/[lessonId]/[chapterId]/[stepId]/page.tsx`
 - **Graceful fallback** - Try/catch error handling for SSR compatibility
 - **Client-side modal** - Existing GitHub auth modal integration
 

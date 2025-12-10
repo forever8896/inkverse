@@ -3,9 +3,11 @@
  * Returns admin dashboard statistics
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { getPool } from '@/lib/postgres';
 import { requireAdminApi } from '@/lib/admin-auth';
+import { successResponse, internalErrorResponse } from '@/lib/api-response';
+import { logError } from '@/types/errors';
 
 export interface AdminStatsResponse {
   success: boolean;
@@ -121,19 +123,10 @@ export async function GET(request: NextRequest) {
       recentActivity
     };
 
-    const response: AdminStatsResponse = {
-      success: true,
-      stats
-    };
-
-    return NextResponse.json(response);
+    return successResponse({ stats });
 
   } catch (error) {
-    console.error('[API] Admin stats error:', error);
-    
-    return NextResponse.json(
-      { success: false, error: 'Internal server error' },
-      { status: 500 }
-    );
+    logError('Admin Stats API', error);
+    return internalErrorResponse(error, 'Failed to fetch stats');
   }
 }

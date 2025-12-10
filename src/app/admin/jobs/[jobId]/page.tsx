@@ -5,6 +5,7 @@ import { motion } from 'motion/react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import MonsterViewer from '@/components/MonsterViewer';
+import { isFailed as checkIsFailed, isRetrying as checkIsRetrying } from '@/lib/status-constants';
 
 interface JobDetail {
   id: string;
@@ -677,8 +678,8 @@ function RetryStatusCard({ job }: { job: JobDetail }) {
     return () => clearInterval(interval);
   }, [job]);
 
-  const isRetrying = job.status.includes('retrying');
-  const isFailed = job.status.includes('failed') && !isRetrying;
+  const isRetrying = checkIsRetrying(job.status);
+  const isFailed = checkIsFailed(job.status) && !isRetrying;
   const isWaitingOnStorage = job.status === 'waiting_on_storage';
   const canRetry = job.lastError?.retryable && (job.lastError.currentRetries < job.lastError.maxRetries);
   const errorInfo = job.lastError ? ERROR_EXPLANATIONS[job.lastError.type] || ERROR_EXPLANATIONS.unknown : null;

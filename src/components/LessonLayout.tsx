@@ -19,6 +19,7 @@ import { useCreatureDisplayStage } from '@/hooks/useCreatureDisplayStage';
 import { useToastNotifications, ToastContainer } from '@/hooks/useToastNotifications';
 import { useNFTCapture } from '@/hooks/useNFTCapture';
 import { CompletionModals } from '@/components/lesson/CompletionModals';
+import { isProcessing } from '@/lib/status-constants';
 
 // wallet stuff
 import { ReactiveDotProvider, ChainProvider, SignerProvider, useAccounts } from '@reactive-dot/react';
@@ -509,7 +510,7 @@ function LessonLayoutInner({ lesson, initialChapter: propChapter, initialStep: p
             </div>
 
             {/* Generation Notification Toast */}
-            {(asset.isGenerating || (asset.status && ['pending', 'generating_image', 'converting_3d'].includes(asset.status))) && (
+            {(asset.isGenerating || isProcessing(asset.status)) && (
               <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-30 w-full max-w-sm px-4 pointer-events-none">
                 <div className="bg-slate-900/90 backdrop-blur-md border border-purple-500/30 rounded-xl p-4 shadow-xl animate-fade-in-up flex items-center space-x-3">
                   <div className="relative flex-shrink-0">

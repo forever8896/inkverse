@@ -3,6 +3,7 @@ import { useMonsterGeneration } from './useMonsterGeneration';
 import { GenerationJobData } from '@/stores/monster-generation';
 import { MonsterStage } from '@/lib/generation-job';
 import { generateRandomMonsterRequest } from '@/lib/monster-prompts';
+import { isProcessing } from '@/lib/status-constants';
 
 interface UseMonsterAssetReturn {
   // State
@@ -124,8 +125,7 @@ export function useMonsterAsset(userId: string | undefined, lessonId: number, cu
   // Poll while processing
   useEffect(() => {
     if (jobId && job) {
-      const isProcessing = ['pending', 'generating_image', 'converting_3d'].includes(job.status);
-      if (isProcessing) {
+      if (isProcessing(job.status)) {
         startPolling(jobId);
       } else {
         stopPolling(jobId);
@@ -207,7 +207,7 @@ export function useMonsterAsset(userId: string | undefined, lessonId: number, cu
     imageUrl: job?.imageUrl || null,
     modelUrl: job?.glbUrl || null,
 
-    isGenerating: job ? ['pending', 'generating_image', 'converting_3d'].includes(job.status) : false,
+    isGenerating: job ? isProcessing(job.status) : false,
     isImageReady: !!job?.imageUrl,
     isModelReady: !!job?.glbUrl,
     isLoadingInitialState,
