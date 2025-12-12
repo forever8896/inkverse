@@ -56,7 +56,7 @@ interface GenerationJobData {
   style: 'cute' | 'fierce' | 'mysterious' | 'playful' | 'cosmic';
   stage: 'egg' | 'young' | 'adult';
   generationType: GenerationType;
-  status: 'pending' | 'generating_image' | 'image_generation_failed' | 'image_generation_retrying' | 'converting_3d' | 'conversion_failed' | 'conversion_retrying' | 'completed' | 'failed' | 'failed_permanent' | 'waiting_on_storage';
+  status: 'pending' | 'checking_prerequisites' | 'prerequisites_failed' | 'generating_image' | 'image_generation_failed' | 'image_generation_retrying' | 'converting_3d' | 'conversion_failed' | 'conversion_retrying' | 'minting_nft' | 'nft_minting_retrying' | 'nft_minting_failed' | 'completed' | 'failed' | 'failed_permanent' | 'waiting_on_storage';
   progress: number;
   errorMessage?: string;
   userMessage?: string;
@@ -79,6 +79,10 @@ interface GenerationJobData {
   createdAt: string;
   updatedAt: string;
   completedAt?: string;
+  // NFT fields
+  nftItemId?: number;
+  nftCollectionId?: number;
+  nftTxHash?: string;
 }
 
 interface MonsterStatusResponse {
@@ -89,28 +93,38 @@ interface MonsterStatusResponse {
   error?: string;
 }
 
-const statusMessages = {
+const statusMessages: Record<string, string> = {
   pending: '🥚 Initializing your monster...',
+  checking_prerequisites: '🔍 Checking NFT services...',
+  prerequisites_failed: '⚠️ Service check failed...',
   generating_image: '🎨 AI is painting your creature...',
   image_generation_failed: '🎨 Image generation failed...',
   image_generation_retrying: '🔄 Retrying image generation...',
   converting_3d: '🏗️ Building your monster in 3D...',
   conversion_failed: '🏗️ 3D conversion failed...',
   conversion_retrying: '🔄 Retrying 3D conversion...',
+  minting_nft: '⛓️ Minting your NFT on blockchain...',
+  nft_minting_retrying: '🔄 Retrying NFT minting...',
+  nft_minting_failed: '⛓️ NFT minting failed...',
   completed: '✨ Your monster is ready!',
   failed: '💥 Something went wrong...',
   failed_permanent: '💥 Generation failed permanently...',
   waiting_on_storage: '🧰 Waiting for storage to come online...',
 };
 
-const statusEmojis = {
+const statusEmojis: Record<string, string> = {
   pending: '🥚',
+  checking_prerequisites: '🔍',
+  prerequisites_failed: '⚠️',
   generating_image: '🎨',
   image_generation_failed: '❌',
   image_generation_retrying: '🔄',
   converting_3d: '🏗️',
   conversion_failed: '❌',
   conversion_retrying: '🔄',
+  minting_nft: '⛓️',
+  nft_minting_retrying: '🔄',
+  nft_minting_failed: '❌',
   completed: '✨',
   failed: '💥',
   failed_permanent: '💥',
@@ -118,12 +132,14 @@ const statusEmojis = {
 };
 
 const progressSteps = [
-  { threshold: 0, label: 'Queuing creation request', emoji: '📋' },
+  { threshold: 0, label: 'Checking NFT services', emoji: '🔍' },
   { threshold: 5, label: 'Starting AI image generation', emoji: '🎨' },
   { threshold: 40, label: 'Image generation complete', emoji: '🖼️' },
   { threshold: 50, label: 'Beginning 3D conversion', emoji: '🔄', requires3D: true },
-  { threshold: 90, label: '3D model created', emoji: '🏗️', requires3D: true },
-  { threshold: 100, label: 'Monster ready!', emoji: '🎉' },
+  { threshold: 85, label: '3D model created', emoji: '🏗️', requires3D: true },
+  { threshold: 92, label: 'Uploading to IPFS', emoji: '📤' },
+  { threshold: 96, label: 'Minting on blockchain', emoji: '⛓️' },
+  { threshold: 100, label: 'NFT minted successfully!', emoji: '🎉' },
 ];
 
 function AnimatedBackground() {
@@ -361,7 +377,13 @@ export default function GenerationProgressPage() {
       }
 
       // Stop polling if job is completed or failed
-      if (data.job.status === 'completed' || data.job.status === 'failed') {
+      if (data.job.status === 'completed' ||
+          data.job.status === 'failed' ||
+          data.job.status === 'failed_permanent' ||
+          data.job.status === 'image_generation_failed' ||
+          data.job.status === 'conversion_failed' ||
+          data.job.status === 'prerequisites_failed' ||
+          data.job.status === 'nft_minting_failed') {
         return false; // Signal to stop polling
       }
       
@@ -514,11 +536,13 @@ export default function GenerationProgressPage() {
         </motion.div>
 
         {/* Progress Section - show for all processing states including retries */}
-        {(currentStatus !== 'completed' && 
-          currentStatus !== 'failed' && 
+        {(currentStatus !== 'completed' &&
+          currentStatus !== 'failed' &&
           currentStatus !== 'failed_permanent' &&
           currentStatus !== 'image_generation_failed' &&
-          currentStatus !== 'conversion_failed') && (
+          currentStatus !== 'conversion_failed' &&
+          currentStatus !== 'prerequisites_failed' &&
+          currentStatus !== 'nft_minting_failed') && (
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -577,8 +601,9 @@ export default function GenerationProgressPage() {
           )}
 
           {/* Error Information for Retrying States */}
-          {(currentStatus === 'image_generation_retrying' || 
-            currentStatus === 'conversion_retrying') && 
+          {(currentStatus === 'image_generation_retrying' ||
+            currentStatus === 'conversion_retrying' ||
+            currentStatus === 'nft_minting_retrying') &&
            (job?.userMessage || job?.errorMessage || job?.lastError) && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -741,10 +766,12 @@ export default function GenerationProgressPage() {
           )}
 
           {/* Failed State */}
-          {(currentStatus === 'failed' || 
+          {(currentStatus === 'failed' ||
             currentStatus === 'failed_permanent' ||
             currentStatus === 'image_generation_failed' ||
-            currentStatus === 'conversion_failed') && (
+            currentStatus === 'conversion_failed' ||
+            currentStatus === 'prerequisites_failed' ||
+            currentStatus === 'nft_minting_failed') && (
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}

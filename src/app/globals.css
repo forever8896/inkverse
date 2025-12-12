@@ -35,6 +35,20 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.552 0.016 285.938);
+
+  /* Monsters Ink! Brand Colors */
+  --mi-deep-violet: #240B4D;
+  --mi-deep-violet-rgb: 36, 11, 77;
+  --mi-cobalt: #1E4CDD;
+  --mi-cobalt-rgb: 30, 76, 221;
+  --mi-mint: #4FFFB0;
+  --mi-mint-rgb: 79, 255, 176;
+  --mi-peach: #FFDAB9;
+  --mi-peach-rgb: 255, 218, 185;
+  --mi-orange: #FF9F1C;
+  --mi-orange-rgb: 255, 159, 28;
+  --mi-cream: #FFF8F0;
+  --mi-cream-rgb: 255, 248, 240;
 }
 
 @theme inline {
@@ -477,4 +491,284 @@ h6 {
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* ============================================
+   MONSTERS INK! LANDING PAGE STYLES
+   ============================================ */
+
+/* Deep violet background for landing */
+.mi-bg-deep {
+  background: linear-gradient(
+    180deg,
+    var(--mi-deep-violet) 0%,
+    #1a0a3a 50%,
+    #0f0520 100%
+  );
+}
+
+/* Egg breathing animation - gentle, organic pulse */
+@keyframes egg-breathe {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+}
+
+.animate-egg-breathe {
+  animation: egg-breathe 4s ease-in-out infinite;
+}
+
+/* Egg shake animation - intense rumble before darkness */
+@keyframes egg-shake {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  5% { transform: translate(-4px, -2px) rotate(-1deg); }
+  10% { transform: translate(4px, 2px) rotate(1deg); }
+  15% { transform: translate(-3px, 3px) rotate(-0.5deg); }
+  20% { transform: translate(3px, -3px) rotate(0.5deg); }
+  25% { transform: translate(-5px, -1px) rotate(-1.5deg); }
+  30% { transform: translate(5px, 1px) rotate(1.5deg); }
+  35% { transform: translate(-4px, 4px) rotate(-1deg); }
+  40% { transform: translate(4px, -4px) rotate(1deg); }
+  45% { transform: translate(-6px, -2px) rotate(-2deg); }
+  50% { transform: translate(6px, 2px) rotate(2deg); }
+  55% { transform: translate(-5px, 3px) rotate(-1.5deg); }
+  60% { transform: translate(5px, -3px) rotate(1.5deg); }
+  65% { transform: translate(-7px, -1px) rotate(-2.5deg); }
+  70% { transform: translate(7px, 1px) rotate(2.5deg); }
+  75% { transform: translate(-6px, 4px) rotate(-2deg); }
+  80% { transform: translate(6px, -4px) rotate(2deg); }
+  85% { transform: translate(-8px, -2px) rotate(-3deg); }
+  90% { transform: translate(8px, 2px) rotate(3deg); }
+  95% { transform: translate(-4px, 2px) rotate(-1deg); }
+  100% { transform: translate(0, 0) rotate(0deg); }
+}
+
+.animate-egg-shake {
+  animation: egg-shake 1.2s ease-in-out;
+}
+
+/* Inner glow pulse for the egg */
+@keyframes egg-inner-glow {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(0.95);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+.animate-egg-glow {
+  animation: egg-inner-glow 3s ease-in-out infinite;
+}
+
+/* Floating particle animation for background spores */
+@keyframes float-particle {
+  0% {
+    transform: translateY(100vh) translateX(0) scale(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+    transform: translateY(90vh) translateX(10px) scale(1);
+  }
+  90% {
+    opacity: 1;
+    transform: translateY(10vh) translateX(-10px) scale(1);
+  }
+  100% {
+    transform: translateY(-10vh) translateX(0) scale(0);
+    opacity: 0;
+  }
+}
+
+.animate-float-particle {
+  animation: float-particle var(--particle-duration, 15s) linear infinite;
+  animation-delay: var(--particle-delay, 0s);
+}
+
+/* Crack lines appearing on hover */
+@keyframes crack-appear {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-crack-appear {
+  animation: crack-appear 0.3s ease-out forwards;
+}
+
+/* Screen shake for egg crack impact */
+@keyframes screen-shake {
+  0%, 100% { transform: translate(0, 0); }
+  10% { transform: translate(-3px, -2px); }
+  20% { transform: translate(3px, 2px); }
+  30% { transform: translate(-2px, 3px); }
+  40% { transform: translate(2px, -3px); }
+  50% { transform: translate(-3px, 2px); }
+  60% { transform: translate(3px, -2px); }
+  70% { transform: translate(-2px, -3px); }
+  80% { transform: translate(2px, 3px); }
+  90% { transform: translate(-3px, -2px); }
+}
+
+.animate-screen-shake {
+  animation: screen-shake 0.5s ease-out;
+}
+
+/* Shell fragment explosion */
+@keyframes shell-explode {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) rotate(0deg) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--explode-x, 100px), var(--explode-y, -100px)) rotate(var(--explode-rotate, 180deg)) scale(0.3);
+  }
+}
+
+.animate-shell-explode {
+  animation: shell-explode 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+/* Light burst from egg */
+@keyframes light-burst {
+  0% {
+    opacity: 0;
+    transform: scale(0);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.5);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(3);
+  }
+}
+
+.animate-light-burst {
+  animation: light-burst 1s ease-out forwards;
+}
+
+/* Creature silhouette reveal */
+@keyframes silhouette-reveal {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+    filter: blur(20px);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.1);
+    filter: blur(5px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+}
+
+.animate-silhouette-reveal {
+  animation: silhouette-reveal 1.2s ease-out forwards;
+}
+
+/* Text fade in with slight rise */
+@keyframes text-reveal {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-text-reveal {
+  animation: text-reveal 0.8s ease-out forwards;
+}
+
+/* Staggered entrance for multiple elements */
+.stagger-1 { animation-delay: 0.1s; }
+.stagger-2 { animation-delay: 0.2s; }
+.stagger-3 { animation-delay: 0.3s; }
+.stagger-4 { animation-delay: 0.4s; }
+.stagger-5 { animation-delay: 0.5s; }
+
+/* Glow effect using brand mint color */
+.glow-mint {
+  box-shadow:
+    0 0 20px rgba(var(--mi-mint-rgb), 0.3),
+    0 0 40px rgba(var(--mi-mint-rgb), 0.2),
+    0 0 60px rgba(var(--mi-mint-rgb), 0.1);
+}
+
+/* Glow effect using brand peach color */
+.glow-peach {
+  box-shadow:
+    0 0 30px rgba(var(--mi-peach-rgb), 0.4),
+    0 0 60px rgba(var(--mi-peach-rgb), 0.2),
+    0 0 90px rgba(var(--mi-peach-rgb), 0.1);
+}
+
+/* Radial glow behind egg */
+.egg-backdrop-glow {
+  background: radial-gradient(
+    ellipse at center,
+    rgba(var(--mi-peach-rgb), 0.3) 0%,
+    rgba(var(--mi-peach-rgb), 0.1) 30%,
+    transparent 70%
+  );
+}
+
+/* Polkadot brand pink for footer */
+.text-polkadot-pink {
+  color: #E6007A;
+}
+
+/* ============================================
+   PERFORMANCE: CSS Gradient Animation
+   Replaces WebGL shader with GPU-composited CSS
+   ============================================ */
+
+@keyframes gradient-shift {
+  0%, 100% {
+    transform: scale(1) translateX(0);
+    opacity: 0.3;
+  }
+  50% {
+    transform: scale(1.1) translateX(5%);
+    opacity: 0.4;
+  }
+}
+
+@keyframes gradient-shift-reverse {
+  0%, 100% {
+    transform: scale(1.1) translateX(-3%);
+    opacity: 0.2;
+  }
+  50% {
+    transform: scale(1) translateX(3%);
+    opacity: 0.25;
+  }
+}
+
+.animate-gradient-shift {
+  animation: gradient-shift 20s ease-in-out infinite;
+}
+
+.animate-gradient-shift-reverse {
+  animation: gradient-shift-reverse 25s ease-in-out infinite;
 }

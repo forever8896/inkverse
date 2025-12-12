@@ -1,7 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import MonsterViewer from './MonsterViewer';
+import dynamic from 'next/dynamic';
 import Image from 'next/image';
+
+// ============================================================================
+// PERFORMANCE: Lazy load Three.js/MonsterViewer (~500KB)
+// Only loads when adult stage is shown (3D model display)
+// ============================================================================
+const MonsterViewer = dynamic(
+  () => import('./MonsterViewer'),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-full flex items-center justify-center bg-slate-900/80">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-indigo-300 text-sm">Loading 3D viewer...</p>
+        </div>
+      </div>
+    )
+  }
+);
 
 interface CreatureStageDisplayProps {
   stage: 'egg' | 'young' | 'adult';
