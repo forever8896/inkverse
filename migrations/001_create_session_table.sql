@@ -1,5 +1,5 @@
--- Session table for Better Auth
-CREATE TABLE session (
+-- Session table for Better Auth (idempotent)
+CREATE TABLE IF NOT EXISTS session (
     id TEXT PRIMARY KEY,
     "expiresAt" TIMESTAMP WITHOUT TIME ZONE NOT NULL,
     "ipAddress" TEXT,
@@ -12,7 +12,7 @@ CREATE TABLE session (
     FOREIGN KEY ("userId") REFERENCES "user"(id) ON DELETE CASCADE
 );
 
--- Indexes for session table
-CREATE INDEX idx_session_user_id ON session("userId");
-CREATE INDEX idx_session_expires_at ON session("expiresAt");
-CREATE INDEX idx_session_token ON session(token);
+-- Indexes for session table (idempotent)
+CREATE INDEX IF NOT EXISTS idx_session_user_id ON session("userId");
+CREATE INDEX IF NOT EXISTS idx_session_expires_at ON session("expiresAt");
+CREATE INDEX IF NOT EXISTS idx_session_token ON session(token);

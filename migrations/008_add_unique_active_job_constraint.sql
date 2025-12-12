@@ -3,9 +3,9 @@
 -- Author: Workflow Integration Team
 -- Date: 2025-11-05
 
--- Prevent duplicate active jobs per user
+-- Prevent duplicate active jobs per user (idempotent)
 -- This is the strongest layer of duplicate prevention
-CREATE UNIQUE INDEX idx_unique_active_job_per_user
+CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_active_job_per_user
 ON monster_generations (user_id)
 WHERE status IN (
   'pending',
@@ -15,14 +15,6 @@ WHERE status IN (
   'conversion_retrying'
 );
 
--- Add comment
+-- Add comment (idempotent - PostgreSQL ignores duplicate comments)
 COMMENT ON INDEX idx_unique_active_job_per_user
 IS 'Ensures only one active generation job per user at a time (prevents browser refresh duplicates)';
-
--- Verify migration
-SELECT
-  indexname,
-  indexdef
-FROM pg_indexes
-WHERE tablename = 'monster_generations'
-  AND indexname = 'idx_unique_active_job_per_user';

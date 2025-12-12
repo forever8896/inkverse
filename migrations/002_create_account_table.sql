@@ -1,5 +1,5 @@
--- Account table for Better Auth (OAuth providers)
-CREATE TABLE account (
+-- Account table for Better Auth (OAuth providers) (idempotent)
+CREATE TABLE IF NOT EXISTS account (
     id TEXT PRIMARY KEY,
     "accountId" TEXT NOT NULL,
     "providerId" TEXT NOT NULL,
@@ -16,6 +16,6 @@ CREATE TABLE account (
     UNIQUE ("providerId", "accountId")
 );
 
--- Indexes for account table
-CREATE INDEX idx_account_user_id ON account("userId");
-CREATE INDEX idx_account_provider_id_account_id ON account("providerId", "accountId");
+-- Indexes for account table (idempotent)
+CREATE INDEX IF NOT EXISTS idx_account_user_id ON account("userId");
+CREATE INDEX IF NOT EXISTS idx_account_provider_id_account_id ON account("providerId", "accountId");

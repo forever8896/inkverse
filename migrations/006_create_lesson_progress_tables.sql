@@ -7,7 +7,7 @@ BEGIN;
 -- ============================================================================
 -- User Lesson Progress (Top-level tracking)
 -- ============================================================================
-CREATE TABLE user_lesson_progress (
+CREATE TABLE IF NOT EXISTS user_lesson_progress (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id VARCHAR(255) NOT NULL,
     lesson_id INTEGER NOT NULL,
@@ -25,7 +25,7 @@ CREATE TABLE user_lesson_progress (
 -- ============================================================================
 -- User Chapter Progress (Middle-tier tracking)
 -- ============================================================================
-CREATE TABLE user_chapter_progress (
+CREATE TABLE IF NOT EXISTS user_chapter_progress (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id VARCHAR(255) NOT NULL,
     lesson_id INTEGER NOT NULL,
@@ -43,7 +43,7 @@ CREATE TABLE user_chapter_progress (
 -- ============================================================================
 -- User Step Progress (Granular tracking with code snapshots)
 -- ============================================================================
-CREATE TABLE user_step_progress (
+CREATE TABLE IF NOT EXISTS user_step_progress (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id VARCHAR(255) NOT NULL,
     lesson_id INTEGER NOT NULL,
@@ -64,7 +64,7 @@ CREATE TABLE user_step_progress (
 -- ============================================================================
 -- Generation Triggers (Links lesson completion to NFT generation)
 -- ============================================================================
-CREATE TABLE lesson_generation_triggers (
+CREATE TABLE IF NOT EXISTS lesson_generation_triggers (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id VARCHAR(255) NOT NULL,
     lesson_id INTEGER NOT NULL,
@@ -80,46 +80,49 @@ CREATE TABLE lesson_generation_triggers (
 );
 
 -- ============================================================================
--- Indexes for Performance
+-- Indexes for Performance (idempotent)
 -- ============================================================================
 
 -- Lesson progress indexes
-CREATE INDEX idx_lesson_progress_user_id ON user_lesson_progress(user_id);
-CREATE INDEX idx_lesson_progress_lesson_id ON user_lesson_progress(lesson_id);
-CREATE INDEX idx_lesson_progress_user_lesson ON user_lesson_progress(user_id, lesson_id);
+CREATE INDEX IF NOT EXISTS idx_lesson_progress_user_id ON user_lesson_progress(user_id);
+CREATE INDEX IF NOT EXISTS idx_lesson_progress_lesson_id ON user_lesson_progress(lesson_id);
+CREATE INDEX IF NOT EXISTS idx_lesson_progress_user_lesson ON user_lesson_progress(user_id, lesson_id);
 
 -- Chapter progress indexes
-CREATE INDEX idx_chapter_progress_user_id ON user_chapter_progress(user_id);
-CREATE INDEX idx_chapter_progress_lesson_id ON user_chapter_progress(lesson_id);
-CREATE INDEX idx_chapter_progress_user_lesson ON user_chapter_progress(user_id, lesson_id);
-CREATE INDEX idx_chapter_progress_user_chapter ON user_chapter_progress(user_id, lesson_id, chapter_id);
+CREATE INDEX IF NOT EXISTS idx_chapter_progress_user_id ON user_chapter_progress(user_id);
+CREATE INDEX IF NOT EXISTS idx_chapter_progress_lesson_id ON user_chapter_progress(lesson_id);
+CREATE INDEX IF NOT EXISTS idx_chapter_progress_user_lesson ON user_chapter_progress(user_id, lesson_id);
+CREATE INDEX IF NOT EXISTS idx_chapter_progress_user_chapter ON user_chapter_progress(user_id, lesson_id, chapter_id);
 
 -- Step progress indexes
-CREATE INDEX idx_step_progress_user_id ON user_step_progress(user_id);
-CREATE INDEX idx_step_progress_lesson_id ON user_step_progress(lesson_id);
-CREATE INDEX idx_step_progress_user_lesson ON user_step_progress(user_id, lesson_id);
-CREATE INDEX idx_step_progress_user_chapter ON user_step_progress(user_id, lesson_id, chapter_id);
-CREATE INDEX idx_step_progress_completed ON user_step_progress(user_id, completed_at) WHERE completed_at IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_step_progress_user_id ON user_step_progress(user_id);
+CREATE INDEX IF NOT EXISTS idx_step_progress_lesson_id ON user_step_progress(lesson_id);
+CREATE INDEX IF NOT EXISTS idx_step_progress_user_lesson ON user_step_progress(user_id, lesson_id);
+CREATE INDEX IF NOT EXISTS idx_step_progress_user_chapter ON user_step_progress(user_id, lesson_id, chapter_id);
+CREATE INDEX IF NOT EXISTS idx_step_progress_completed ON user_step_progress(user_id, completed_at) WHERE completed_at IS NOT NULL;
 
 -- Generation trigger indexes
-CREATE INDEX idx_generation_triggers_user_id ON lesson_generation_triggers(user_id);
-CREATE INDEX idx_generation_triggers_job_id ON lesson_generation_triggers(generation_job_id);
-CREATE INDEX idx_generation_triggers_completed ON lesson_generation_triggers(completed) WHERE completed = FALSE;
+CREATE INDEX IF NOT EXISTS idx_generation_triggers_user_id ON lesson_generation_triggers(user_id);
+CREATE INDEX IF NOT EXISTS idx_generation_triggers_job_id ON lesson_generation_triggers(generation_job_id);
+CREATE INDEX IF NOT EXISTS idx_generation_triggers_completed ON lesson_generation_triggers(completed) WHERE completed = FALSE;
 
 -- ============================================================================
--- Triggers for automatic timestamp updates
+-- Triggers for automatic timestamp updates (idempotent)
 -- ============================================================================
 
+DROP TRIGGER IF EXISTS update_lesson_progress_updated_at ON user_lesson_progress;
 CREATE TRIGGER update_lesson_progress_updated_at
     BEFORE UPDATE ON user_lesson_progress
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_chapter_progress_updated_at ON user_chapter_progress;
 CREATE TRIGGER update_chapter_progress_updated_at
     BEFORE UPDATE ON user_chapter_progress
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_step_progress_updated_at ON user_step_progress;
 CREATE TRIGGER update_step_progress_updated_at
     BEFORE UPDATE ON user_step_progress
     FOR EACH ROW

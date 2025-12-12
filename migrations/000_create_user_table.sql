@@ -1,5 +1,5 @@
--- User table for Better Auth
-CREATE TABLE "user" (
+-- User table for Better Auth (idempotent)
+CREATE TABLE IF NOT EXISTS "user" (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
     email TEXT NOT NULL UNIQUE,
@@ -18,8 +18,8 @@ CREATE TABLE "user" (
     "banExpires" TIMESTAMP WITHOUT TIME ZONE
 );
 
--- Indexes for user table
-CREATE INDEX idx_user_email ON "user"(email);
-CREATE INDEX idx_user_githubusername ON "user"("githubUsername");
-CREATE INDEX idx_user_role ON "user"(role);
-CREATE INDEX idx_user_banned ON "user"(banned);
+-- Indexes for user table (idempotent)
+CREATE INDEX IF NOT EXISTS idx_user_email ON "user"(email);
+CREATE INDEX IF NOT EXISTS idx_user_githubusername ON "user"("githubUsername");
+CREATE INDEX IF NOT EXISTS idx_user_role ON "user"(role);
+CREATE INDEX IF NOT EXISTS idx_user_banned ON "user"(banned);

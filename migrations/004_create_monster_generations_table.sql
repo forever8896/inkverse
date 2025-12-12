@@ -1,20 +1,39 @@
--- Custom enum types for monster generations
-CREATE TYPE monster_style AS ENUM ('cute', 'fierce', 'mysterious', 'playful', 'cosmic');
-CREATE TYPE monster_stage AS ENUM ('egg', 'young', 'adult');
-CREATE TYPE generation_type AS ENUM ('full', 'image_only');
-CREATE TYPE generation_status AS ENUM (
-    'pending',
-    'generating_image',
-    'converting_3d',
-    'completed',
-    'failed',
-    'image_generation_failed',
-    'image_generation_retrying',
-    'conversion_failed',
-    'conversion_retrying',
-    'failed_permanent',
-    'waiting_on_storage'
-);
+-- Custom enum types for monster generations (idempotent - safe to re-run)
+DO $$ BEGIN
+    CREATE TYPE monster_style AS ENUM ('cute', 'fierce', 'mysterious', 'playful', 'cosmic');
+EXCEPTION
+    WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE monster_stage AS ENUM ('egg', 'young', 'adult');
+EXCEPTION
+    WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE generation_type AS ENUM ('full', 'image_only');
+EXCEPTION
+    WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE generation_status AS ENUM (
+        'pending',
+        'generating_image',
+        'converting_3d',
+        'completed',
+        'failed',
+        'image_generation_failed',
+        'image_generation_retrying',
+        'conversion_failed',
+        'conversion_retrying',
+        'failed_permanent',
+        'waiting_on_storage'
+    );
+EXCEPTION
+    WHEN duplicate_object THEN NULL;
+END $$;
 
 -- Trigger function to automatically update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -32,8 +51,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Monster generations table
-CREATE TABLE monster_generations (
+-- Monster generations table (idempotent)
+CREATE TABLE IF NOT EXISTS monster_generations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id VARCHAR(255) NOT NULL,
     prompt TEXT NOT NULL,
@@ -65,13 +84,14 @@ CREATE TABLE monster_generations (
     CONSTRAINT monster_generations_progress_check CHECK (progress >= 0 AND progress <= 100)
 );
 
--- Indexes for monster_generations table
-CREATE INDEX idx_monster_generations_user_id ON monster_generations(user_id);
-CREATE INDEX idx_monster_generations_status ON monster_generations(status);
-CREATE INDEX idx_monster_generations_user_status ON monster_generations(user_id, status);
-CREATE INDEX idx_monster_generations_created_at ON monster_generations(created_at DESC);
+-- Indexes for monster_generations table (idempotent)
+CREATE INDEX IF NOT EXISTS idx_monster_generations_user_id ON monster_generations(user_id);
+CREATE INDEX IF NOT EXISTS idx_monster_generations_status ON monster_generations(status);
+CREATE INDEX IF NOT EXISTS idx_monster_generations_user_status ON monster_generations(user_id, status);
+CREATE INDEX IF NOT EXISTS idx_monster_generations_created_at ON monster_generations(created_at DESC);
 
--- Trigger to automatically update updated_at
+-- Trigger to automatically update updated_at (idempotent)
+DROP TRIGGER IF EXISTS update_monster_generations_updated_at ON monster_generations;
 CREATE TRIGGER update_monster_generations_updated_at
     BEFORE UPDATE ON monster_generations
     FOR EACH ROW

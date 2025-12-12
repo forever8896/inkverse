@@ -1,8 +1,8 @@
--- Enable btree_gist extension for EXCLUDE constraint
+-- Enable btree_gist extension for EXCLUDE constraint (idempotent)
 CREATE EXTENSION IF NOT EXISTS btree_gist;
 
--- API costs table for tracking provider pricing over time
-CREATE TABLE api_costs (
+-- API costs table for tracking provider pricing over time (idempotent)
+CREATE TABLE IF NOT EXISTS api_costs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     provider VARCHAR(50) NOT NULL,
     service VARCHAR(100) NOT NULL,
@@ -22,7 +22,7 @@ CREATE TABLE api_costs (
     )
 );
 
--- Indexes for api_costs table
-CREATE INDEX idx_api_costs_provider_service ON api_costs(provider, service);
-CREATE INDEX idx_api_costs_valid_from ON api_costs(valid_from DESC);
-CREATE INDEX idx_api_costs_active ON api_costs(valid_to) WHERE valid_to IS NULL;
+-- Indexes for api_costs table (idempotent)
+CREATE INDEX IF NOT EXISTS idx_api_costs_provider_service ON api_costs(provider, service);
+CREATE INDEX IF NOT EXISTS idx_api_costs_valid_from ON api_costs(valid_from DESC);
+CREATE INDEX IF NOT EXISTS idx_api_costs_active ON api_costs(valid_to) WHERE valid_to IS NULL;
