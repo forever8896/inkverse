@@ -19,19 +19,22 @@ import { Camera, Loader2 } from 'lucide-react';
 import { useLessonContext } from './LessonContext';
 import { isProcessing } from '@/lib/status-constants';
 
-// CreatureStageDisplay - Load immediately, but MonsterViewer inside is lazy
-const CreatureStageDisplay = dynamic(
-  () => import('@/components/CreatureStageDisplay').then(mod => ({ default: mod.CreatureStageDisplay })),
+// LeftPanelDisplay - Smart display component with priority hierarchy
+const LeftPanelDisplay = dynamic(
+  () =>
+    import('@/components/LeftPanelDisplay').then((mod) => ({
+      default: mod.LeftPanelDisplay,
+    })),
   {
     ssr: false,
     loading: () => (
       <div className="w-full h-full flex items-center justify-center">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-purple-300 text-sm">Loading creature display...</p>
+          <p className="text-purple-300 text-sm">Loading display...</p>
         </div>
       </div>
-    )
+    ),
   }
 );
 
@@ -66,11 +69,7 @@ export function LessonCreaturePanel() {
             className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
             title="View all lessons"
           >
-            <img
-              src="/logo.png"
-              alt="Monsters ink!"
-              className="h-[80px]"
-            />
+            <img src="/logo.png" alt="Monsters ink!" className="h-[80px]" />
           </Link>
 
           <div className="flex items-center space-x-3">
@@ -94,7 +93,7 @@ export function LessonCreaturePanel() {
           </div>
         </div>
 
-        {/* Creature Display */}
+        {/* Smart Display - Handles lesson images, generation status, and creatures */}
         <div
           ref={creatureDisplayRef}
           className={`relative flex-1 transition-all duration-300 ease-out ${
@@ -103,15 +102,7 @@ export function LessonCreaturePanel() {
               : 'opacity-100 scale-100 translate-y-0'
           }`}
         >
-          <CreatureStageDisplay
-            stage={targetStage}
-            imageUrl={asset.imageUrl}
-            modelUrl={asset.modelUrl}
-            isRevealing={isDisplayRevealing}
-            isLoading={effectiveLoading}
-            error={asset.error}
-            onRetry={handleRetry}
-          />
+          <LeftPanelDisplay />
         </div>
       </motion.div>
 
@@ -144,8 +135,12 @@ function GenerationNotification({ isVisible }: { isVisible: boolean }) {
           <div className="absolute inset-0 w-3 h-3 bg-green-500 rounded-full animate-ping opacity-75"></div>
         </div>
         <div className="flex-1">
-          <p className="text-sm font-medium text-white">Creating your unique monster...</p>
-          <p className="text-xs text-slate-400">Standby, it will be ready soon.</p>
+          <p className="text-sm font-medium text-white">
+            Creating your unique monster...
+          </p>
+          <p className="text-xs text-slate-400">
+            Standby, it will be ready soon.
+          </p>
         </div>
       </div>
     </div>
