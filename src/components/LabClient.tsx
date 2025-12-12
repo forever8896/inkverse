@@ -92,7 +92,8 @@ function LabLoadingScreen({ onComplete }: { onComplete: () => void }) {
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden"
       style={{
-        background: 'linear-gradient(180deg, #240B4D 0%, #1a0a3a 50%, #0f0520 100%)',
+        background:
+          'linear-gradient(180deg, #240B4D 0%, #1a0a3a 50%, #0f0520 100%)',
       }}
     >
       {/* Subtle vertical lines - deep violet theme */}
@@ -103,7 +104,8 @@ function LabLoadingScreen({ onComplete }: { onComplete: () => void }) {
             className="absolute w-px h-full"
             style={{
               left: `${(i + 1) * 6.25}%`,
-              background: 'linear-gradient(to bottom, transparent, rgba(79, 255, 176, 0.3), transparent)',
+              background:
+                'linear-gradient(to bottom, transparent, rgba(79, 255, 176, 0.3), transparent)',
             }}
             animate={{ opacity: [0.1, 0.3, 0.1] }}
             transition={{ duration: 3, repeat: Infinity, delay: i * 0.2 }}
@@ -132,7 +134,8 @@ function LabLoadingScreen({ onComplete }: { onComplete: () => void }) {
               left: '50%',
               top: '50%',
               transform: 'translate(-50%, -50%)',
-              background: 'radial-gradient(circle, rgba(79, 255, 176, 0.2) 0%, rgba(79, 255, 176, 0.05) 50%, transparent 70%)',
+              background:
+                'radial-gradient(circle, rgba(79, 255, 176, 0.2) 0%, rgba(79, 255, 176, 0.05) 50%, transparent 70%)',
             }}
           />
           <Image
@@ -273,7 +276,8 @@ export default function LabClient({ chapters }: { chapters: Lesson[] }) {
             transition={{ duration: 0.8, ease: 'easeOut' }}
             className="relative min-h-screen"
             style={{
-              background: 'linear-gradient(180deg, #240B4D 0%, #1a0a3a 50%, #0f0520 100%)',
+              background:
+                'linear-gradient(180deg, #240B4D 0%, #1a0a3a 50%, #0f0520 100%)',
             }}
           >
             <FloatingParticles />
@@ -317,12 +321,17 @@ export default function LabClient({ chapters }: { chapters: Lesson[] }) {
                           style={{
                             width: 300,
                             height: 300,
-                            background: 'radial-gradient(circle, rgba(79, 255, 176, 0.15) 0%, transparent 70%)',
+                            background:
+                              'radial-gradient(circle, rgba(79, 255, 176, 0.15) 0%, transparent 70%)',
                           }}
                         />
                         <motion.div
                           animate={{ scale: [1, 1.02, 1] }}
-                          transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                          transition={{
+                            duration: 3,
+                            repeat: Infinity,
+                            ease: 'easeInOut',
+                          }}
                         >
                           <Image
                             src="/creatures/first_awake.png"
@@ -331,7 +340,9 @@ export default function LabClient({ chapters }: { chapters: Lesson[] }) {
                             height={200}
                             className="object-contain relative z-10"
                             style={{
-                              filter: createHSLFilter(creatureColor, { includeGlow: true }),
+                              filter: createHSLFilter(creatureColor, {
+                                includeGlow: true,
+                              }),
                             }}
                           />
                         </motion.div>
@@ -363,7 +374,8 @@ export default function LabClient({ chapters }: { chapters: Lesson[] }) {
                   </h3>
 
                   {chapters.map((chapter, index) => {
-                    const isLocked = chapter.id > 1 && !chapters[index - 1]?.completed;
+                    const isLocked =
+                      chapter.id > 1 && !chapters[index - 1]?.completed;
                     const isCompleted = chapter.completed;
                     const isCurrent = chapter.id === nextLesson?.id;
 
@@ -396,9 +408,7 @@ export default function LabClient({ chapters }: { chapters: Lesson[] }) {
                           <Link href={`/lesson/${chapter.id}/1/1`}>
                             <div
                               className={`flex items-center gap-4 p-4 rounded-xl transition-all duration-300 hover:scale-[1.02] cursor-pointer ${
-                                isCurrent
-                                  ? 'ring-2 ring-[#4FFFB0]/50'
-                                  : ''
+                                isCurrent ? 'ring-2 ring-[#4FFFB0]/50' : ''
                               }`}
                               style={{
                                 background: isCompleted
@@ -467,7 +477,9 @@ export default function LabClient({ chapters }: { chapters: Lesson[] }) {
                       boxShadow: '0 0 30px rgba(30, 76, 221, 0.3)',
                     }}
                   >
-                    {nextLesson?.completed ? 'Review lessons' : 'Continue learning'}
+                    {nextLesson?.completed
+                      ? 'Review lessons'
+                      : 'Continue learning'}
                   </Link>
                 </motion.div>
 
@@ -478,12 +490,21 @@ export default function LabClient({ chapters }: { chapters: Lesson[] }) {
                   transition={{ delay: 0.8 }}
                   className="text-center mt-16"
                 >
-                  <p className="text-xs text-slate-500">
-                    Funded by{' '}
-                    <span style={{ color: '#E6007A' }} className="font-semibold">
-                      Polkadot
+                  <div className="flex items-center justify-center gap-2">
+                    <span
+                      className="text-xs text-slate-500 font-unbounded"
+                      style={{ fontFamily: 'var(--font-unbounded)' }}
+                    >
+                      Funded by
                     </span>
-                  </p>
+                    <Image
+                      src="/Polkadot_Logo_Pink-White.png"
+                      alt="Polkadot"
+                      width={66}
+                      height={22}
+                      className="object-contain -translate-y-0.5"
+                    />
+                  </div>
                 </motion.footer>
               </div>
             </div>

@@ -14,14 +14,16 @@ const OrganicShaderBackground = dynamic(
 
 // Subtle floating particles for ambient atmosphere
 function FloatingParticles() {
-  const [particles, setParticles] = useState<Array<{
-    id: number;
-    left: string;
-    size: number;
-    duration: number;
-    delay: number;
-    opacity: number;
-  }>>([]);
+  const [particles, setParticles] = useState<
+    Array<{
+      id: number;
+      left: string;
+      size: number;
+      duration: number;
+      delay: number;
+      opacity: number;
+    }>
+  >([]);
 
   useEffect(() => {
     // Generate particles only on client
@@ -61,11 +63,7 @@ function FloatingParticles() {
 }
 
 // The darkness transition and loading sequence
-function DarknessTransition({
-  onReady,
-}: {
-  onReady: () => void;
-}) {
+function DarknessTransition({ onReady }: { onReady: () => void }) {
   const [narrativeStage, setNarrativeStage] = useState(0);
   const [isLessonReady, setIsLessonReady] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
@@ -108,7 +106,11 @@ function DarknessTransition({
 
   // When lesson is ready and we've shown enough narrative, start exit animation
   useEffect(() => {
-    if (isLessonReady && narrativeStage >= narrativeMessages.length - 1 && !isExiting) {
+    if (
+      isLessonReady &&
+      narrativeStage >= narrativeMessages.length - 1 &&
+      !isExiting
+    ) {
       const exitTimer = setTimeout(() => {
         setIsExiting(true);
       }, 800);
@@ -140,7 +142,8 @@ function DarknessTransition({
       <div
         className="absolute w-[500px] h-[500px] rounded-full opacity-20"
         style={{
-          background: 'radial-gradient(circle, rgba(79, 255, 176, 0.15) 0%, transparent 70%)',
+          background:
+            'radial-gradient(circle, rgba(79, 255, 176, 0.15) 0%, transparent 70%)',
           filter: 'blur(60px)',
         }}
       />
@@ -151,7 +154,7 @@ function DarknessTransition({
         animate={{
           opacity: isExiting ? 0 : 1,
           scale: isExiting ? 1.1 : 1,
-          y: isExiting ? -20 : 0
+          y: isExiting ? -20 : 0,
         }}
         transition={{ duration: 0.5 }}
       >
@@ -186,7 +189,9 @@ function DarknessTransition({
                 boxShadow: '0 0 10px rgba(79, 255, 176, 0.5)',
               }}
               initial={{ width: '0%' }}
-              animate={{ width: `${((narrativeStage + 1) / narrativeMessages.length) * 100}%` }}
+              animate={{
+                width: `${((narrativeStage + 1) / narrativeMessages.length) * 100}%`,
+              }}
               transition={{ duration: 0.6, ease: 'easeOut' }}
             />
           </div>
@@ -234,7 +239,8 @@ export default function Home() {
       <div
         className="min-h-screen"
         style={{
-          background: 'linear-gradient(180deg, #240B4D 0%, #1a0a3a 50%, #0f0520 100%)',
+          background:
+            'linear-gradient(180deg, #240B4D 0%, #1a0a3a 50%, #0f0520 100%)',
         }}
       />
     );
@@ -320,12 +326,21 @@ export default function Home() {
             transition={{ delay: 0.8 }}
             className="absolute bottom-6 text-center"
           >
-            <p className="text-xs text-slate-500">
-              Funded by{' '}
-              <span style={{ color: '#E6007A' }} className="font-semibold">
-                Polkadot
+            <div className="flex items-center justify-center gap-2">
+              <span
+                className="text-xs text-slate-500 font-unbounded"
+                style={{ fontFamily: 'var(--font-unbounded)' }}
+              >
+                Funded by
               </span>
-            </p>
+              <Image
+                src="/Polkadot_Logo_Pink-White.png"
+                alt="Polkadot"
+                width={66}
+                height={22}
+                className="object-contain -translate-y-0.5"
+              />
+            </div>
           </motion.footer>
         </div>
       </div>
@@ -337,9 +352,7 @@ export default function Home() {
     <>
       {/* Darkness transition overlay */}
       <AnimatePresence>
-        {showDarkness && (
-          <DarknessTransition onReady={() => {}} />
-        )}
+        {showDarkness && <DarknessTransition onReady={() => {}} />}
       </AnimatePresence>
 
       {/* Main landing page */}
@@ -412,7 +425,8 @@ export default function Home() {
                 left: '50%',
                 bottom: '-8px',
                 transform: 'translateX(-42%)',
-                background: 'radial-gradient(ellipse, rgba(79, 255, 176, 0.15) 0%, transparent 70%)',
+                background:
+                  'radial-gradient(ellipse, rgba(79, 255, 176, 0.15) 0%, transparent 70%)',
               }}
             />
 
@@ -425,7 +439,15 @@ export default function Home() {
                 isShaking ? 'animate-egg-shake' : ''
               } ${isHovering && !isShaking ? 'scale-105' : 'scale-100'}`}
             >
-              <div className={isShaking ? '' : isHovering ? 'animate-egg-wiggle' : 'animate-egg-breathe'}>
+              <div
+                className={
+                  isShaking
+                    ? ''
+                    : isHovering
+                      ? 'animate-egg-wiggle'
+                      : 'animate-egg-breathe'
+                }
+              >
                 <Image
                   src="/creatures/first_egg.png"
                   alt="Click to begin your journey"
@@ -457,7 +479,8 @@ export default function Home() {
             className="font-pixel text-[10px] text-center max-w-lg tracking-wider leading-relaxed"
             style={{ color: '#94a3b8' }}
           >
-            They evolve as you code. Complete your ink! training and immortalize your companion on-chain.
+            They evolve as you code. Complete your ink! training and immortalize
+            your companion on-chain.
           </motion.p>
 
           {/* Footer */}
@@ -467,12 +490,21 @@ export default function Home() {
             transition={{ delay: 1.5 }}
             className="absolute bottom-6 text-center"
           >
-            <p className="text-xs text-slate-500">
-              Funded by{' '}
-              <span style={{ color: '#E6007A' }} className="font-semibold">
-                Polkadot
+            <div className="flex items-center justify-center gap-2">
+              <span
+                className="text-xs text-slate-500 font-unbounded"
+                style={{ fontFamily: 'var(--font-unbounded)' }}
+              >
+                Funded by
               </span>
-            </p>
+              <Image
+                src="/Polkadot_Logo_Pink-White.png"
+                alt="Polkadot"
+                width={66}
+                height={22}
+                className="object-contain -translate-y-0.5"
+              />
+            </div>
           </motion.footer>
         </div>
       </div>
