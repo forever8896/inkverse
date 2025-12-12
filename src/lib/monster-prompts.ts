@@ -68,6 +68,9 @@ export interface GenerateMonsterRequest {
   lessonId?: number;
   chapterId?: number;
   stepId?: number;
+
+  // Wallet Address for NFT minting
+  walletAddress?: string;
 }
 
 // Option Constants

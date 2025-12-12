@@ -113,6 +113,72 @@ export const ERROR_HANDLERS: Record<ErrorType, Omit<JobError, 'currentRetries' |
     suggestedRetryDelay: 0,
     maxRetries: 0
   },
+  // NFT Pre-flight errors
+  ipfs_unavailable: {
+    type: 'ipfs_unavailable',
+    userMessage: 'IPFS storage is temporarily unavailable. Please try again.',
+    retryable: false,
+    suggestedRetryDelay: 0,
+    maxRetries: 0
+  },
+  blockchain_unavailable: {
+    type: 'blockchain_unavailable',
+    userMessage: 'Blockchain is temporarily unavailable. Please try again.',
+    retryable: false,
+    suggestedRetryDelay: 0,
+    maxRetries: 0
+  },
+  // NFT IPFS errors
+  ipfs_upload_failed: {
+    type: 'ipfs_upload_failed',
+    userMessage: 'Having trouble uploading to IPFS. Retrying...',
+    retryable: true,
+    suggestedRetryDelay: 15,
+    maxRetries: 3
+  },
+  ipfs_rate_limit: {
+    type: 'ipfs_rate_limit',
+    userMessage: 'IPFS service is busy. Retrying...',
+    retryable: true,
+    suggestedRetryDelay: 30,
+    maxRetries: 5
+  },
+  pinata_invalid_credentials: {
+    type: 'pinata_invalid_credentials',
+    userMessage: 'IPFS configuration error. Please contact support.',
+    retryable: false,
+    suggestedRetryDelay: 0,
+    maxRetries: 0
+  },
+  // NFT Blockchain errors
+  blockchain_connection_failed: {
+    type: 'blockchain_connection_failed',
+    userMessage: 'Lost connection to blockchain. Retrying...',
+    retryable: true,
+    suggestedRetryDelay: 30,
+    maxRetries: 5
+  },
+  blockchain_tx_failed: {
+    type: 'blockchain_tx_failed',
+    userMessage: 'Blockchain transaction failed. Retrying...',
+    retryable: true,
+    suggestedRetryDelay: 60,
+    maxRetries: 3
+  },
+  blockchain_tx_timeout: {
+    type: 'blockchain_tx_timeout',
+    userMessage: 'Transaction is taking longer than expected. Retrying...',
+    retryable: true,
+    suggestedRetryDelay: 120,
+    maxRetries: 3
+  },
+  nft_collection_not_found: {
+    type: 'nft_collection_not_found',
+    userMessage: 'NFT collection not configured. Please contact support.',
+    retryable: false,
+    suggestedRetryDelay: 0,
+    maxRetries: 0
+  },
   unknown: {
     type: 'unknown',
     userMessage: "Something unexpected happened. We're looking into it - please try again in a few minutes.",
@@ -125,33 +191,48 @@ export const ERROR_HANDLERS: Record<ErrorType, Omit<JobError, 'currentRetries' |
 export type MonsterStyle = 'cute' | 'fierce' | 'mysterious' | 'playful' | 'cosmic';
 export type MonsterStage = 'egg' | 'young' | 'adult';
 export type GenerationType = 'full' | 'image_only';
-export type GenerationStatus = 
-  | 'pending' 
-  | 'generating_image' 
+export type GenerationStatus =
+  | 'pending'
+  | 'checking_prerequisites'
+  | 'prerequisites_failed'
+  | 'generating_image'
   | 'image_generation_failed'
   | 'image_generation_retrying'
-  | 'converting_3d' 
+  | 'converting_3d'
   | 'conversion_failed'
   | 'conversion_retrying'
-  | 'completed' 
+  | 'minting_nft'
+  | 'nft_minting_retrying'
+  | 'nft_minting_failed'
+  | 'completed'
   | 'failed_permanent'
   | 'waiting_on_storage';
 
-export type ErrorType = 
+export type ErrorType =
   | 'openai_rate_limit'
   | 'openai_invalid_api_key'
   | 'openai_insufficient_quota'
-  | 'openai_content_policy' 
+  | 'openai_content_policy'
   | 'openai_network_timeout'
   | 'openai_api_error'
   | 'fal_overloaded'
   | 'fal_invalid_api_key'
   | 'fal_insufficient_quota'
-  | 'fal_network_timeout' 
+  | 'fal_network_timeout'
   | 'fal_api_error'
   | 'database_error'
   | 's3_upload_error'
   | 's3_storage_unavailable'
+  // NFT errors
+  | 'ipfs_unavailable'
+  | 'blockchain_unavailable'
+  | 'ipfs_upload_failed'
+  | 'ipfs_rate_limit'
+  | 'pinata_invalid_credentials'
+  | 'blockchain_connection_failed'
+  | 'blockchain_tx_failed'
+  | 'blockchain_tx_timeout'
+  | 'nft_collection_not_found'
   | 'unknown';
 
 export interface JobError {
@@ -196,6 +277,16 @@ export interface GenerationJobData {
   costCalculationMethod: string;
   lastCostUpdate: Date;
   lastUrlRefresh: Date;
+  // NFT fields
+  nftItemId?: number;
+  nftCollectionId?: number;
+  nftMetadataCid?: string;
+  nftImageCid?: string;
+  nftModelCid?: string;
+  nftTxHash?: string;
+  nftBlockHash?: string;
+  nftMintedAt?: Date;
+  nftOwnerAddress?: string;
 }
 
 export interface CreateJobParams {
@@ -204,6 +295,7 @@ export interface CreateJobParams {
   style: MonsterStyle;
   stage: MonsterStage;
   generationType: GenerationType;
+  nftOwnerAddress?: string; // Wallet address for NFT minting (stored at job creation)
 }
 
 export interface UpdateJobParams {
@@ -230,6 +322,16 @@ export interface UpdateJobParams {
   costCalculationMethod?: string;
   lastCostUpdate?: Date;
   lastUrlRefresh?: Date;
+  // NFT fields
+  nftItemId?: number;
+  nftCollectionId?: number;
+  nftMetadataCid?: string;
+  nftImageCid?: string;
+  nftModelCid?: string;
+  nftTxHash?: string;
+  nftBlockHash?: string;
+  nftMintedAt?: Date;
+  nftOwnerAddress?: string;
 }
 
 // Interface for logging cost tracking data
@@ -303,6 +405,16 @@ export class GenerationJob {
 
   get lastCostUpdate(): Date { return this.data.lastCostUpdate; }
   get lastUrlRefresh(): Date { return this.data.lastUrlRefresh; }
+  // NFT getters
+  get nftItemId(): number | undefined { return this.data.nftItemId; }
+  get nftCollectionId(): number | undefined { return this.data.nftCollectionId; }
+  get nftMetadataCid(): string | undefined { return this.data.nftMetadataCid; }
+  get nftImageCid(): string | undefined { return this.data.nftImageCid; }
+  get nftModelCid(): string | undefined { return this.data.nftModelCid; }
+  get nftTxHash(): string | undefined { return this.data.nftTxHash; }
+  get nftBlockHash(): string | undefined { return this.data.nftBlockHash; }
+  get nftMintedAt(): Date | undefined { return this.data.nftMintedAt; }
+  get nftOwnerAddress(): string | undefined { return this.data.nftOwnerAddress; }
 
   /**
    * Create a new generation job in the database
@@ -324,8 +436,9 @@ export class GenerationJob {
           status,
           progress,
           total_cost,
-          retry_count
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+          retry_count,
+          nft_owner_address
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         RETURNING *
       `, [
         jobId,
@@ -338,49 +451,67 @@ export class GenerationJob {
         'pending',
         0,
         0.00,
-        0
+        0,
+        params.nftOwnerAddress || null
       ]);
 
       const row = result.rows[0];
       console.log(`[GenerationJob] Created job ${jobId} for user ${params.userId}`);
 
-      return new GenerationJob({
-        id: row.id,
-        userId: row.user_id,
-        workflowRunId: row.workflow_run_id,
-        prompt: row.prompt,
-        style: row.style,
-        stage: row.stage,
-        generationType: row.generation_type,
-        status: row.status,
-        progress: row.progress,
-        errorMessage: row.error_message,
-        userMessage: row.user_message,
-        imageS3Key: row.image_s3_key,
-        imageUrl: row.image_url,
-        glbS3Key: row.glb_s3_key,
-        glbUrl: row.glb_url,
-        totalCost: parseFloat(row.total_cost),
-        retryCount: row.retry_count || 0,
-        lastError: row.last_error ? GenerationJob.safeParseJSON(row.last_error) : undefined,
-        createdAt: row.created_at,
-        updatedAt: row.updated_at,
-        completedAt: row.completed_at,
-        // Token tracking fields
-        openaiTextTokens: row.openai_text_tokens || 0,
-        openaiImageTokens: row.openai_image_tokens || 0,
-        openaiTotalTokens: row.openai_total_tokens || 0,
-        openaiEstimatedCost: parseFloat(row.openai_estimated_cost) || 0.0,
-        falEstimatedCost: parseFloat(row.fal_estimated_cost) || 0.0,
-        costCalculationMethod: row.cost_calculation_method || 'token_based',
-        lastCostUpdate: row.last_cost_update || row.created_at,
-        lastUrlRefresh: row.last_url_refresh || row.updated_at || row.created_at,
-      });
+      return new GenerationJob(GenerationJob.mapRowToData(row));
 
     } catch (error) {
       console.error('[GenerationJob] Failed to create job:', error);
       throw error;
     }
+  }
+
+  /**
+   * Map database row to GenerationJobData
+   */
+  private static mapRowToData(row: any): GenerationJobData {
+    return {
+      id: row.id,
+      userId: row.user_id,
+      workflowRunId: row.workflow_run_id,
+      prompt: row.prompt,
+      style: row.style,
+      stage: row.stage,
+      generationType: row.generation_type,
+      status: row.status,
+      progress: row.progress,
+      errorMessage: row.error_message,
+      userMessage: row.user_message,
+      imageS3Key: row.image_s3_key,
+      imageUrl: row.image_url,
+      glbS3Key: row.glb_s3_key,
+      glbUrl: row.glb_url,
+      totalCost: parseFloat(row.total_cost),
+      retryCount: row.retry_count || 0,
+      lastError: row.last_error ? GenerationJob.safeParseJSON(row.last_error) : undefined,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+      completedAt: row.completed_at,
+      // Token tracking fields
+      openaiTextTokens: row.openai_text_tokens || 0,
+      openaiImageTokens: row.openai_image_tokens || 0,
+      openaiTotalTokens: row.openai_total_tokens || 0,
+      openaiEstimatedCost: parseFloat(row.openai_estimated_cost) || 0.0,
+      falEstimatedCost: parseFloat(row.fal_estimated_cost) || 0.0,
+      costCalculationMethod: row.cost_calculation_method || 'token_based',
+      lastCostUpdate: row.last_cost_update || row.created_at,
+      lastUrlRefresh: row.last_url_refresh || row.updated_at || row.created_at,
+      // NFT fields
+      nftItemId: row.nft_item_id ?? undefined,
+      nftCollectionId: row.nft_collection_id ?? undefined,
+      nftMetadataCid: row.nft_metadata_cid ?? undefined,
+      nftImageCid: row.nft_image_cid ?? undefined,
+      nftModelCid: row.nft_model_cid ?? undefined,
+      nftTxHash: row.nft_tx_hash ?? undefined,
+      nftBlockHash: row.nft_block_hash ?? undefined,
+      nftMintedAt: row.nft_minted_at ?? undefined,
+      nftOwnerAddress: row.nft_owner_address ?? undefined,
+    };
   }
 
   /**
@@ -445,8 +576,9 @@ export class GenerationJob {
           status,
           progress,
           total_cost,
-          retry_count
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+          retry_count,
+          nft_owner_address
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         RETURNING *
       `, [
         jobId,
@@ -459,41 +591,12 @@ export class GenerationJob {
         'pending',
         0,
         0.00,
-        0
+        0,
+        params.nftOwnerAddress || null
       ]);
 
       const row = jobResult.rows[0];
-      const job = new GenerationJob({
-        id: row.id,
-        userId: row.user_id,
-        workflowRunId: row.workflow_run_id,
-        prompt: row.prompt,
-        style: row.style,
-        stage: row.stage,
-        generationType: row.generation_type,
-        status: row.status,
-        progress: row.progress,
-        errorMessage: row.error_message,
-        userMessage: row.user_message,
-        imageS3Key: row.image_s3_key,
-        imageUrl: row.image_url,
-        glbS3Key: row.glb_s3_key,
-        glbUrl: row.glb_url,
-        totalCost: parseFloat(row.total_cost),
-        retryCount: row.retry_count || 0,
-        lastError: row.last_error ? GenerationJob.safeParseJSON(row.last_error) : undefined,
-        createdAt: row.created_at,
-        updatedAt: row.updated_at,
-        completedAt: row.completed_at,
-        openaiTextTokens: row.openai_text_tokens || 0,
-        openaiImageTokens: row.openai_image_tokens || 0,
-        openaiTotalTokens: row.openai_total_tokens || 0,
-        openaiEstimatedCost: parseFloat(row.openai_estimated_cost) || 0.0,
-        falEstimatedCost: parseFloat(row.fal_estimated_cost) || 0.0,
-        costCalculationMethod: row.cost_calculation_method || 'token_based',
-        lastCostUpdate: row.last_cost_update || row.created_at,
-        lastUrlRefresh: row.last_url_refresh || row.updated_at || row.created_at,
-      });
+      const job = new GenerationJob(GenerationJob.mapRowToData(row));
 
       // 3. Create or update trigger
       // Note: We include 'stage' column here for Fix #3
@@ -557,39 +660,7 @@ export class GenerationJob {
         return null;
       }
 
-      const row = result.rows[0];
-      return new GenerationJob({
-        id: row.id,
-        userId: row.user_id,
-        workflowRunId: row.workflow_run_id,
-        prompt: row.prompt,
-        style: row.style,
-        stage: row.stage,
-        generationType: row.generation_type,
-        status: row.status,
-        progress: row.progress,
-        errorMessage: row.error_message,
-        userMessage: row.user_message,
-        imageS3Key: row.image_s3_key,
-        imageUrl: row.image_url,
-        glbS3Key: row.glb_s3_key,
-        glbUrl: row.glb_url,
-        totalCost: parseFloat(row.total_cost),
-        retryCount: row.retry_count || 0,
-        lastError: row.last_error ? GenerationJob.safeParseJSON(row.last_error) : undefined,
-        createdAt: row.created_at,
-        updatedAt: row.updated_at,
-        completedAt: row.completed_at,
-        // Token tracking fields
-        openaiTextTokens: row.openai_text_tokens || 0,
-        openaiImageTokens: row.openai_image_tokens || 0,
-        openaiTotalTokens: row.openai_total_tokens || 0,
-        openaiEstimatedCost: parseFloat(row.openai_estimated_cost) || 0.0,
-        falEstimatedCost: parseFloat(row.fal_estimated_cost) || 0.0,
-        costCalculationMethod: row.cost_calculation_method || 'token_based',
-        lastCostUpdate: row.last_cost_update || row.created_at,
-        lastUrlRefresh: row.last_url_refresh || row.updated_at || row.created_at,
-      });
+      return new GenerationJob(GenerationJob.mapRowToData(result.rows[0]));
 
     } catch (error) {
       console.error(`[GenerationJob] Failed to find job ${jobId}:`, error);
@@ -601,52 +672,21 @@ export class GenerationJob {
    * Find generation jobs for a user
    */
   static async findByUserId(
-    userId: string, 
-    limit: number = 20, 
+    userId: string,
+    limit: number = 20,
     offset: number = 0
   ): Promise<GenerationJob[]> {
     const pool = getPool();
 
     try {
       const result = await pool.query(`
-        SELECT * FROM monster_generations 
-        WHERE user_id = $1 
-        ORDER BY created_at DESC 
+        SELECT * FROM monster_generations
+        WHERE user_id = $1
+        ORDER BY created_at DESC
         LIMIT $2 OFFSET $3
       `, [userId, limit, offset]);
 
-      return result.rows.map((row: any) => new GenerationJob({
-        id: row.id,
-        userId: row.user_id,
-        workflowRunId: row.workflow_run_id,
-        prompt: row.prompt,
-        style: row.style,
-        stage: row.stage,
-        generationType: row.generation_type,
-        status: row.status,
-        progress: row.progress,
-        errorMessage: row.error_message,
-        userMessage: row.user_message,
-        imageS3Key: row.image_s3_key,
-        imageUrl: row.image_url,
-        glbS3Key: row.glb_s3_key,
-        glbUrl: row.glb_url,
-        totalCost: parseFloat(row.total_cost),
-        retryCount: row.retry_count || 0,
-        lastError: row.last_error ? GenerationJob.safeParseJSON(row.last_error) : undefined,
-        createdAt: row.created_at,
-        updatedAt: row.updated_at,
-        completedAt: row.completed_at,
-        // Token tracking fields
-        openaiTextTokens: row.openai_text_tokens || 0,
-        openaiImageTokens: row.openai_image_tokens || 0,
-        openaiTotalTokens: row.openai_total_tokens || 0,
-        openaiEstimatedCost: parseFloat(row.openai_estimated_cost) || 0.0,
-        falEstimatedCost: parseFloat(row.fal_estimated_cost) || 0.0,
-        costCalculationMethod: row.cost_calculation_method || 'token_based',
-        lastCostUpdate: row.last_cost_update || row.created_at,
-        lastUrlRefresh: row.last_url_refresh || row.updated_at || row.created_at,
-      }));
+      return result.rows.map((row: any) => new GenerationJob(GenerationJob.mapRowToData(row)));
 
     } catch (error) {
       console.error(`[GenerationJob] Failed to find jobs for user ${userId}:`, error);
@@ -797,6 +837,61 @@ export class GenerationJob {
         updates.push(`last_url_refresh = $${paramIndex++}`);
         values.push(params.lastUrlRefresh);
         this.data.lastUrlRefresh = params.lastUrlRefresh;
+      }
+
+      // NFT fields
+      if (params.nftItemId !== undefined) {
+        updates.push(`nft_item_id = $${paramIndex++}`);
+        values.push(params.nftItemId);
+        this.data.nftItemId = params.nftItemId;
+      }
+
+      if (params.nftCollectionId !== undefined) {
+        updates.push(`nft_collection_id = $${paramIndex++}`);
+        values.push(params.nftCollectionId);
+        this.data.nftCollectionId = params.nftCollectionId;
+      }
+
+      if (params.nftMetadataCid !== undefined) {
+        updates.push(`nft_metadata_cid = $${paramIndex++}`);
+        values.push(params.nftMetadataCid);
+        this.data.nftMetadataCid = params.nftMetadataCid;
+      }
+
+      if (params.nftImageCid !== undefined) {
+        updates.push(`nft_image_cid = $${paramIndex++}`);
+        values.push(params.nftImageCid);
+        this.data.nftImageCid = params.nftImageCid;
+      }
+
+      if (params.nftModelCid !== undefined) {
+        updates.push(`nft_model_cid = $${paramIndex++}`);
+        values.push(params.nftModelCid);
+        this.data.nftModelCid = params.nftModelCid;
+      }
+
+      if (params.nftTxHash !== undefined) {
+        updates.push(`nft_tx_hash = $${paramIndex++}`);
+        values.push(params.nftTxHash);
+        this.data.nftTxHash = params.nftTxHash;
+      }
+
+      if (params.nftBlockHash !== undefined) {
+        updates.push(`nft_block_hash = $${paramIndex++}`);
+        values.push(params.nftBlockHash);
+        this.data.nftBlockHash = params.nftBlockHash;
+      }
+
+      if (params.nftMintedAt !== undefined) {
+        updates.push(`nft_minted_at = $${paramIndex++}`);
+        values.push(params.nftMintedAt);
+        this.data.nftMintedAt = params.nftMintedAt;
+      }
+
+      if (params.nftOwnerAddress !== undefined) {
+        updates.push(`nft_owner_address = $${paramIndex++}`);
+        values.push(params.nftOwnerAddress);
+        this.data.nftOwnerAddress = params.nftOwnerAddress;
       }
 
       if (updates.length === 0) {
@@ -1069,6 +1164,36 @@ export class GenerationJob {
       database_error: [config.userMessage],
       s3_upload_error: [config.userMessage],
       s3_storage_unavailable: [config.userMessage],
+      // NFT errors
+      ipfs_unavailable: [config.userMessage],
+      blockchain_unavailable: [config.userMessage],
+      ipfs_upload_failed: [
+        config.userMessage,
+        "Still having trouble uploading to IPFS. Retrying...",
+        "IPFS upload is taking longer than expected."
+      ],
+      ipfs_rate_limit: [
+        config.userMessage,
+        "IPFS service still busy. Retrying...",
+        "High demand for IPFS. Your upload is queued."
+      ],
+      pinata_invalid_credentials: [config.userMessage],
+      blockchain_connection_failed: [
+        config.userMessage,
+        "Still trying to connect to blockchain...",
+        "Blockchain connection unstable. Retrying..."
+      ],
+      blockchain_tx_failed: [
+        config.userMessage,
+        "Transaction failed. Retrying...",
+        "Blockchain is busy. Your mint is queued."
+      ],
+      blockchain_tx_timeout: [
+        config.userMessage,
+        "Transaction is still processing...",
+        "Blockchain is congested. Please wait..."
+      ],
+      nft_collection_not_found: [config.userMessage],
       unknown: [config.userMessage]
     };
 
@@ -1096,6 +1221,16 @@ export class GenerationJob {
       database_error: "We're having trouble saving your progress. Please contact support if this continues.",
       s3_upload_error: "Unable to store your files. Please try again.",
       s3_storage_unavailable: 'Cannot reach storage. Please start MinIO or restore S3 connectivity before retrying.',
+      // NFT errors
+      ipfs_unavailable: "IPFS storage is unavailable. NFT minting cannot proceed. Your monster is safe - try minting again later.",
+      blockchain_unavailable: "Blockchain is unavailable. NFT minting cannot proceed. Your monster is safe - try minting again later.",
+      ipfs_upload_failed: "Unable to upload to IPFS after multiple attempts. Your monster is safe - try minting again later.",
+      ipfs_rate_limit: "IPFS service is experiencing high demand. Your monster is safe - try minting again later.",
+      pinata_invalid_credentials: "IPFS configuration error. Please contact support.",
+      blockchain_connection_failed: "Unable to connect to blockchain. Your monster is safe - try minting again later.",
+      blockchain_tx_failed: "NFT minting transaction failed. Your monster is safe - try minting again later.",
+      blockchain_tx_timeout: "NFT minting transaction timed out. Check your wallet - the mint may have succeeded.",
+      nft_collection_not_found: "NFT collection not configured. Please contact support.",
       unknown: "Something unexpected went wrong. Please try again or contact support if this continues."
     };
 
@@ -1149,7 +1284,7 @@ export class GenerationJob {
     try {
       // Use UPDATE with WHERE to atomically check and update status
       const result = await pool.query(`
-        UPDATE monster_generations 
+        UPDATE monster_generations
         SET status = 'generating_image', progress = 5, updated_at = NOW()
         WHERE id = $1 AND status = 'pending'
         RETURNING *
@@ -1159,39 +1294,7 @@ export class GenerationJob {
         return null; // Job already started or not found
       }
 
-      const row = result.rows[0];
-      return new GenerationJob({
-        id: row.id,
-        userId: row.user_id,
-        workflowRunId: row.workflow_run_id,
-        prompt: row.prompt,
-        style: row.style,
-        stage: row.stage,
-        generationType: row.generation_type,
-        status: row.status,
-        progress: row.progress,
-        errorMessage: row.error_message,
-        userMessage: row.user_message,
-        imageS3Key: row.image_s3_key,
-        imageUrl: row.image_url,
-        glbS3Key: row.glb_s3_key,
-        glbUrl: row.glb_url,
-        totalCost: parseFloat(row.total_cost),
-        retryCount: row.retry_count || 0,
-        lastError: row.last_error ? GenerationJob.safeParseJSON(row.last_error) : undefined,
-        createdAt: row.created_at,
-        updatedAt: row.updated_at,
-        completedAt: row.completed_at,
-        // Token tracking fields
-        openaiTextTokens: row.openai_text_tokens || 0,
-        openaiImageTokens: row.openai_image_tokens || 0,
-        openaiTotalTokens: row.openai_total_tokens || 0,
-        openaiEstimatedCost: parseFloat(row.openai_estimated_cost) || 0.0,
-        falEstimatedCost: parseFloat(row.fal_estimated_cost) || 0.0,
-        costCalculationMethod: row.cost_calculation_method || 'token_based',
-        lastCostUpdate: row.last_cost_update || row.created_at,
-        lastUrlRefresh: row.last_url_refresh || row.updated_at || row.created_at,
-      });
+      return new GenerationJob(GenerationJob.mapRowToData(result.rows[0]));
 
     } catch (error) {
       console.error(`[GenerationJob] Failed to atomically start job ${jobId}:`, error);
@@ -1297,6 +1400,16 @@ export class GenerationJob {
       costCalculationMethod: this.data.costCalculationMethod,
       lastCostUpdate: this.data.lastCostUpdate,
       lastUrlRefresh: this.data.lastUrlRefresh,
+      // NFT fields
+      nftItemId: this.data.nftItemId,
+      nftCollectionId: this.data.nftCollectionId,
+      nftMetadataCid: this.data.nftMetadataCid,
+      nftImageCid: this.data.nftImageCid,
+      nftModelCid: this.data.nftModelCid,
+      nftTxHash: this.data.nftTxHash,
+      nftBlockHash: this.data.nftBlockHash,
+      nftMintedAt: this.data.nftMintedAt,
+      nftOwnerAddress: this.data.nftOwnerAddress,
     };
   }
 
@@ -1320,37 +1433,7 @@ export class GenerationJob {
         LIMIT 20
       `);
 
-      return result.rows.map(row => new GenerationJob({
-        id: row.id,
-        userId: row.user_id,
-        workflowRunId: row.workflow_run_id,
-        prompt: row.prompt,
-        style: row.style,
-        stage: row.stage,
-        generationType: row.generation_type,
-        status: row.status,
-        progress: row.progress,
-        errorMessage: row.error_message,
-        userMessage: row.user_message,
-        imageS3Key: row.image_s3_key,
-        imageUrl: row.image_url,
-        glbS3Key: row.glb_s3_key,
-        glbUrl: row.glb_url,
-        totalCost: row.total_cost,
-        retryCount: row.retry_count,
-        lastError: GenerationJob.safeParseJSON(row.last_error),
-        createdAt: row.created_at,
-        updatedAt: row.updated_at,
-        completedAt: row.completed_at,
-        openaiTextTokens: row.openai_text_tokens || 0,
-        openaiImageTokens: row.openai_image_tokens || 0,
-        openaiTotalTokens: row.openai_total_tokens || 0,
-        openaiEstimatedCost: row.openai_estimated_cost || 0,
-        falEstimatedCost: row.fal_estimated_cost || 0,
-        costCalculationMethod: row.cost_calculation_method || 'token_based',
-        lastCostUpdate: row.last_cost_update || new Date(),
-        lastUrlRefresh: row.last_url_refresh || row.updated_at || new Date(),
-      }));
+      return result.rows.map((row: any) => new GenerationJob(GenerationJob.mapRowToData(row)));
 
     } catch (error) {
       console.error('[GenerationJob] Failed to find resumable jobs:', error);
@@ -1405,10 +1488,13 @@ export class GenerationJob {
 
     const statusFilter = params.status || [
       'pending',
+      'checking_prerequisites',
       'generating_image',
       'converting_3d',
+      'minting_nft',
       'image_generation_retrying',
-      'conversion_retrying'
+      'conversion_retrying',
+      'nft_minting_retrying'
     ];
 
     try {
@@ -1423,38 +1509,7 @@ export class GenerationJob {
         return null;
       }
 
-      const row = result.rows[0];
-      return new GenerationJob({
-        id: row.id,
-        userId: row.user_id,
-        workflowRunId: row.workflow_run_id,
-        prompt: row.prompt,
-        style: row.style,
-        stage: row.stage,
-        generationType: row.generation_type,
-        status: row.status,
-        progress: row.progress,
-        errorMessage: row.error_message,
-        userMessage: row.user_message,
-        imageS3Key: row.image_s3_key,
-        imageUrl: row.image_url,
-        glbS3Key: row.glb_s3_key,
-        glbUrl: row.glb_url,
-        totalCost: parseFloat(row.total_cost),
-        retryCount: row.retry_count || 0,
-        lastError: row.last_error ? GenerationJob.safeParseJSON(row.last_error) : undefined,
-        createdAt: row.created_at,
-        updatedAt: row.updated_at,
-        completedAt: row.completed_at,
-        openaiTextTokens: row.openai_text_tokens || 0,
-        openaiImageTokens: row.openai_image_tokens || 0,
-        openaiTotalTokens: row.openai_total_tokens || 0,
-        openaiEstimatedCost: parseFloat(row.openai_estimated_cost) || 0.0,
-        falEstimatedCost: parseFloat(row.fal_estimated_cost) || 0.0,
-        costCalculationMethod: row.cost_calculation_method || 'token_based',
-        lastCostUpdate: row.last_cost_update || row.created_at,
-        lastUrlRefresh: row.last_url_refresh || row.updated_at || row.created_at,
-      });
+      return new GenerationJob(GenerationJob.mapRowToData(result.rows[0]));
 
     } catch (error) {
       console.error(`[GenerationJob] Failed to find active job for user ${params.userId}:`, error);

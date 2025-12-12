@@ -79,8 +79,18 @@ export async function GET(
         const run = await getRun(job.workflowRunId);
         workflowStatus = await run.status;
         isProcessing = workflowStatus === 'running';
-      } catch (error) {
-        console.error(`❌ [API] Failed to get workflow status:`, error);
+      } catch (error: any) {
+        // WorkflowRunNotFoundError is expected for completed/old jobs - Vercel cleans them up
+        if (error?.name === 'WorkflowRunNotFoundError' || error?.message?.includes('not found')) {
+          // Only log at debug level for completed jobs
+          if (job.status === 'completed' || job.status === 'failed_permanent') {
+            // Expected - workflow run was cleaned up after completion
+          } else {
+            console.warn(`⚠️ [API] Workflow run ${job.workflowRunId} not found for active job ${jobId}`);
+          }
+        } else {
+          console.error(`❌ [API] Failed to get workflow status:`, error);
+        }
       }
     }
 

@@ -25,16 +25,21 @@ interface UseMonsterAssetReturn {
   // Resume indicator - true when reconnecting to an existing job
   wasResumed: boolean;
 
+  // Wallet requirement state
+  walletRequired: boolean; // True if generation was blocked due to missing wallet
+
   // Actions
-  triggerGeneration: (chapterId: number, stepId: number, stage?: 'young' | 'adult', force?: boolean) => Promise<void>;
+  triggerGeneration: (chapterId: number, stepId: number, stage?: 'young' | 'adult', force?: boolean, walletAddress?: string) => Promise<void>;
   refreshAssets: () => Promise<void>;
   forceRefresh: () => Promise<void>;
+  clearWalletRequired: () => void; // Clear the walletRequired flag
 }
 
 export function useMonsterAsset(userId: string | undefined, lessonId: number, currentStage?: MonsterStage): UseMonsterAssetReturn {
   const [jobId, setJobId] = useState<string | null>(null);
   const [isLoadingInitialState, setIsLoadingInitialState] = useState(true);
   const [wasResumed, setWasResumed] = useState(false);
+  const [walletRequired, setWalletRequired] = useState(false);
 
   // Refs for throttling and locking
   const localTriggerPending = useRef<Set<string>>(new Set());
@@ -136,31 +141,32 @@ export function useMonsterAsset(userId: string | undefined, lessonId: number, cu
     };
   }, [jobId, job?.status, startPolling, stopPolling]);
 
-  const triggerGeneration = useCallback(async (chapterId: number, stepId: number, stage: 'young' | 'adult' = 'young', force: boolean = false) => {
+  const triggerGeneration = useCallback(async (chapterId: number, stepId: number, stage: 'young' | 'adult' = 'young', force: boolean = false, walletAddress?: string) => {
     if (!userId) return;
-    
+
     const triggerKey = `${lessonId}-${chapterId}-${stepId}`;
     if (localTriggerPending.current.has(triggerKey) && !force) return;
-    
+
     localTriggerPending.current.add(triggerKey);
 
     try {
       // Atomic creation/check handled by the API
       const randomMonster = generateRandomMonsterRequest();
-      
+
       const generateRes = await fetch('/api/generate-monster', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...randomMonster,
-          stage: stage, 
+          stage: stage,
           generationType: 'full',
           lessonId,
           chapterId,
-          stepId
+          stepId,
+          walletAddress, // Pass wallet address for NFT minting
         })
       });
-      
+
       const generateData = await generateRes.json();
 
       if (!generateRes.ok) {
@@ -170,9 +176,19 @@ export function useMonsterAsset(userId: string | undefined, lessonId: number, cu
           return;
         }
 
+        // Check if wallet is required but not provided
+        if (generateData.code === 'WALLET_REQUIRED' || generateData.code === 'INVALID_WALLET_ADDRESS') {
+          console.log('[useMonsterAsset] Wallet required for generation');
+          setWalletRequired(true);
+          return; // Don't throw - let UI handle wallet connection
+        }
+
         console.error('[useMonsterAsset] Generation failed:', generateData.error);
         throw new Error(generateData.error || 'Generation failed');
       }
+
+      // Clear wallet required flag on success
+      setWalletRequired(false);
 
       const newJobId = generateData.jobId;
 
@@ -198,6 +214,10 @@ export function useMonsterAsset(userId: string | undefined, lessonId: number, cu
     }
   }, [userId, lessonId, fetchJobStatus, startPolling]);
 
+  const clearWalletRequired = useCallback(() => {
+    setWalletRequired(false);
+  }, []);
+
   return {
     jobId,
     status: job?.status || null,
@@ -212,9 +232,11 @@ export function useMonsterAsset(userId: string | undefined, lessonId: number, cu
     isModelReady: !!job?.glbUrl,
     isLoadingInitialState,
     wasResumed,
+    walletRequired,
 
     triggerGeneration,
     refreshAssets,
-    forceRefresh
+    forceRefresh,
+    clearWalletRequired,
   };
 }

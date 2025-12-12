@@ -2,15 +2,18 @@
 
 /**
  * Main Monster Generation Workflow
- * Orchestrates the complete pipeline: storage check → image generation → 3D conversion → completion
+ * Orchestrates the complete pipeline:
+ *   prerequisites → storage → image → 3D → NFT minting → completion
  *
  * This workflow is durable and survives Vercel function timeouts through event sourcing.
  * Each step is automatically retried on failure with proper error handling.
  */
 
+import { checkNFTPrerequisites } from './steps/check-nft-prerequisites';
 import { checkStorage } from './steps/check-storage';
 import { generateImage, type ImageGenerationResult } from './steps/generate-image';
 import { convert3D, type Conversion3DResult } from './steps/convert-3d';
+import { mintNFT, type MintNFTResult } from './steps/mint-nft';
 import { markComplete, type CompleteJobResult } from './steps/mark-complete';
 import { type GenerationType } from '@/lib/generation-job';
 
@@ -29,6 +32,10 @@ export interface GenerateMonsterResult {
   glbUrl?: string;
   totalCost: number;
   completedAt: Date;
+  // NFT fields
+  nftItemId?: number;
+  nftCollectionId?: number;
+  nftTxHash?: string;
 }
 
 /**
@@ -45,6 +52,10 @@ export async function generateMonster(
 ): Promise<GenerateMonsterResult> {
   const { jobId, userId, prompt, generationType } = input;
 
+  // Step 0: Check NFT prerequisites (IPFS, blockchain, platform balance)
+  // Fail fast if NFT services are unavailable before expensive operations
+  await checkNFTPrerequisites(jobId);
+
   // Step 1: Check S3 storage availability
   // This is a pre-flight check to fail fast if storage is down
   await checkStorage(jobId);
@@ -60,7 +71,11 @@ export async function generateMonster(
     glbResult = await convert3D(jobId, imageResult.imageS3Key, userId);
   }
 
-  // Step 4: Mark job as complete in database
+  // Step 4: Mint NFT (upload to IPFS + blockchain mint)
+  // Single responsibility: only handles IPFS and minting, not completion
+  const nftResult: MintNFTResult = await mintNFT(jobId);
+
+  // Step 5: Mark job as complete in database
   const completeResult: CompleteJobResult = await markComplete(
     jobId,
     imageResult.imageS3Key,
@@ -77,6 +92,10 @@ export async function generateMonster(
     glbS3Key: glbResult?.glbS3Key,
     glbUrl: glbResult?.glbUrl,
     totalCost: completeResult.totalCost,
-    completedAt: completeResult.completedAt
+    completedAt: completeResult.completedAt,
+    // NFT fields
+    nftItemId: nftResult.nftItemId,
+    nftCollectionId: nftResult.nftCollectionId,
+    nftTxHash: nftResult.txHash,
   };
 }

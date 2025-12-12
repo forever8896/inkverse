@@ -9,6 +9,7 @@ import { GenerationJob } from '@/lib/generation-job';
 import { auth } from '@/lib/auth';
 import { RATE_LIMITS } from '@/config/constants';
 import { generatePromptFromStructuredData, type GenerateMonsterRequest } from '@/lib/monster-prompts';
+import { NFTsPalletService } from '@/services/nfts-pallet-service';
 
 export interface GenerateMonsterResponse {
   success: boolean;
@@ -38,6 +39,31 @@ export async function POST(request: NextRequest) {
     } catch (error) {
       return NextResponse.json(
         { success: false, error: 'Invalid JSON in request body' },
+        { status: 400 }
+      );
+    }
+
+    // Validate wallet address for NFT minting
+    const walletAddress = body.walletAddress;
+    if (!walletAddress) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Please connect your Polkadot wallet to generate a monster',
+          code: 'WALLET_REQUIRED'
+        },
+        { status: 400 }
+      );
+    }
+
+    // Validate SS58 address format
+    if (!(await NFTsPalletService.validateSS58Address(walletAddress))) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Invalid wallet address format. Please reconnect your wallet.',
+          code: 'INVALID_WALLET_ADDRESS'
+        },
         { status: 400 }
       );
     }
@@ -329,6 +355,8 @@ export async function POST(request: NextRequest) {
     } : undefined;
 
     // Create the generation job
+    // FIX #4: Store wallet address at job creation time (not at mint time)
+    // This ensures security - we use the wallet from when the job was created
     let job;
     try {
       job = await GenerationJob.createWithTrigger({
@@ -337,6 +365,7 @@ export async function POST(request: NextRequest) {
         style: body.style,
         stage: body.stage,
         generationType,
+        nftOwnerAddress: walletAddress,
       }, lessonContext);
     } catch (error: any) {
       // Handle race condition (unique constraint violation)
@@ -458,8 +487,10 @@ export async function GET() {
       // Legacy fields
       style: '(optional) cute | fierce | mysterious | playful | cosmic - defaults to cute',
       stage: 'egg | young | adult',
+      // NFT minting
+      walletAddress: '(required) SS58 Polkadot wallet address for NFT ownership',
     },
-    note: 'AI prompt is generated server-side from structured data for security',
+    note: 'AI prompt is generated server-side from structured data for security. Wallet address is required for NFT minting.',
     authentication: 'Required (Better Auth session)',
     rateLimit: `Maximum ${RATE_LIMITS.MAX_ACTIVE_JOBS_PER_USER} active jobs per user`,
   });

@@ -43,6 +43,8 @@ export function getRetryStatus(stepName: string): GenerationStatus {
       return 'image_generation_retrying';
     case 'convert3D':
       return 'conversion_retrying';
+    case 'mintNFT':
+      return 'nft_minting_retrying';
     default:
       return 'image_generation_retrying';
   }
@@ -57,6 +59,10 @@ export function getFailedStatus(stepName: string): GenerationStatus {
       return 'image_generation_failed';
     case 'convert3D':
       return 'conversion_failed';
+    case 'mintNFT':
+      return 'nft_minting_failed';
+    case 'checkNFTPrerequisites':
+      return 'prerequisites_failed';
     default:
       return 'failed_permanent';
   }
