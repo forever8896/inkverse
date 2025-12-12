@@ -9,12 +9,22 @@ const nextConfig: NextConfig = {
         protocol: 'http',
         hostname: 'localhost',
         port: '9000',
-        pathname: '/monsters-dev/**',
+        pathname: '/**',
       },
       {
         // Prod: Cloudflare R2
         protocol: 'https',
         hostname: '*.r2.cloudflarestorage.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.amazonaws.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.fal.media',
         pathname: '/**',
       },
     ],
