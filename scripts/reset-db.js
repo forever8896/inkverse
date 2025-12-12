@@ -28,16 +28,28 @@ async function resetDatabase() {
     console.log('🗑️  Dropping all tables...\n');
 
     // Drop tables in reverse order of dependencies
+    // IMPORTANT: Keep this list in sync with all migrations!
     const dropStatements = [
+      // Lesson progress tables (from migration 006)
+      'DROP TABLE IF EXISTS lesson_generation_triggers CASCADE;',
+      'DROP TABLE IF EXISTS user_step_progress CASCADE;',
+      'DROP TABLE IF EXISTS user_chapter_progress CASCADE;',
+      'DROP TABLE IF EXISTS user_lesson_progress CASCADE;',
+      // Monster generations (from migration 004)
       'DROP TABLE IF EXISTS monster_generations CASCADE;',
+      // API costs (from migration 005)
       'DROP TABLE IF EXISTS api_costs CASCADE;',
+      // Auth tables (from migrations 000-003)
       'DROP TABLE IF EXISTS verification CASCADE;',
       'DROP TABLE IF EXISTS account CASCADE;',
       'DROP TABLE IF EXISTS session CASCADE;',
       'DROP TABLE IF EXISTS "user" CASCADE;',
+      // Custom enum types (from migration 004)
       'DROP TYPE IF EXISTS generation_status CASCADE;',
+      'DROP TYPE IF EXISTS generation_type CASCADE;',
       'DROP TYPE IF EXISTS monster_stage CASCADE;',
       'DROP TYPE IF EXISTS monster_style CASCADE;',
+      // Functions (from migration 004)
       'DROP FUNCTION IF EXISTS update_updated_at_column() CASCADE;',
     ];
 
