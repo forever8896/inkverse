@@ -38,6 +38,7 @@ export class NFTMetadataService {
   private pinata: PinataSDK;
   private s3Service: S3Service;
   private gateway: string;
+  private gatewayKey: string | null;
 
   private constructor() {
     if (!process.env.PINATA_JWT) {
@@ -53,6 +54,7 @@ export class NFTMetadataService {
     });
     this.s3Service = S3Service.getInstance();
     this.gateway = process.env.PINATA_GATEWAY;
+    this.gatewayKey = process.env.PINATA_GATEWAY_KEY || null;
   }
 
   static getInstance(): NFTMetadataService {
@@ -167,9 +169,13 @@ export class NFTMetadataService {
       const testData = { test: true, timestamp: Date.now() };
       const upload = await this.pinata.upload.public.json(testData);
 
-      // Try to retrieve it
+      // Try to retrieve it via dedicated gateway (with auth if configured)
       const url = `https://${this.gateway}/ipfs/${upload.cid}`;
-      const response = await fetch(url, { method: 'HEAD' });
+      const headers: HeadersInit = {};
+      if (this.gatewayKey) {
+        headers['x-pinata-gateway-token'] = this.gatewayKey;
+      }
+      const response = await fetch(url, { method: 'HEAD', headers });
 
       if (response.ok) {
         return { ok: true };
