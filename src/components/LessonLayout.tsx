@@ -52,12 +52,6 @@ const WalletProviders = dynamic(
     loading: () => (
       <div className="min-h-screen relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-slate-900 via-[#1a0a2e] to-slate-950" />
-        <div className="relative z-10 container mx-auto px-4 py-8">
-          <div className="text-center text-white">
-            <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-            <p>Initializing...</p>
-          </div>
-        </div>
       </div>
     )
   }
@@ -235,14 +229,8 @@ export default function LessonLayout({ lesson, initialChapter, initialStep }: Le
 function LessonLayoutLoading() {
   return (
     <div className="min-h-screen relative overflow-hidden">
-      {/* Static gradient fallback - no JS required */}
+      {/* Silent loading - just the background for seamless transition */}
       <div className="absolute inset-0 bg-gradient-to-b from-slate-900 via-[#1a0a2e] to-slate-950" />
-      <div className="relative z-10 container mx-auto px-4 py-8">
-        <div className="text-center text-white">
-          <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p>Loading lesson...</p>
-        </div>
-      </div>
     </div>
   );
 }

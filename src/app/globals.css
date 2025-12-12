@@ -772,3 +772,86 @@ h6 {
 .animate-gradient-shift-reverse {
   animation: gradient-shift-reverse 25s ease-in-out infinite;
 }
+
+/* ============================================
+   ENHANCED LOGO & EGG EFFECTS
+   ============================================ */
+
+/* Logo ambient glow animation */
+@keyframes logo-glow {
+  0%, 100% {
+    opacity: 0.7;
+    transform: scale(1.25);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.3);
+  }
+}
+
+.animate-logo-glow {
+  animation: logo-glow 6s ease-in-out infinite;
+}
+
+/* Shimmer effect for logo */
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 8s ease-in-out infinite;
+}
+
+/* Sparkle twinkle animation */
+@keyframes sparkle {
+  0%, 100% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-sparkle {
+  animation: sparkle 3s ease-in-out infinite;
+}
+
+/* Ambient glow beneath egg - subtle ground reflection */
+@keyframes egg-ambient-glow {
+  0%, 100% {
+    opacity: 0.6;
+    transform: translateX(-50%) scaleX(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: translateX(-50%) scaleX(1.1);
+  }
+}
+
+.animate-egg-ambient-glow {
+  animation: egg-ambient-glow 4s ease-in-out infinite;
+}
+
+/* Subtle egg wiggle on hover */
+@keyframes egg-wiggle {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-2deg);
+  }
+  75% {
+    transform: rotate(2deg);
+  }
+}
+
+.animate-egg-wiggle {
+  animation: egg-wiggle 0.4s ease-in-out infinite;
+}

@@ -10,6 +10,7 @@
  * - Complete lesson button
  */
 
+import { motion } from 'motion/react';
 import { useLessonContext } from './LessonContext';
 
 export function LessonNavigation() {
@@ -32,7 +33,12 @@ export function LessonNavigation() {
   const canProceed = !currentStepData?.validation || isValidated;
 
   return (
-    <div className="flex justify-between items-center flex-shrink-0">
+    <motion.div
+      className="flex justify-between items-center flex-shrink-0"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, delay: 0.4, ease: 'easeOut' }}
+    >
       {/* Previous Button */}
       <div className="relative group">
         <button
@@ -118,7 +124,7 @@ export function LessonNavigation() {
           onClick={nextStep}
         />
       )}
-    </div>
+    </motion.div>
   );
 }
 

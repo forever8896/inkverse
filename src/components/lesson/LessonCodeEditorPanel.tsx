@@ -10,6 +10,7 @@
  */
 
 import dynamic from 'next/dynamic';
+import { motion } from 'motion/react';
 import { useLessonContext } from './LessonContext';
 
 // Monaco Editor (~1MB) - Only load when code step is shown
@@ -46,12 +47,15 @@ export function LessonCodeEditorPanel() {
   }
 
   return (
-    <div
+    <motion.div
       className={`flex-1 flex flex-col min-h-0 mb-4 transition-all duration-500 ease-out ${
         isTransitioning
           ? 'opacity-0 translate-x-4'
           : 'opacity-100 translate-x-0'
       }`}
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, delay: 0.3, ease: 'easeOut' }}
     >
       {/* Editor Header */}
       <div className="p-3 flex-shrink-0">
@@ -105,7 +109,7 @@ export function LessonCodeEditorPanel() {
           />
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 

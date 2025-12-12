@@ -4,6 +4,13 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 import Image from 'next/image';
+import dynamic from 'next/dynamic';
+
+// Dynamic import for WebGL background (client-side only)
+const OrganicShaderBackground = dynamic(
+  () => import('@/components/OrganicShaderBackground'),
+  { ssr: false }
+);
 
 // Subtle floating particles for ambient atmosphere
 function FloatingParticles() {
@@ -61,11 +68,13 @@ function DarknessTransition({
 }) {
   const [narrativeStage, setNarrativeStage] = useState(0);
   const [isLessonReady, setIsLessonReady] = useState(false);
+  const [isExiting, setIsExiting] = useState(false);
   const router = useRouter();
 
   const narrativeMessages = [
     'Your creature stirs...',
     'A bond is forming...',
+    'Preparing your workspace...',
     'Ready to learn together.',
   ];
 
@@ -74,15 +83,15 @@ function DarknessTransition({
     // Prefetch the lesson route
     router.prefetch('/lesson/1/1/1');
 
-    // Give it time to prefetch, then mark as ready
+    // Give it time to prefetch heavy components (Monaco, WalletProviders, etc.)
     const prefetchTimer = setTimeout(() => {
       setIsLessonReady(true);
-    }, 2500); // Minimum time for narrative + prefetch
+    }, 6000); // Match narrative duration (4 messages × 1.5s)
 
     return () => clearTimeout(prefetchTimer);
   }, [router]);
 
-  // Progress through narrative messages
+  // Progress through narrative messages (slower for readability)
   useEffect(() => {
     const interval = setInterval(() => {
       setNarrativeStage((prev) => {
@@ -92,65 +101,97 @@ function DarknessTransition({
         }
         return prev + 1;
       });
-    }, 1000);
+    }, 1500); // Slower transitions for better readability
 
     return () => clearInterval(interval);
   }, [narrativeMessages.length]);
 
-  // When lesson is ready and we've shown enough narrative, navigate
+  // When lesson is ready and we've shown enough narrative, start exit animation
   useEffect(() => {
-    if (isLessonReady && narrativeStage >= narrativeMessages.length - 1) {
-      // Small delay after "Ready to learn together" before navigating
+    if (isLessonReady && narrativeStage >= narrativeMessages.length - 1 && !isExiting) {
+      const exitTimer = setTimeout(() => {
+        setIsExiting(true);
+      }, 800);
+      return () => clearTimeout(exitTimer);
+    }
+  }, [isLessonReady, narrativeStage, narrativeMessages.length, isExiting]);
+
+  // Navigate after exit animation completes
+  useEffect(() => {
+    if (isExiting) {
       const navTimer = setTimeout(() => {
         localStorage.setItem('monsters-ink-hatched', 'true');
         onReady();
         router.push('/lesson/1/1/1');
-      }, 800);
+      }, 600); // Match the exit animation duration
       return () => clearTimeout(navTimer);
     }
-  }, [isLessonReady, narrativeStage, narrativeMessages.length, router, onReady]);
+  }, [isExiting, router, onReady]);
 
   return (
     <motion.div
       className="fixed inset-0 z-50 flex items-center justify-center"
       style={{ background: '#0a0412' }}
       initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.8 }}
+      animate={{ opacity: isExiting ? 0 : 1 }}
+      transition={{ duration: isExiting ? 0.6 : 0.8 }}
     >
-      {/* Narrative text */}
-      <div className="text-center">
+      {/* Subtle ambient glow */}
+      <div
+        className="absolute w-[500px] h-[500px] rounded-full opacity-20"
+        style={{
+          background: 'radial-gradient(circle, rgba(79, 255, 176, 0.15) 0%, transparent 70%)',
+          filter: 'blur(60px)',
+        }}
+      />
+
+      {/* Narrative content */}
+      <motion.div
+        className="text-center relative z-10"
+        animate={{
+          opacity: isExiting ? 0 : 1,
+          scale: isExiting ? 1.1 : 1,
+          y: isExiting ? -20 : 0
+        }}
+        transition={{ duration: 0.5 }}
+      >
+        {/* Narrative text */}
         <AnimatePresence mode="wait">
           <motion.p
             key={narrativeStage}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.5 }}
-            className="text-lg font-pixel tracking-wider"
-            style={{ color: '#4FFFB0' }}
+            initial={{ opacity: 0, y: 15, filter: 'blur(4px)' }}
+            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+            exit={{ opacity: 0, y: -15, filter: 'blur(4px)' }}
+            transition={{ duration: 0.6, ease: 'easeOut' }}
+            className="text-sm md:text-base font-pixel tracking-widest px-8"
+            style={{
+              color: '#4FFFB0',
+              textShadow: '0 0 20px rgba(79, 255, 176, 0.5)',
+            }}
           >
             {narrativeMessages[narrativeStage]}
           </motion.p>
         </AnimatePresence>
 
-        {/* Subtle loading indicator */}
-        <motion.div
-          className="mt-8 w-32 h-0.5 mx-auto rounded-full overflow-hidden"
-          style={{ background: 'rgba(79, 255, 176, 0.1)' }}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-        >
-          <motion.div
-            className="h-full rounded-full"
-            style={{ background: '#4FFFB0' }}
-            initial={{ width: '0%' }}
-            animate={{ width: isLessonReady ? '100%' : '70%' }}
-            transition={{ duration: isLessonReady ? 0.3 : 2, ease: 'easeOut' }}
-          />
-        </motion.div>
-      </div>
+        {/* Progress bar */}
+        <div className="mt-10 w-48 mx-auto">
+          <div
+            className="h-1 rounded-full overflow-hidden"
+            style={{ background: 'rgba(79, 255, 176, 0.15)' }}
+          >
+            <motion.div
+              className="h-full rounded-full"
+              style={{
+                background: 'linear-gradient(90deg, #4FFFB0, #2dd4bf)',
+                boxShadow: '0 0 10px rgba(79, 255, 176, 0.5)',
+              }}
+              initial={{ width: '0%' }}
+              animate={{ width: `${((narrativeStage + 1) / narrativeMessages.length) * 100}%` }}
+              transition={{ duration: 0.6, ease: 'easeOut' }}
+            />
+          </div>
+        </div>
+      </motion.div>
     </motion.div>
   );
 }
@@ -202,12 +243,10 @@ export default function Home() {
   // Returning user view
   if (hasHatched) {
     return (
-      <div
-        className="min-h-screen overflow-hidden relative"
-        style={{
-          background: 'linear-gradient(180deg, #240B4D 0%, #1a0a3a 50%, #0f0520 100%)',
-        }}
-      >
+      <div className="min-h-screen overflow-hidden relative">
+        {/* WebGL organic background */}
+        <OrganicShaderBackground />
+
         <FloatingParticles />
 
         <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-6">
@@ -308,10 +347,10 @@ export default function Home() {
         className={`min-h-screen overflow-hidden relative transition-opacity duration-500 ${
           showDarkness ? 'opacity-0' : 'opacity-100'
         }`}
-        style={{
-          background: 'linear-gradient(180deg, #240B4D 0%, #1a0a3a 50%, #0f0520 100%)',
-        }}
       >
+        {/* WebGL organic background */}
+        <OrganicShaderBackground />
+
         {/* Floating particles */}
         <FloatingParticles />
 
@@ -335,15 +374,25 @@ export default function Home() {
           </motion.div>
 
           {/* Tagline */}
-          <motion.p
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4, duration: 0.6 }}
-            className="font-pixel text-[10px] md:text-xs mb-16 tracking-wider text-center"
-            style={{ color: '#4FFFB0' }}
+            className="mb-16 text-center"
           >
-            Every ink! master starts with an egg
-          </motion.p>
+            <p
+              className="font-pixel text-[10px] md:text-xs tracking-wider mb-2"
+              style={{ color: '#4FFFB0' }}
+            >
+              Inside this egg sleeps your future companion
+            </p>
+            <p
+              className="font-pixel text-[8px] md:text-[10px] tracking-wider"
+              style={{ color: '#94a3b8' }}
+            >
+              Together, you'll learn to code ink! smart contracts
+            </p>
+          </motion.div>
 
           {/* Egg */}
           <motion.div
@@ -356,16 +405,14 @@ export default function Home() {
             transition={{ delay: 0.6, duration: 0.6 }}
             className="relative mb-10"
           >
-            {/* Soft glow behind egg */}
+            {/* Ambient glow beneath egg */}
             <div
-              className="absolute rounded-full animate-egg-glow"
+              className="absolute w-48 h-16 rounded-[100%] animate-egg-ambient-glow"
               style={{
-                width: 350,
-                height: 350,
                 left: '50%',
-                top: '50%',
-                transform: 'translate(-50%, -50%)',
-                background: 'radial-gradient(circle, rgba(255, 218, 185, 0.2) 0%, rgba(255, 218, 185, 0.05) 40%, transparent 70%)',
+                bottom: '-8px',
+                transform: 'translateX(-42%)',
+                background: 'radial-gradient(ellipse, rgba(79, 255, 176, 0.15) 0%, transparent 70%)',
               }}
             />
 
@@ -378,18 +425,13 @@ export default function Home() {
                 isShaking ? 'animate-egg-shake' : ''
               } ${isHovering && !isShaking ? 'scale-105' : 'scale-100'}`}
             >
-              <div className={isShaking ? '' : 'animate-egg-breathe'}>
+              <div className={isShaking ? '' : isHovering ? 'animate-egg-wiggle' : 'animate-egg-breathe'}>
                 <Image
                   src="/creatures/first_egg.png"
                   alt="Click to begin your journey"
                   width={260}
                   height={260}
                   className="object-contain relative z-10 transition-all duration-300"
-                  style={{
-                    filter: isHovering
-                      ? 'drop-shadow(0 0 35px rgba(255, 218, 185, 0.5))'
-                      : 'drop-shadow(0 0 15px rgba(255, 218, 185, 0.25))',
-                  }}
                   priority
                 />
               </div>
@@ -401,10 +443,10 @@ export default function Home() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1, duration: 0.6 }}
-            className="text-sm mb-3"
-            style={{ color: isHovering ? '#FFDAB9' : '#64748b' }}
+            className="font-pixel text-xs mb-4 tracking-wider"
+            style={{ color: '#FFDAB9' }}
           >
-            {isHovering ? 'Click to awaken...' : 'Touch to awaken'}
+            Wake them up
           </motion.p>
 
           {/* Value prop */}
@@ -412,10 +454,10 @@ export default function Home() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1.2, duration: 0.6 }}
-            className="text-xs text-center max-w-sm"
-            style={{ color: '#475569' }}
+            className="font-pixel text-[10px] text-center max-w-lg tracking-wider leading-relaxed"
+            style={{ color: '#94a3b8' }}
           >
-            Master ink! smart contracts by evolving your creature
+            They evolve as you code. Complete your ink! training and immortalize your companion on-chain.
           </motion.p>
 
           {/* Footer */}

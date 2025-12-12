@@ -9,6 +9,7 @@
  * - Code editor toggle button
  */
 
+import { motion } from 'motion/react';
 import LessonContent from '@/components/LessonContent';
 import { useLessonContext } from './LessonContext';
 
@@ -24,12 +25,15 @@ export function LessonInstructionsPanel() {
   } = useLessonContext();
 
   return (
-    <div
+    <motion.div
       className={`p-6 flex flex-col overflow-hidden backdrop-blur-md bg-white/5 rounded-xl mb-4 transition-all duration-500 ease-out ${
         isTransitioning
           ? 'opacity-0 translate-x-4'
           : 'opacity-100 translate-x-0'
       } ${currentStepData?.code !== undefined && showCodeEditor ? 'flex-1 min-h-0' : 'flex-[2] min-h-0'}`}
+      initial={{ opacity: 0, y: -30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, delay: 0.2, ease: 'easeOut' }}
     >
       {/* Lesson Content */}
       {currentStepData && (
@@ -89,7 +93,7 @@ export function LessonInstructionsPanel() {
       {currentStepData?.hint && (
         <HintTooltip hint={currentStepData.hint} isVisible={showHint} />
       )}
-    </div>
+    </motion.div>
   );
 }
 

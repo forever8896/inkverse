@@ -14,6 +14,7 @@
 
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
+import { motion } from 'motion/react';
 import { Camera, Loader2 } from 'lucide-react';
 import { useLessonContext } from './LessonContext';
 import { isProcessing } from '@/lib/status-constants';
@@ -52,7 +53,12 @@ export function LessonCreaturePanel() {
   return (
     <div className="relative overflow-hidden transition-all duration-500 p-5 w-1/2">
       {/* Single bordered container for logo, button, and creature */}
-      <div className="w-full h-full rounded-xl border border-purple-500/30 bg-slate-900 flex flex-col overflow-hidden">
+      <motion.div
+        className="w-full h-full rounded-xl border border-purple-500/30 bg-slate-900 flex flex-col overflow-hidden"
+        initial={{ opacity: 0, x: -40 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.5, delay: 0.1, ease: 'easeOut' }}
+      >
         {/* Header: Logo and Snapshot Button */}
         <div className="flex justify-between items-start p-4 flex-shrink-0">
           <Link
@@ -107,7 +113,7 @@ export function LessonCreaturePanel() {
             onRetry={handleRetry}
           />
         </div>
-      </div>
+      </motion.div>
 
       {/* Generation Notification Toast */}
       <GenerationNotification
