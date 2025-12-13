@@ -9,10 +9,13 @@
  * Note: GitHubAuthModal is already a separate component and not included here.
  */
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Confetti from 'react-confetti';
 import { ConnectButton } from '@/components/web3/connect-button';
 import { MintCreatureNFT } from '@/components/MintCreatureNFT';
+import { signIn, useSession } from '@/lib/auth-client';
+import { Github, Loader2, Shield, Zap, BookOpen } from 'lucide-react';
 
 // ============================================================================
 // Types
@@ -22,6 +25,10 @@ interface ChapterCompleteModalProps {
   isOpen: boolean;
   chapterTitle: string;
   onContinue: () => void;
+  /** Whether authentication is required to continue (Chapter 1 of Lesson 1) */
+  requiresAuth?: boolean;
+  /** Whether user is currently authenticated */
+  isAuthenticated?: boolean;
 }
 
 interface LessonCompleteModalProps {
@@ -50,6 +57,10 @@ interface CompletionModalsProps {
     isOpen: boolean;
     title: string;
     onContinue: () => void;
+    /** Whether authentication is required to continue (Chapter 1 of Lesson 1) */
+    requiresAuth?: boolean;
+    /** Whether user is currently authenticated */
+    isAuthenticated?: boolean;
   };
   /** Lesson completion modal state */
   lessonComplete: {
@@ -78,9 +89,117 @@ function ChapterCompleteModal({
   isOpen,
   chapterTitle,
   onContinue,
+  requiresAuth = false,
+  isAuthenticated = true,
 }: ChapterCompleteModalProps) {
+  const [isLoading, setIsLoading] = useState(false);
+  const { data: session } = useSession();
+
+  // Auto-continue when user authenticates (session becomes available)
+  useEffect(() => {
+    if (requiresAuth && session?.user && isOpen) {
+      // User just authenticated, auto-continue to next chapter
+      onContinue();
+    }
+  }, [session?.user, requiresAuth, isOpen, onContinue]);
+
   if (!isOpen) return null;
 
+  // Determine if we should show auth prompt
+  const showAuthPrompt = requiresAuth && !isAuthenticated && !session?.user;
+
+  const handleGitHubSignIn = async () => {
+    setIsLoading(true);
+    try {
+      // Store pending chapter completion in localStorage before OAuth redirect
+      // This allows us to auto-continue after the page reloads post-auth
+      localStorage.setItem('pendingChapterComplete', 'true');
+
+      await signIn.social({
+        provider: 'github',
+        callbackURL: window.location.href, // Stay on current page after auth
+      });
+      // The signIn will redirect, so we don't need to handle success here
+    } catch (error) {
+      console.error('GitHub sign-in error:', error);
+      localStorage.removeItem('pendingChapterComplete');
+      setIsLoading(false);
+    }
+  };
+
+  // Auth-required variant for Chapter 1 unauthenticated users
+  if (showAuthPrompt) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+        <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl shadow-2xl p-10 flex flex-col items-center max-w-md border border-purple-500/30">
+          <div className="text-6xl mb-6 animate-bounce">🎉</div>
+          <h2 className="text-3xl font-bold text-white mb-3 text-center">
+            Chapter Complete!
+          </h2>
+          <p className="text-xl text-purple-300 mb-4 text-center font-semibold">
+            {chapterTitle}
+          </p>
+
+          {/* Auth required message */}
+          <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-4 mb-6 w-full">
+            <p className="text-slate-200 text-center text-sm leading-relaxed">
+              To <strong>save your progress</strong> and continue your journey, please sign in with GitHub.
+            </p>
+          </div>
+
+          {/* Benefits */}
+          <div className="w-full mb-6 space-y-3">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-purple-600/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                <BookOpen size={16} className="text-purple-400" />
+              </div>
+              <p className="text-slate-300 text-sm">Save your progress across sessions</p>
+            </div>
+
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-cyan-600/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Zap size={16} className="text-cyan-400" />
+              </div>
+              <p className="text-slate-300 text-sm">Unlock AI creature generation</p>
+            </div>
+
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-pink-600/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Shield size={16} className="text-pink-400" />
+              </div>
+              <p className="text-slate-300 text-sm">Mint your unique NFT on completion</p>
+            </div>
+          </div>
+
+          {/* GitHub Sign In Button */}
+          <button
+            onClick={handleGitHubSignIn}
+            disabled={isLoading}
+            className="w-full bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 disabled:from-slate-600 disabled:to-slate-600 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 flex items-center justify-center space-x-3 shadow-lg hover:shadow-xl hover:scale-105 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 size={20} className="animate-spin" />
+                <span>Connecting...</span>
+              </>
+            ) : (
+              <>
+                <Github size={20} />
+                <span>Continue with GitHub</span>
+              </>
+            )}
+          </button>
+
+          {/* Footer */}
+          <p className="mt-4 text-slate-500 text-xs text-center">
+            We only access basic profile information.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Standard authenticated variant
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
       <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl shadow-2xl p-10 flex flex-col items-center max-w-md border border-purple-500/30">
@@ -290,6 +409,8 @@ export function CompletionModals({
         isOpen={chapterComplete.isOpen}
         chapterTitle={chapterComplete.title}
         onContinue={chapterComplete.onContinue}
+        requiresAuth={chapterComplete.requiresAuth}
+        isAuthenticated={chapterComplete.isAuthenticated}
       />
 
       <LessonCompleteModal

@@ -69,6 +69,8 @@ interface LessonContextValue {
   showNFTMinting: boolean;
   setShowNFTMinting: (show: boolean) => void;
   moveToNextChapter: () => void;
+  /** Whether auth is required to continue from the current chapter completion modal */
+  chapterRequiresAuth: boolean;
 
   // Auth
   session: any;
@@ -162,6 +164,7 @@ export function LessonProvider({
   const [showChapterComplete, setShowChapterComplete] = useState(false);
   const [completedChapterTitle, setCompletedChapterTitle] = useState('');
   const [showNFTMinting, setShowNFTMinting] = useState(false);
+  const [chapterRequiresAuth, setChapterRequiresAuth] = useState(false);
 
   // -------------------------------------------------------------------------
   // UI State
@@ -327,14 +330,32 @@ export function LessonProvider({
   }, []);
 
   // -------------------------------------------------------------------------
-  // Check Auth Requirement
+  // Auto-continue after OAuth redirect (handles page reload after GitHub auth)
   // -------------------------------------------------------------------------
-  const checkAuthRequirement = useCallback(() => {
-    if (lesson?.id === 1 && currentStep === 3 && isValidated && !session?.user && !isAuthLoading) {
-      localStorage.setItem(`auth-flow-lesson-${lesson.id}-step`, currentStep.toString());
-      setTimeout(() => setShowAuthModal(true), 1000);
+  useEffect(() => {
+    // Only run on client side
+    if (typeof window === 'undefined') return;
+
+    const pendingComplete = localStorage.getItem('pendingChapterComplete');
+
+    // If there's a pending chapter completion AND user is now authenticated
+    if (pendingComplete && session?.user && !isAuthLoading) {
+      // Clear the flag first to prevent re-triggering
+      localStorage.removeItem('pendingChapterComplete');
+
+      // Auto-navigate to Chapter 2 (Chapter 1 is index 0, so we go to index 1)
+      // Only if we're still on Chapter 1 (lesson 1)
+      if (lesson?.id === 1 && currentChapter === 0) {
+        // Small delay to ensure smooth transition after page load
+        setTimeout(() => {
+          setCurrentChapter(1);
+          setCurrentStep(0);
+          // Update URL
+          window.history.replaceState(null, '', `/lesson/${lesson.id}/2/1`);
+        }, 100);
+      }
     }
-  }, [lesson?.id, currentStep, isValidated, session?.user, isAuthLoading]);
+  }, [session?.user, isAuthLoading, lesson?.id, currentChapter]);
 
   // -------------------------------------------------------------------------
   // Save Progress
@@ -392,8 +413,6 @@ export function LessonProvider({
             message: 'Your creature responds beautifully to the code!',
           });
         }
-
-        checkAuthRequirement();
       } else {
         setIsValidated(false);
         addToast({
@@ -409,10 +428,9 @@ export function LessonProvider({
         title: '✅ Step Complete!',
         message: 'Ready to move on to the next step.',
       });
-      checkAuthRequirement();
       return true;
     }
-  }, [currentStepData, currentChapterData, userCode, session?.user, addToast, triggerWithWallet, checkAuthRequirement]);
+  }, [currentStepData, currentChapterData, userCode, session?.user, addToast, triggerWithWallet]);
 
   // -------------------------------------------------------------------------
   // Navigation Functions
@@ -451,6 +469,10 @@ export function LessonProvider({
     if (currentStep < currentChapterData.steps.length - 1) {
       transitionTo(() => setCurrentStep(currentStep + 1));
     } else if (lesson.chapters && currentChapter < lesson.chapters.length - 1) {
+      // Check if Chapter 1 of Lesson 1 requires auth to continue
+      const requiresAuth = lesson.id === 1 && currentChapter === 0 && !session?.user;
+      setChapterRequiresAuth(requiresAuth);
+
       setCompletedChapterTitle(currentChapterData.title);
       setShowChapterComplete(true);
     }
@@ -551,6 +573,7 @@ export function LessonProvider({
     showNFTMinting,
     setShowNFTMinting,
     moveToNextChapter,
+    chapterRequiresAuth,
 
     // Auth
     session,

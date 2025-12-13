@@ -85,6 +85,8 @@ function LessonLayoutInner() {
     showNFTMinting,
     setShowNFTMinting,
     moveToNextChapter,
+    chapterRequiresAuth,
+    session,
     asset,
     handleWalletConnected,
     addToast,
@@ -120,6 +122,8 @@ function LessonLayoutInner() {
             isOpen: showChapterComplete,
             title: completedChapterTitle,
             onContinue: moveToNextChapter,
+            requiresAuth: chapterRequiresAuth,
+            isAuthenticated: !!session?.user,
           }}
           lessonComplete={{
             isOpen: showCompletionModal,
