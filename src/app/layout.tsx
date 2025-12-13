@@ -48,7 +48,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${pressStart2P.variable} ${unbounded.variable} antialiased bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 min-h-screen`}
+        className={`${geistSans.variable} ${geistMono.variable} ${pressStart2P.variable} ${unbounded.variable} antialiased bg-gradient-to-b from-[#0a0412] via-[#1a0a2e] to-[#0f0520] min-h-screen`}
       >
         <div className="relative">
           {/* Background pattern */}
