@@ -161,26 +161,28 @@ export class NFTMetadataService {
   }
 
   /**
-   * Test IPFS connectivity
+   * Test IPFS connectivity via Pinata API authentication endpoint
+   * This is more reliable than gateway testing and doesn't require gateway keys
    */
   async testConnectivity(): Promise<{ ok: boolean; error?: string }> {
     try {
-      // Upload a small test JSON
-      const testData = { test: true, timestamp: Date.now() };
-      const upload = await this.pinata.upload.public.json(testData);
-
-      // Try to retrieve it via dedicated gateway (with auth if configured)
-      const url = `https://${this.gateway}/ipfs/${upload.cid}`;
-      const headers: HeadersInit = {};
-      if (this.gatewayKey) {
-        headers['x-pinata-gateway-token'] = this.gatewayKey;
-      }
-      const response = await fetch(url, { method: 'HEAD', headers });
+      // Use Pinata's official authentication test endpoint
+      const response = await fetch('https://api.pinata.cloud/data/testAuthentication', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${process.env.PINATA_JWT}`,
+        },
+      });
 
       if (response.ok) {
         return { ok: true };
       }
-      return { ok: false, error: `Gateway returned ${response.status}` };
+
+      const errorData = await response.json().catch(() => ({}));
+      return {
+        ok: false,
+        error: errorData?.error?.reason || `API returned ${response.status}`
+      };
     } catch (error) {
       return {
         ok: false,
