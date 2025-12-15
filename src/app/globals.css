@@ -855,3 +855,31 @@ h6 {
 .animate-egg-wiggle {
   animation: egg-wiggle 0.4s ease-in-out infinite;
 }
+
+/* ============================================
+   MONACO EDITOR ERROR DECORATIONS
+   ============================================ */
+
+/* Error line background highlight */
+.error-line-decoration {
+  background-color: rgba(239, 68, 68, 0.15) !important;
+  border-left: 3px solid #ef4444 !important;
+}
+
+/* Warning line background highlight */
+.warning-line-decoration {
+  background-color: rgba(245, 158, 11, 0.15) !important;
+  border-left: 3px solid #f59e0b !important;
+}
+
+/* Error glyph icon in gutter */
+.error-glyph {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='6' fill='%23ef4444'/%3E%3Cpath d='M8 4v5M8 11v1' stroke='white' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E") center center no-repeat !important;
+  margin-left: 3px;
+}
+
+/* Warning glyph icon in gutter */
+.warning-glyph {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath d='M8 2L1 14h14L8 2z' fill='%23f59e0b'/%3E%3Cpath d='M8 6v4M8 12v1' stroke='%23000' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E") center center no-repeat !important;
+  margin-left: 3px;
+}
