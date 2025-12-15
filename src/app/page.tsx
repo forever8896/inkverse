@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
+import { playSound, stopSound } from '@/lib/sound-manager';
 
 // Dynamic import for WebGL background (client-side only)
 const OrganicShaderBackground = dynamic(
@@ -217,14 +218,23 @@ export default function Home() {
     setHasHatched(false); // Always show first-time experience for testing
   }, []);
 
+  const playHoverSound = useCallback(() => {
+    playSound('MONSTER_SHAKE');
+  }, []);
+
   const handleEggClick = useCallback(() => {
     if (isShaking || showDarkness) return;
+
+    // Play shake sound using SoundManager
+    playSound('MONSTER_SHAKE_LG');
 
     // Start shaking
     setIsShaking(true);
 
     // After shake animation, transition to darkness
     setTimeout(() => {
+      // Stop the shake sound before darkness transition
+      stopSound('MONSTER_SHAKE_LG');
       setShowDarkness(true);
     }, 1200); // Shake duration
   }, [isShaking, showDarkness]);
@@ -433,7 +443,10 @@ export default function Home() {
             {/* The egg */}
             <div
               onClick={handleEggClick}
-              onMouseEnter={() => setIsHovering(true)}
+              onMouseEnter={() => {
+                setIsHovering(true);
+                playHoverSound();
+              }}
               onMouseLeave={() => setIsHovering(false)}
               className={`relative cursor-pointer transition-transform duration-200 ${
                 isShaking ? 'animate-egg-shake' : ''
