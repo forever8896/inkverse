@@ -28,6 +28,7 @@ export function LessonNavigation() {
     goToStep,
     goToChapter,
     setShowCompletionModal,
+    playClickSound,
   } = useLessonContext();
 
   const canProceed = !currentStepData?.validation || isValidated;
@@ -42,7 +43,7 @@ export function LessonNavigation() {
       {/* Previous Button */}
       <div className="relative group">
         <button
-          onClick={previousStep}
+          onClick={() => { playClickSound(); previousStep(); }}
           disabled={currentStep === 0 && currentChapter === 0}
           className="w-10 h-10 rounded-lg border border-slate-600/50 bg-slate-800/50 hover:bg-slate-700/70 hover:border-slate-500/70 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-slate-800/50 disabled:hover:border-slate-600/50 transition-all duration-200 flex items-center justify-center backdrop-blur-sm hover:scale-105 active:scale-95"
           aria-label="Previous step"
@@ -80,7 +81,7 @@ export function LessonNavigation() {
           {currentChapterData && Array.from({ length: currentChapterData.steps.length }, (_, i) => (
             <button
               key={i}
-              onClick={() => goToStep(i)}
+              onClick={() => { playClickSound(); goToStep(i); }}
               className={`w-3 h-3 rounded-full transition-all duration-200 hover:scale-110 ${
                 i === currentStep
                   ? 'bg-gradient-to-r from-purple-400 to-cyan-400 shadow-lg shadow-purple-400/30'
@@ -98,7 +99,7 @@ export function LessonNavigation() {
           {lesson?.chapters?.map((chapter, idx) => (
             <button
               key={chapter.id}
-              onClick={() => goToChapter(idx)}
+              onClick={() => { playClickSound(); goToChapter(idx); }}
               className={`w-2 h-2 rounded-full transition-all duration-200 hover:scale-125 ${
                 idx === currentChapter
                   ? 'bg-purple-500'
@@ -116,12 +117,12 @@ export function LessonNavigation() {
       {isLastStep ? (
         <CompleteButton
           canProceed={canProceed}
-          onClick={() => setShowCompletionModal(true)}
+          onClick={() => { playClickSound(); setShowCompletionModal(true); }}
         />
       ) : (
         <NextButton
           canProceed={canProceed}
-          onClick={nextStep}
+          onClick={() => { playClickSound(); nextStep(); }}
         />
       )}
     </motion.div>

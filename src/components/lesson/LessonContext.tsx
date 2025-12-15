@@ -18,8 +18,10 @@ import { useMonsterAsset } from '@/hooks/useMonsterAsset';
 import { useCreatureDisplayStage } from '@/hooks/useCreatureDisplayStage';
 import { useToastNotifications, ToastContainer } from '@/hooks/useToastNotifications';
 import { useNFTCapture } from '@/hooks/useNFTCapture';
+import { useCodeCompilation, type CompilationError, type CompilationResult } from '@/hooks/useCodeCompilation';
 import { useAccounts } from '@reactive-dot/react';
 import { isProcessing } from '@/lib/status-constants';
+import { playSound } from '@/lib/sound-manager';
 
 // ============================================================================
 // Types
@@ -50,13 +52,22 @@ interface LessonContextValue {
   userCode: string;
   setUserCode: (code: string) => void;
   isValidated: boolean;
-  validateUserCode: () => boolean;
+  validateUserCode: () => Promise<boolean>;
   resetCode: () => void;
   showSolution: () => void;
   showCodeEditor: boolean;
   setShowCodeEditor: (show: boolean) => void;
   showHint: boolean;
   setShowHint: (show: boolean) => void;
+
+  // Compilation
+  isCompiling: boolean;
+  compilationResult: CompilationResult | null;
+  compilationErrors: CompilationError[];
+  compilationWarnings: CompilationError[];
+  clearCompilationErrors: () => void;
+  showSuccessSquink: boolean;
+  dismissSquink: () => void;
 
   // Modals
   showAuthModal: boolean;
@@ -100,6 +111,9 @@ interface LessonContextValue {
 
   // Refs
   lessonContentRef: React.RefObject<HTMLDivElement | null>;
+
+  // Sound effects
+  playClickSound: () => void;
 }
 
 const LessonContext = createContext<LessonContextValue | null>(null);
@@ -165,6 +179,7 @@ export function LessonProvider({
   const [completedChapterTitle, setCompletedChapterTitle] = useState('');
   const [showNFTMinting, setShowNFTMinting] = useState(false);
   const [chapterRequiresAuth, setChapterRequiresAuth] = useState(false);
+  const [showSuccessSquink, setShowSuccessSquink] = useState(false);
 
   // -------------------------------------------------------------------------
   // UI State
@@ -183,6 +198,18 @@ export function LessonProvider({
   const { data: session, isPending: isAuthLoading } = useSession();
   const { toasts, addToast } = useToastNotifications();
   const accounts = useAccounts();
+  const {
+    compile,
+    isCompiling,
+    lastResult: compilationResult,
+    reset: resetCompilation,
+  } = useCodeCompilation();
+
+  // Sound effect functions - using playSound directly for reliability
+  const playCorrectSound = useCallback(() => playSound('CORRECT'), []);
+  const playWrongSound = useCallback(() => playSound('WRONG'), []);
+  const playLevelUpSound = useCallback(() => playSound('LVL_UP'), []);
+  const playClickSound = useCallback(() => playSound('CLICK'), []);
 
   // -------------------------------------------------------------------------
   // Derived Data
@@ -384,13 +411,25 @@ export function LessonProvider({
   // -------------------------------------------------------------------------
   // Validate Code
   // -------------------------------------------------------------------------
-  const validateUserCode = useCallback(() => {
+  const validateUserCode = useCallback(async (): Promise<boolean> => {
+    // Clear any previous feedback (errors and success)
+    resetCompilation();
+    setShowSuccessSquink(false);
+
     if (currentStepData?.validation) {
+      // Check if code matches expected pattern (for lesson progression)
       const validationResult = validateCodeWithFeedback(userCode, currentStepData.validation);
 
       if (validationResult.isValid) {
         setIsValidated(true);
 
+        // Play success sound
+        playCorrectSound();
+
+        // Always show success via the Squink character
+        setShowSuccessSquink(true);
+
+        // Additionally handle generation triggers
         if (currentStepData?.triggersGeneration && currentChapterData) {
           if (!session?.user) {
             addToast({
@@ -406,22 +445,59 @@ export function LessonProvider({
               currentStepData.generationStage || 'young'
             );
           }
-        } else {
+        }
+        return true;
+      } else {
+        // Pattern validation failed - run actual compilation to get real Rust errors
+        setIsValidated(false);
+
+        // Show compiling indicator (no sound yet - wait for result)
+        addToast({
+          type: 'info',
+          title: '🔧 Compiling...',
+          message: 'Running Rust compiler to check your code...',
+        });
+
+        // Call the compilation service for real Rust compiler errors
+        const compilationResponse = await compile(userCode);
+
+        if (compilationResponse.serviceUnavailable) {
+          // Service unavailable - play error sound
+          playWrongSound();
           addToast({
-            type: 'success',
-            title: '🎉 Perfect!',
-            message: 'Your creature responds beautifully to the code!',
+            type: 'error',
+            title: '🔌 Service Unavailable',
+            message: 'Code validation service is offline. Please try again later.',
+          });
+        } else if (!compilationResponse.success && compilationResponse.errors.length > 0) {
+          // Show actual Rust compilation errors - play error sound
+          playWrongSound();
+          const firstError = compilationResponse.errors[0];
+          addToast({
+            type: 'error',
+            title: `🔍 Compiler Error${firstError.code ? ` [${firstError.code}]` : ''}`,
+            message: firstError.message,
+          });
+        } else if (compilationResponse.success) {
+          // Code compiles successfully but doesn't match expected pattern
+          // This is a "soft" error - code works but not what we expected
+          // Use a different tone - info sound or no sound
+          addToast({
+            type: 'info',
+            title: '✓ Code Compiles!',
+            message: validationResult.feedback,
+          });
+        } else {
+          // Unknown error - play error sound
+          playWrongSound();
+          addToast({
+            type: 'error',
+            title: '🔍 Check Failed',
+            message: 'Unable to validate code. Please try again.',
           });
         }
-      } else {
-        setIsValidated(false);
-        addToast({
-          type: 'error',
-          title: '🔍 Not quite there yet',
-          message: validationResult.feedback,
-        });
+        return false;
       }
-      return validationResult.isValid;
     } else {
       addToast({
         type: 'success',
@@ -430,7 +506,7 @@ export function LessonProvider({
       });
       return true;
     }
-  }, [currentStepData, currentChapterData, userCode, session?.user, addToast, triggerWithWallet]);
+  }, [currentStepData, currentChapterData, userCode, session?.user, addToast, triggerWithWallet, compile, resetCompilation, playCorrectSound, playWrongSound]);
 
   // -------------------------------------------------------------------------
   // Navigation Functions
@@ -445,6 +521,10 @@ export function LessonProvider({
 
   const nextStep = useCallback(async () => {
     if (!lesson || !currentChapterData || !currentStepData) return;
+
+    // Clear any Squink feedback when navigating
+    setShowSuccessSquink(false);
+    resetCompilation();
 
     if (currentStepData.triggersGeneration) {
       if (!session?.user) {
@@ -475,10 +555,17 @@ export function LessonProvider({
 
       setCompletedChapterTitle(currentChapterData.title);
       setShowChapterComplete(true);
+
+      // Play level up sound for chapter completion
+      playLevelUpSound();
     }
-  }, [lesson, currentChapterData, currentStepData, currentStep, currentChapter, session?.user, addToast, triggerWithWallet, saveStepProgress, transitionTo]);
+  }, [lesson, currentChapterData, currentStepData, currentStep, currentChapter, session?.user, addToast, triggerWithWallet, saveStepProgress, transitionTo, resetCompilation, playLevelUpSound]);
 
   const previousStep = useCallback(() => {
+    // Clear any Squink feedback when navigating
+    setShowSuccessSquink(false);
+    resetCompilation();
+
     if (currentStep > 0) {
       transitionTo(() => setCurrentStep(currentStep - 1));
     } else if (currentChapter > 0 && lesson?.chapters) {
@@ -490,20 +577,26 @@ export function LessonProvider({
         });
       }
     }
-  }, [currentStep, currentChapter, lesson?.chapters, transitionTo]);
+  }, [currentStep, currentChapter, lesson?.chapters, transitionTo, resetCompilation]);
 
   const goToStep = useCallback((stepIndex: number) => {
     if (stepIndex !== currentStep) {
+      // Clear any Squink feedback when navigating
+      setShowSuccessSquink(false);
+      resetCompilation();
       transitionTo(() => setCurrentStep(stepIndex));
     }
-  }, [currentStep, transitionTo]);
+  }, [currentStep, transitionTo, resetCompilation]);
 
   const goToChapter = useCallback((chapterIndex: number) => {
+    // Clear any Squink feedback when navigating
+    setShowSuccessSquink(false);
+    resetCompilation();
     transitionTo(() => {
       setCurrentChapter(chapterIndex);
       setCurrentStep(0);
     });
-  }, [transitionTo]);
+  }, [transitionTo, resetCompilation]);
 
   const moveToNextChapter = useCallback(() => {
     setShowChapterComplete(false);
@@ -522,6 +615,12 @@ export function LessonProvider({
       setIsValidated(false);
     }
   }, [currentStepData?.code]);
+
+  // Dismiss the Squink (both error and success states)
+  const dismissSquink = useCallback(() => {
+    setShowSuccessSquink(false);
+    resetCompilation();
+  }, [resetCompilation]);
 
   const showSolution = useCallback(() => {
     if (currentStepData?.expectedCode) {
@@ -561,6 +660,15 @@ export function LessonProvider({
     setShowCodeEditor,
     showHint,
     setShowHint,
+
+    // Compilation
+    isCompiling,
+    compilationResult,
+    compilationErrors: compilationResult?.errors || [],
+    compilationWarnings: compilationResult?.warnings || [],
+    clearCompilationErrors: resetCompilation,
+    showSuccessSquink,
+    dismissSquink,
 
     // Modals
     showAuthModal,
@@ -603,6 +711,9 @@ export function LessonProvider({
 
     // Refs
     lessonContentRef,
+
+    // Sound effects
+    playClickSound,
   };
 
   return (

@@ -7,11 +7,13 @@
  * - Editor header with title
  * - Reset, Check, and Solution buttons
  * - Monaco code editor (lazy loaded)
+ * - Squink character for playful feedback (errors and success)
  */
 
 import dynamic from 'next/dynamic';
 import { motion } from 'motion/react';
 import { useLessonContext } from './LessonContext';
+import { Squink } from './ErrorSquink';
 
 // Monaco Editor (~1MB) - Only load when code step is shown
 const MonacoCodeEditor = dynamic(
@@ -39,7 +41,17 @@ export function LessonCodeEditorPanel() {
     resetCode,
     showSolution,
     showCodeEditor,
+    isCompiling,
+    compilationErrors,
+    showSuccessSquink,
+    dismissSquink,
+    playClickSound,
   } = useLessonContext();
+
+  // Handler for async validation
+  const handleCheckCode = async () => {
+    await validateUserCode();
+  };
 
   // Don't render if no code or editor is hidden
   if (currentStepData?.code === undefined || !showCodeEditor) {
@@ -48,7 +60,7 @@ export function LessonCodeEditorPanel() {
 
   return (
     <motion.div
-      className={`flex-1 flex flex-col min-h-0 mb-4 transition-all duration-500 ease-out ${
+      className={`flex-1 flex flex-col min-h-0 mb-4 transition-all duration-500 ease-out relative ${
         isTransitioning
           ? 'opacity-0 translate-x-4'
           : 'opacity-100 translate-x-0'
@@ -66,7 +78,7 @@ export function LessonCodeEditorPanel() {
           <div className="flex space-x-2">
             {/* Reset Button */}
             <EditorButton
-              onClick={resetCode}
+              onClick={() => { playClickSound(); resetCode(); }}
               icon={<ResetIcon />}
               tooltip="Reset Code"
               variant="default"
@@ -75,17 +87,18 @@ export function LessonCodeEditorPanel() {
             {/* Check Code Button */}
             {currentStepData?.validation && (
               <EditorButton
-                onClick={validateUserCode}
-                icon={<CheckIcon />}
-                tooltip="Check Code"
+                onClick={() => { playClickSound(); handleCheckCode(); }}
+                icon={isCompiling ? <SpinnerIcon /> : <CheckIcon />}
+                tooltip={isCompiling ? 'Compiling...' : 'Check Code'}
                 variant="primary"
+                disabled={isCompiling}
               />
             )}
 
             {/* Solution Button */}
             {currentStepData?.expectedCode && (
               <EditorButton
-                onClick={showSolution}
+                onClick={() => { playClickSound(); showSolution(); }}
                 icon={<HelpIcon />}
                 tooltip="Show Solution"
                 variant="secondary"
@@ -96,7 +109,7 @@ export function LessonCodeEditorPanel() {
       </div>
 
       {/* Code Editor */}
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0 relative">
         <div
           className={`h-full transition-all duration-300 ease-out ${
             isTransitioning ? 'opacity-0 scale-98' : 'opacity-100 scale-100'
@@ -106,8 +119,16 @@ export function LessonCodeEditorPanel() {
             value={userCode}
             onChange={setUserCode}
             language="rust"
+            errors={compilationErrors}
           />
         </div>
+
+        {/* Squink - Animated character that displays feedback */}
+        <Squink
+          errors={compilationErrors}
+          isSuccess={showSuccessSquink}
+          onDismiss={dismissSquink}
+        />
       </div>
     </motion.div>
   );
@@ -122,20 +143,24 @@ interface EditorButtonProps {
   icon: React.ReactNode;
   tooltip: string;
   variant: 'default' | 'primary' | 'secondary';
+  disabled?: boolean;
 }
 
-function EditorButton({ onClick, icon, tooltip, variant }: EditorButtonProps) {
+function EditorButton({ onClick, icon, tooltip, variant, disabled = false }: EditorButtonProps) {
   const variantClasses = {
     default: 'border-slate-600/50 bg-slate-800/50 hover:bg-slate-700/70 hover:border-slate-500/70',
     primary: 'border-purple-500/50 bg-gradient-to-r from-purple-600/20 to-cyan-600/20 hover:from-purple-600/40 hover:to-cyan-600/40 hover:border-purple-400/70 shadow-lg shadow-purple-500/20',
     secondary: 'border-cyan-500/50 bg-cyan-600/20 hover:bg-cyan-600/40 hover:border-cyan-400/70 shadow-lg shadow-cyan-500/20',
   };
 
+  const disabledClasses = 'opacity-50 cursor-not-allowed hover:scale-100 active:scale-100';
+
   return (
     <div className="relative group">
       <button
-        onClick={onClick}
-        className={`w-8 h-8 rounded-lg border transition-all duration-200 flex items-center justify-center backdrop-blur-sm hover:scale-105 active:scale-95 ${variantClasses[variant]}`}
+        onClick={disabled ? undefined : onClick}
+        disabled={disabled}
+        className={`w-8 h-8 rounded-lg border transition-all duration-200 flex items-center justify-center backdrop-blur-sm ${disabled ? disabledClasses : 'hover:scale-105 active:scale-95'} ${variantClasses[variant]}`}
         aria-label={tooltip}
       >
         {icon}
@@ -204,6 +229,24 @@ function HelpIcon() {
       <circle cx="12" cy="12" r="10" />
       <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
       <path d="M12 17h.01" />
+    </svg>
+  );
+}
+
+function SpinnerIcon() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="text-purple-200 animate-spin"
+    >
+      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
     </svg>
   );
 }
