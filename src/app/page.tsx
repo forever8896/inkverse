@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import { playSound, stopSound } from '@/lib/sound-manager';
+import { NarrativeLoadingScreen } from '@/components/NarrativeLoadingScreen';
 
 // Dynamic import for WebGL background (client-side only)
 const OrganicShaderBackground = dynamic(
@@ -63,144 +64,6 @@ function FloatingParticles() {
   );
 }
 
-// The darkness transition and loading sequence
-function DarknessTransition({ onReady }: { onReady: () => void }) {
-  const [narrativeStage, setNarrativeStage] = useState(0);
-  const [isLessonReady, setIsLessonReady] = useState(false);
-  const [isExiting, setIsExiting] = useState(false);
-  const router = useRouter();
-
-  const narrativeMessages = [
-    'Your creature stirs...',
-    'A bond is forming...',
-    'Preparing your workspace...',
-    'Ready to learn together.',
-  ];
-
-  // Prefetch and wait for the lesson page to be ready
-  useEffect(() => {
-    // Prefetch the lesson route
-    router.prefetch('/lesson/1/1/1');
-
-    // Give it time to prefetch heavy components (Monaco, WalletProviders, etc.)
-    const prefetchTimer = setTimeout(() => {
-      setIsLessonReady(true);
-    }, 6000); // Match narrative duration (4 messages × 1.5s)
-
-    return () => clearTimeout(prefetchTimer);
-  }, [router]);
-
-  // Progress through narrative messages (slower for readability)
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setNarrativeStage((prev) => {
-        if (prev >= narrativeMessages.length - 1) {
-          clearInterval(interval);
-          return prev;
-        }
-        return prev + 1;
-      });
-    }, 1500); // Slower transitions for better readability
-
-    return () => clearInterval(interval);
-  }, [narrativeMessages.length]);
-
-  // When lesson is ready and we've shown enough narrative, start exit animation
-  useEffect(() => {
-    if (
-      isLessonReady &&
-      narrativeStage >= narrativeMessages.length - 1 &&
-      !isExiting
-    ) {
-      const exitTimer = setTimeout(() => {
-        setIsExiting(true);
-      }, 800);
-      return () => clearTimeout(exitTimer);
-    }
-  }, [isLessonReady, narrativeStage, narrativeMessages.length, isExiting]);
-
-  // Navigate after exit animation completes
-  useEffect(() => {
-    if (isExiting) {
-      const navTimer = setTimeout(() => {
-        localStorage.setItem('monsters-ink-hatched', 'true');
-        onReady();
-        router.push('/lesson/1/1/1');
-      }, 600); // Match the exit animation duration
-      return () => clearTimeout(navTimer);
-    }
-  }, [isExiting, router, onReady]);
-
-  return (
-    <motion.div
-      className="fixed inset-0 z-50 flex items-center justify-center"
-      style={{ background: '#0a0412' }}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: isExiting ? 0 : 1 }}
-      transition={{ duration: isExiting ? 0.6 : 0.8 }}
-    >
-      {/* Subtle ambient glow */}
-      <div
-        className="absolute w-[500px] h-[500px] rounded-full opacity-20"
-        style={{
-          background:
-            'radial-gradient(circle, rgba(79, 255, 176, 0.15) 0%, transparent 70%)',
-          filter: 'blur(60px)',
-        }}
-      />
-
-      {/* Narrative content */}
-      <motion.div
-        className="text-center relative z-10"
-        animate={{
-          opacity: isExiting ? 0 : 1,
-          scale: isExiting ? 1.1 : 1,
-          y: isExiting ? -20 : 0,
-        }}
-        transition={{ duration: 0.5 }}
-      >
-        {/* Narrative text */}
-        <AnimatePresence mode="wait">
-          <motion.p
-            key={narrativeStage}
-            initial={{ opacity: 0, y: 15, filter: 'blur(4px)' }}
-            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-            exit={{ opacity: 0, y: -15, filter: 'blur(4px)' }}
-            transition={{ duration: 0.6, ease: 'easeOut' }}
-            className="text-sm md:text-base font-pixel tracking-widest px-8"
-            style={{
-              color: '#4FFFB0',
-              textShadow: '0 0 20px rgba(79, 255, 176, 0.5)',
-            }}
-          >
-            {narrativeMessages[narrativeStage]}
-          </motion.p>
-        </AnimatePresence>
-
-        {/* Progress bar */}
-        <div className="mt-10 w-48 mx-auto">
-          <div
-            className="h-1 rounded-full overflow-hidden"
-            style={{ background: 'rgba(79, 255, 176, 0.15)' }}
-          >
-            <motion.div
-              className="h-full rounded-full"
-              style={{
-                background: 'linear-gradient(90deg, #4FFFB0, #2dd4bf)',
-                boxShadow: '0 0 10px rgba(79, 255, 176, 0.5)',
-              }}
-              initial={{ width: '0%' }}
-              animate={{
-                width: `${((narrativeStage + 1) / narrativeMessages.length) * 100}%`,
-              }}
-              transition={{ duration: 0.6, ease: 'easeOut' }}
-            />
-          </div>
-        </div>
-      </motion.div>
-    </motion.div>
-  );
-}
 
 export default function Home() {
   const [isHovering, setIsHovering] = useState(false);
@@ -242,6 +105,18 @@ export default function Home() {
   const handleContinueJourney = useCallback(() => {
     router.push('/lab');
   }, [router]);
+
+  const handleTransitionComplete = useCallback(() => {
+    localStorage.setItem('monsters-ink-hatched', 'true');
+    router.push('/lesson/1/1/1');
+  }, [router]);
+
+  // Prefetch lesson route when transition starts
+  useEffect(() => {
+    if (showDarkness) {
+      router.prefetch('/lesson/1/1/1');
+    }
+  }, [showDarkness, router]);
 
   // Show nothing while checking localStorage (prevents flash)
   if (hasHatched === null) {
@@ -362,7 +237,7 @@ export default function Home() {
     <>
       {/* Darkness transition overlay */}
       <AnimatePresence>
-        {showDarkness && <DarknessTransition onReady={() => {}} />}
+        {showDarkness && <NarrativeLoadingScreen onComplete={handleTransitionComplete} />}
       </AnimatePresence>
 
       {/* Main landing page */}
