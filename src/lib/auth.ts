@@ -24,18 +24,45 @@ export const auth = betterAuth({
     github: {
       clientId: process.env.GITHUB_CLIENT_ID!,
       clientSecret: process.env.GITHUB_CLIENT_SECRET!,
-      scope: [], // Request no scopes - minimal data collection
+      scope: [], // Request no OAuth scopes - minimal data collection
       disableDefaultScope: true, // Prevent Better Auth from adding default scopes
-      // TEMPORARY: Log full OAuth payload for privacy audit
-      mapProfileToUser: (profile) => {
-        console.log('\n========== GITHUB OAUTH PAYLOAD ==========');
-        console.log('Full profile object:', JSON.stringify(profile, null, 2));
-        console.log('===========================================\n');
-        // Return default mapping - don't change behavior
+      // PRIVACY: Use GraphQL to request ONLY the user's unique ID
+      // This is provably minimal - we literally only ask for one field
+      getUserInfo: async (token) => {
+        const response = await fetch('https://api.github.com/graphql', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token.accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            query: `query { viewer { databaseId } }`,
+          }),
+        });
+
+        const result = await response.json();
+        const githubId = result.data?.viewer?.databaseId;
+
+        console.log('\n========== GITHUB GRAPHQL RESPONSE ==========');
+        console.log('Raw response:', JSON.stringify(result, null, 2));
+        console.log('Extracted ID:', githubId);
+        console.log('==============================================\n');
+
+        if (!githubId) {
+          throw new Error('Failed to get GitHub user ID');
+        }
+
+        // Return minimal synthetic user data
+        // Only the GitHub ID is real - everything else is generated
         return {
-          name: profile.name || profile.login,
-          email: profile.email,
-          image: profile.avatar_url,
+          user: {
+            id: String(githubId),
+            name: `user-${githubId}`, // Synthetic name
+            email: `${githubId}@noreply.monsters.ink`, // Synthetic email
+            image: undefined, // No avatar - we didn't request it
+            emailVerified: false,
+          },
+          data: { id: githubId }, // Raw data for reference
         };
       },
     },
