@@ -22,7 +22,6 @@ export interface AdminUser {
   email?: string;
   image?: string;
   createdAt: string;
-  emailVerified?: string;
   jobCount: number;
   totalSpent: number;
   lastActive?: string;
@@ -46,7 +45,6 @@ interface UserRow {
   email: string | null;
   image: string | null;
   createdAt: Date;
-  emailVerified: Date | null;
   job_count: string;
   total_spent: string | null;
   last_active: Date | null;
@@ -96,6 +94,7 @@ export async function GET(request: NextRequest) {
     const limitOffsetClause = buildLimitOffsetClause(params, params.queryParams);
 
     // Get users with job statistics
+    // Note: We only store GitHub ID - name/email are synthetic
     const usersQuery = `
       SELECT
         u.id,
@@ -103,7 +102,6 @@ export async function GET(request: NextRequest) {
         u.email,
         u.image,
         u."createdAt",
-        u."emailVerified",
         COALESCE(mg.job_count, 0) as job_count,
         COALESCE(mg.total_spent, 0) as total_spent,
         mg.last_active
@@ -130,7 +128,6 @@ export async function GET(request: NextRequest) {
       email: row.email ?? undefined,
       image: row.image ?? undefined,
       createdAt: row.createdAt.toISOString(),
-      emailVerified: row.emailVerified?.toISOString(),
       jobCount: parseInt(row.job_count),
       totalSpent: parseFloat(row.total_spent || '0'),
       lastActive: row.last_active?.toISOString(),

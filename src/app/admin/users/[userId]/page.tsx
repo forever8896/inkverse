@@ -11,7 +11,6 @@ interface UserDetail {
   email?: string;
   image?: string;
   createdAt: string;
-  emailVerified?: string;
   jobCount: number;
   totalSpent: number;
   lastActive?: string;
@@ -221,13 +220,6 @@ export default function AdminUserDetail() {
                   <div className="text-sm font-medium text-slate-300 mb-1">Joined</div>
                   <div className="text-white">{formatDate(user.createdAt)}</div>
                 </div>
-
-                {user.emailVerified && (
-                  <div>
-                    <div className="text-sm font-medium text-slate-300 mb-1">Email Verified</div>
-                    <div className="text-green-300">✅ {formatDate(user.emailVerified)}</div>
-                  </div>
-                )}
 
                 {user.lastActive && (
                   <div>

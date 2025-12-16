@@ -11,7 +11,6 @@ interface User {
   email?: string;
   image?: string;
   createdAt: string;
-  emailVerified?: string;
   jobCount: number;
   totalSpent: number;
   lastActive?: string;

@@ -13,7 +13,6 @@ export interface AdminUserDetail {
   email?: string;
   image?: string;
   createdAt: string;
-  emailVerified?: string;
   jobCount: number;
   totalSpent: number;
   lastActive?: string;
@@ -55,25 +54,25 @@ export async function GET(
     }
 
     // Get user details with job statistics
+    // Note: We only store GitHub ID - name/email are synthetic
     const userQuery = `
-      SELECT 
+      SELECT
         u.id,
         u.name,
         u.email,
         u.image,
         u."createdAt",
-        u."emailVerified",
         COALESCE(mg.job_count, 0) as job_count,
         COALESCE(mg.total_spent, 0) as total_spent,
         mg.last_active
       FROM "user" u
       LEFT JOIN (
-        SELECT 
+        SELECT
           user_id,
           COUNT(*) as job_count,
           SUM(total_cost) as total_spent,
           MAX(updated_at) as last_active
-        FROM monster_generations 
+        FROM monster_generations
         GROUP BY user_id
       ) mg ON u.id = mg.user_id
       WHERE u.id = $1
@@ -122,7 +121,6 @@ export async function GET(
       email: userRow.email,
       image: userRow.image,
       createdAt: userRow.createdAt.toISOString(),
-      emailVerified: userRow.emailVerified?.toISOString(),
       jobCount: parseInt(userRow.job_count),
       totalSpent: parseFloat(userRow.total_spent || 0),
       lastActive: userRow.last_active?.toISOString(),
