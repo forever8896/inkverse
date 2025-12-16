@@ -272,7 +272,7 @@ export default function LabClient({ chapters }: { chapters: Lesson[] }) {
                         </div>
 
                         {/* NFT Metadata Card */}
-                        {userMonster.nftItemId ? (
+                        {userMonster.nftItemId !== null ? (
                           <div
                             className="w-full max-w-sm rounded-xl p-4 mt-2"
                             style={{
