@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate SS58 address format
-    if (!(await NFTsPalletService.validateSS58Address(walletAddress))) {
+    if (!NFTsPalletService.validateSS58Address(walletAddress)) {
       return NextResponse.json(
         {
           success: false,

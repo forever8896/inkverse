@@ -17,7 +17,6 @@ let ApiPromise: typeof import('@polkadot/api').ApiPromise;
 let WsProvider: typeof import('@polkadot/api').WsProvider;
 let Keyring: typeof import('@polkadot/keyring').Keyring;
 let cryptoWaitReady: typeof import('@polkadot/util-crypto').cryptoWaitReady;
-let decodeAddress: typeof import('@polkadot/util-crypto').decodeAddress;
 
 async function loadPolkadotModules() {
   if (!ApiPromise) {
@@ -30,7 +29,6 @@ async function loadPolkadotModules() {
 
     const utilCrypto = await import('@polkadot/util-crypto');
     cryptoWaitReady = utilCrypto.cryptoWaitReady;
-    decodeAddress = utilCrypto.decodeAddress;
   }
 }
 
@@ -82,18 +80,14 @@ export class NFTsPalletService {
   }
 
   /**
-   * Validate SS58 address format
+   * Validate SS58 address format using regex
    * FIX #5: Add owner address validation
-   * NOTE: Now async due to dynamic imports for Turbopack compatibility
    */
-  static async validateSS58Address(address: string): Promise<boolean> {
-    try {
-      await loadPolkadotModules();
-      decodeAddress(address);
-      return true;
-    } catch {
-      return false;
-    }
+  static validateSS58Address(address: string): boolean {
+    // SS58 addresses are base58 encoded, typically 47-48 characters
+    // Base58 excludes 0, O, I, l to avoid ambiguity
+    const ss58Regex = /^[1-9A-HJ-NP-Za-km-z]{45,50}$/;
+    return ss58Regex.test(address);
   }
 
   /**
@@ -233,7 +227,7 @@ export class NFTsPalletService {
     console.log(`  Metadata: ${metadataUri}`);
 
     // FIX #5: Validate owner address before attempting mint
-    if (!(await NFTsPalletService.validateSS58Address(ownerAddress))) {
+    if (!NFTsPalletService.validateSS58Address(ownerAddress)) {
       return {
         success: false,
         error: `Invalid owner address format: ${ownerAddress}`,
