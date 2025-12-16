@@ -24,45 +24,53 @@ export const auth = betterAuth({
     github: {
       clientId: process.env.GITHUB_CLIENT_ID!,
       clientSecret: process.env.GITHUB_CLIENT_SECRET!,
-      scope: [], // Request no OAuth scopes - minimal data collection
-      disableDefaultScope: true, // Prevent Better Auth from adding default scopes
-      // PRIVACY: Use GraphQL to request ONLY the user's unique ID
-      // This is provably minimal - we literally only ask for one field
+      // PRIVACY-FIRST AUTHENTICATION
+      // We request zero OAuth scopes and use GitHub's GraphQL API to fetch
+      // ONLY the user's unique database ID. No name, email, avatar, location,
+      // or any other personal information is requested or stored.
+      //
+      // GraphQL query: `query { viewer { databaseId } }`
+      //
+      // This is provably minimal data collection - auditors can verify the
+      // exact query we send and confirm we only receive a single integer.
+      scope: [],
+      disableDefaultScope: true,
       getUserInfo: async (token) => {
+        const query = 'query { viewer { databaseId } }';
+
         const response = await fetch('https://api.github.com/graphql', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token.accessToken}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            query: `query { viewer { databaseId } }`,
-          }),
+          body: JSON.stringify({ query }),
         });
 
         const result = await response.json();
         const githubId = result.data?.viewer?.databaseId;
 
-        console.log('\n========== GITHUB GRAPHQL RESPONSE ==========');
-        console.log('Raw response:', JSON.stringify(result, null, 2));
-        console.log('Extracted ID:', githubId);
-        console.log('==============================================\n');
+        // Privacy audit log: confirm we only received the user ID
+        console.log('[Auth] GitHub OAuth - Privacy-minimal authentication');
+        console.log('[Auth] GraphQL query sent:', query);
+        console.log('[Auth] Complete API response:', JSON.stringify(result));
+        console.log('[Auth] Only data extracted: databaseId =', githubId);
 
         if (!githubId) {
-          throw new Error('Failed to get GitHub user ID');
+          console.error('[Auth] Failed to retrieve GitHub user ID');
+          throw new Error('GitHub authentication failed: unable to retrieve user ID');
         }
 
-        // Return minimal synthetic user data
-        // Only the GitHub ID is real - everything else is generated
+        // All user fields except ID are synthetic - no personal data stored
         return {
           user: {
             id: String(githubId),
-            name: `user-${githubId}`, // Synthetic name
-            email: `${githubId}@noreply.monsters.ink`, // Synthetic email
-            image: undefined, // No avatar - we didn't request it
+            name: `user-${githubId}`,
+            email: `${githubId}@noreply.monsters.ink`,
+            image: undefined,
             emailVerified: false,
           },
-          data: { id: githubId }, // Raw data for reference
+          data: { id: githubId },
         };
       },
     },
