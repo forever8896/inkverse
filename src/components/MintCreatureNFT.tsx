@@ -143,7 +143,7 @@ export function MintCreatureNFT({ lessonId, onMintSuccess, mintedTokenId }: Mint
 
       <div className="space-y-3">
         <div className="text-sm text-gray-300">
-          <p><strong>Network:</strong> Pop Network Testnet</p>
+          <p><strong>Network:</strong> Paseo Asset Hub</p>
           <p><strong>Lesson:</strong> {lessonId}</p>
           <p><strong>Contract:</strong> {contractAddress}</p>
         </div>
@@ -155,7 +155,7 @@ export function MintCreatureNFT({ lessonId, onMintSuccess, mintedTokenId }: Mint
         ) : isAccountMapped === false ? (
           <div className="space-y-2">
             <p className="text-orange-400 text-sm">
-              Your account needs to be mapped before you can interact with contracts on Pop Network.
+              Your account needs to be mapped before you can interact with contracts on Asset Hub.
             </p>
             <Button
               onClick={handleMapAccount}
