@@ -89,8 +89,8 @@ export default function GitHubAuthModal({ isOpen, onClose, onAuthSuccess }: GitH
               <Shield size={16} className="text-pink-400" />
             </div>
             <div>
-              <h3 className="text-white font-medium text-sm">Secure & Private</h3>
-              <p className="text-slate-400 text-xs mt-1">Only requires basic GitHub profile access</p>
+              <h3 className="text-white font-medium text-sm">Privacy-First</h3>
+              <p className="text-slate-400 text-xs mt-1">We only store your GitHub ID - no name, email, or profile data</p>
             </div>
           </div>
         </div>
@@ -117,9 +117,9 @@ export default function GitHubAuthModal({ isOpen, onClose, onAuthSuccess }: GitH
         {/* Footer */}
         <div className="mt-6 text-center">
           <p className="text-slate-500 text-xs">
-            By continuing, you agree to our authentication requirements.
+            We request zero OAuth permissions from GitHub.
             <br />
-            We only access basic profile information.
+            Only your unique GitHub ID is stored - nothing else.
           </p>
         </div>
       </div>

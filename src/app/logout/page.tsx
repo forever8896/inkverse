@@ -42,14 +42,6 @@ export default function LogoutPage() {
             </p>
           </div>
 
-          {session?.user && (
-            <div className="mb-4 p-3 bg-black/20 rounded-lg">
-              <p className="text-sm text-gray-300">
-                Signing out: <span className="text-purple-300">{session.user.name}</span>
-              </p>
-            </div>
-          )}
-
           <div className="text-xs text-gray-400">
             You'll be redirected to the home page shortly...
           </div>
