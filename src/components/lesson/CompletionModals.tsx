@@ -10,7 +10,6 @@
  */
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import Confetti from 'react-confetti';
 import { ConnectButton } from '@/components/web3/connect-button';
 import { MintCreatureNFT } from '@/components/MintCreatureNFT';
@@ -280,13 +279,6 @@ function LessonCompleteModal({
             <span>📚</span>
             <span>View ink! Docs</span>
           </a>
-          <Link
-            href="/playground"
-            className="px-6 py-2 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 rounded-lg text-white font-semibold shadow-md transition-all duration-200 flex items-center space-x-2"
-          >
-            <span>🚀</span>
-            <span>What&apos;s Next</span>
-          </Link>
         </div>
       </div>
     </div>
