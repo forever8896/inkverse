@@ -2,6 +2,18 @@ import type { NextConfig } from 'next';
 import { withWorkflow } from 'workflow/next';
 
 const nextConfig: NextConfig = {
+  // Exclude Polkadot packages from serverless bundling (they're too large/complex)
+  serverExternalPackages: [
+    '@polkadot/api',
+    '@polkadot/keyring',
+    '@polkadot/util',
+    '@polkadot/util-crypto',
+    '@polkadot/types',
+    '@polkadot/types-codec',
+    '@polkadot/rpc-core',
+    '@polkadot/rpc-provider',
+  ],
+
   images: {
     remotePatterns: [
       {
