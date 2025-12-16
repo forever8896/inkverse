@@ -24,7 +24,20 @@ export const auth = betterAuth({
     github: {
       clientId: process.env.GITHUB_CLIENT_ID!,
       clientSecret: process.env.GITHUB_CLIENT_SECRET!,
-      scope: ['read:user'], // Just user scope, not email
+      scope: [], // Request no scopes - minimal data collection
+      disableDefaultScope: true, // Prevent Better Auth from adding default scopes
+      // TEMPORARY: Log full OAuth payload for privacy audit
+      mapProfileToUser: (profile) => {
+        console.log('\n========== GITHUB OAUTH PAYLOAD ==========');
+        console.log('Full profile object:', JSON.stringify(profile, null, 2));
+        console.log('===========================================\n');
+        // Return default mapping - don't change behavior
+        return {
+          name: profile.name || profile.login,
+          email: profile.email,
+          image: profile.avatar_url,
+        };
+      },
     },
   },
   // Enable session management
