@@ -225,7 +225,7 @@ export default function AdminJobs() {
           </div>
           <div className="flex items-center gap-4">
             <Link
-              href="/generate"
+              href="/admin/generate"
               className="px-4 py-2 bg-emerald-600/20 hover:bg-emerald-600/40 border-2 border-emerald-500/50 hover:border-emerald-400 rounded-lg text-emerald-300 hover:text-emerald-100 font-pixel text-[10px] uppercase transition-all hover:shadow-lg hover:shadow-emerald-500/20"
             >
               ➕ New Job
@@ -475,7 +475,7 @@ export default function AdminJobs() {
                               View
                             </Link>
                             <Link
-                              href={`/generate/${job.id}`}
+                              href={`/admin/generate/${job.id}`}
                               target="_blank"
                               className="px-3 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/40 border border-emerald-500/50 hover:border-emerald-400 rounded text-emerald-300 hover:text-emerald-100 font-pixel text-[8px] uppercase transition-all hover:shadow-lg hover:shadow-emerald-500/20"
                             >

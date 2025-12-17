@@ -7,9 +7,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GenerationJob } from '@/lib/generation-job';
 import { auth } from '@/lib/auth';
-import { RATE_LIMITS } from '@/config/constants';
 import { generatePromptFromStructuredData, type GenerateMonsterRequest } from '@/lib/monster-prompts';
 import { NFTsPalletService } from '@/services/nfts-pallet-service';
+
+// Rate limiting constants
+const MAX_ACTIVE_JOBS_PER_USER = 2;
+const DEFAULT_JOB_FETCH_LIMIT = 10;
 
 export interface GenerateMonsterResponse {
   success: boolean;
@@ -43,9 +46,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate wallet address for NFT minting
+    // Check if user is admin for wallet bypass (admin testing mode)
+    const { isSessionAdmin } = await import('@/lib/admin-auth');
+    const isAdmin = await isSessionAdmin(session);
+    const adminBypass = isAdmin && body.adminBypass === true;
+
+    // Validate wallet address for NFT minting (skip for admins with adminBypass flag)
     const walletAddress = body.walletAddress;
-    if (!walletAddress) {
+    if (!walletAddress && !adminBypass) {
       return NextResponse.json(
         {
           success: false,
@@ -56,8 +64,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate SS58 address format
-    if (!NFTsPalletService.validateSS58Address(walletAddress)) {
+    // Validate SS58 address format (skip if admin bypass or no wallet)
+    if (walletAddress && !NFTsPalletService.validateSS58Address(walletAddress)) {
       return NextResponse.json(
         {
           success: false,
@@ -235,7 +243,7 @@ export async function POST(request: NextRequest) {
     // Check if user has reached generation limit
     const recentJobs = await GenerationJob.findByUserId(
       session.user.id,
-      RATE_LIMITS.DEFAULT_JOB_FETCH_LIMIT,
+      DEFAULT_JOB_FETCH_LIMIT,
       0
     );
     const activeJobs = recentJobs.filter(
@@ -245,50 +253,52 @@ export async function POST(request: NextRequest) {
         job.status === 'converting_3d'
     );
 
-    if (activeJobs.length >= RATE_LIMITS.MAX_ACTIVE_JOBS_PER_USER) {
+    if (activeJobs.length >= MAX_ACTIVE_JOBS_PER_USER) {
       return NextResponse.json(
         {
           success: false,
-          error: `Maximum of ${RATE_LIMITS.MAX_ACTIVE_JOBS_PER_USER} active jobs allowed per user`,
+          error: `Maximum of ${MAX_ACTIVE_JOBS_PER_USER} active jobs allowed per user`,
         },
         { status: 429 }
       );
     }
 
-    // Check for completed sets limit and progression
-    const completedSets = await GenerationJob.countCompletedSets(session.user.id);
+    // Check for completed sets limit and progression (skip for admin bypass)
+    if (!adminBypass) {
+      const completedSets = await GenerationJob.countCompletedSets(session.user.id);
 
-    // Rule 1: Max 1 Young Monster
-    if (body.stage === 'young' && completedSets.young >= 1) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'You already have a Young monster. You can now evolve it to Adult.',
-        },
-        { status: 403 }
-      );
-    }
+      // Rule 1: Max 1 Young Monster
+      if (body.stage === 'young' && completedSets.young >= 1) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'You already have a Young monster. You can now evolve it to Adult.',
+          },
+          { status: 403 }
+        );
+      }
 
-    // Rule 2: Max 1 Adult Monster
-    if (body.stage === 'adult' && completedSets.adult >= 1) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'You already have an Adult monster. Limit reached.',
-        },
-        { status: 403 }
-      );
-    }
+      // Rule 2: Max 1 Adult Monster
+      if (body.stage === 'adult' && completedSets.adult >= 1) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'You already have an Adult monster. Limit reached.',
+          },
+          { status: 403 }
+        );
+      }
 
-    // Rule 3: Progression (Young -> Adult)
-    if (body.stage === 'adult' && completedSets.young === 0) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'You must generate a Young monster first before creating an Adult.',
-        },
-        { status: 400 }
-      );
+      // Rule 3: Progression (Young -> Adult)
+      if (body.stage === 'adult' && completedSets.young === 0) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'You must generate a Young monster first before creating an Adult.',
+          },
+          { status: 400 }
+        );
+      }
     }
 
     // Helper to safely check workflow status (Fix #6)
@@ -365,7 +375,7 @@ export async function POST(request: NextRequest) {
         style: body.style,
         stage: body.stage,
         generationType,
-        nftOwnerAddress: walletAddress,
+        nftOwnerAddress: walletAddress || undefined, // undefined for admin bypass (no NFT minting)
       }, lessonContext);
     } catch (error: any) {
       // Handle race condition (unique constraint violation)
@@ -433,7 +443,8 @@ export async function POST(request: NextRequest) {
       jobId: job.id,
       userId: session.user.id,
       prompt: aiPrompt,
-      generationType
+      generationType,
+      adminBypass // Pass through to workflow to skip NFT prerequisites/minting
     }]);
 
     console.log(`✅ [API] Workflow started: ${run.runId}`);
@@ -492,6 +503,6 @@ export async function GET() {
     },
     note: 'AI prompt is generated server-side from structured data for security. Wallet address is required for NFT minting.',
     authentication: 'Required (Better Auth session)',
-    rateLimit: `Maximum ${RATE_LIMITS.MAX_ACTIVE_JOBS_PER_USER} active jobs per user`,
+    rateLimit: `Maximum ${MAX_ACTIVE_JOBS_PER_USER} active jobs per user`,
   });
 }

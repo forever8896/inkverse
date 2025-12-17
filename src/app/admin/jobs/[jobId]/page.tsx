@@ -509,8 +509,8 @@ function DiagnosticPanel({ job }: { job: JobDetail }) {
             )}
             {job.status === 'generating_image' && (
               <div className="text-cyan-300">
-                ✓ ProductionPipelineOrchestrator.generateImageOnly() should be executing
-                <br />✓ OpenAI DALL-E API call in progress (30-90s typical)
+                ✓ Workflow step: generateImage() executing
+                <br />✓ OpenAI API call in progress (30-90s typical)
                 <br />✓ On success: Upload to S3, update imageS3Key, transition to converting_3d
                 <br />✓ On failure: Record error, transition to image_generation_failed
               </div>
@@ -532,7 +532,7 @@ function DiagnosticPanel({ job }: { job: JobDetail }) {
             )}
             {job.status === 'converting_3d' && (
               <div className="text-purple-300">
-                ✓ ProductionPipelineOrchestrator.convertImageTo3D() should be executing
+                ✓ Workflow step: convert3D() executing
                 <br />✓ fal.ai API processing (2-5min typical, up to 10min peak)
                 <br />✓ On success: Upload GLB to S3, update glbS3Key, transition to completed
                 <br />✓ On failure: Record error, transition to conversion_failed
@@ -1338,7 +1338,7 @@ export default function AdminJobDetail() {
 
               <div className="space-y-3">
                 <Link
-                  href={`/generate/${job.id}`}
+                  href={`/admin/generate/${job.id}`}
                   target="_blank"
                   className="block w-full px-4 py-2 bg-emerald-600/20 hover:bg-emerald-600/40 border border-emerald-500/50 hover:border-emerald-400 rounded-lg text-emerald-300 hover:text-emerald-100 text-center font-pixel text-[8px] uppercase transition-all"
                 >

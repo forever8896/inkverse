@@ -323,7 +323,7 @@ export default function AdminUserDetail() {
                               View
                             </Link>
                             <Link
-                              href={`/generate/${job.id}`}
+                              href={`/admin/generate/${job.id}`}
                               target="_blank"
                               className="px-3 py-1 bg-green-600 hover:bg-green-700 rounded text-white text-xs font-medium transition-colors"
                             >

@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useRouter } from 'next/navigation';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
 import MonsterViewer from '@/components/MonsterViewer';
 
 // Accordion component for prompt
@@ -132,14 +131,15 @@ const statusEmojis: Record<string, string> = {
 };
 
 const progressSteps = [
-  { threshold: 0, label: 'Checking NFT services', emoji: '🔍' },
+  { threshold: 0, label: 'Checking NFT services', emoji: '🔍', requiresNFT: true },
   { threshold: 5, label: 'Starting AI image generation', emoji: '🎨' },
   { threshold: 40, label: 'Image generation complete', emoji: '🖼️' },
   { threshold: 50, label: 'Beginning 3D conversion', emoji: '🔄', requires3D: true },
   { threshold: 85, label: '3D model created', emoji: '🏗️', requires3D: true },
-  { threshold: 92, label: 'Uploading to IPFS', emoji: '📤' },
-  { threshold: 96, label: 'Minting on blockchain', emoji: '⛓️' },
-  { threshold: 100, label: 'NFT minted successfully!', emoji: '🎉' },
+  { threshold: 90, label: 'Generation complete!', emoji: '🎉', requiresNFT: false, adminOnly: true },
+  { threshold: 92, label: 'Uploading to IPFS', emoji: '📤', requiresNFT: true },
+  { threshold: 96, label: 'Minting on blockchain', emoji: '⛓️', requiresNFT: true },
+  { threshold: 100, label: 'NFT minted successfully!', emoji: '🎉', requiresNFT: true },
 ];
 
 function AnimatedBackground() {
@@ -161,11 +161,11 @@ function AnimatedBackground() {
 function FloatingCreationElements() {
   const creationEmojis = ['🧪', '⚗️', '🔬', '🧬', '✨', '🌟', '💫', '🔮', '🎨', '🏗️'];
   const [isClient, setIsClient] = useState(false);
-  
+
   useEffect(() => {
     setIsClient(true);
   }, []);
-  
+
   // Fixed positions to avoid hydration mismatch
   const fixedPositions = [
     { left: 10, top: 15, duration: 12, delay: 0 },
@@ -179,7 +179,7 @@ function FloatingCreationElements() {
     { left: 60, top: 20, duration: 11, delay: 1.2 },
     { left: 25, top: 40, duration: 13, delay: 1.8 },
   ];
-  
+
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
       {isClient && creationEmojis.map((emoji, index) => {
@@ -224,7 +224,7 @@ function ProgressBar({ progress, status }: { progress: number; status: string })
       <div className="relative h-6 bg-slate-800 rounded-full overflow-hidden border border-slate-600">
         {/* Background glow */}
         <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-cyan-500/20" />
-        
+
         {/* Progress fill */}
         <motion.div
           className="absolute inset-y-0 left-0 bg-gradient-to-r from-purple-500 to-cyan-500 rounded-full"
@@ -235,7 +235,7 @@ function ProgressBar({ progress, status }: { progress: number; status: string })
             boxShadow: '0 0 20px rgba(147, 51, 234, 0.5), inset 0 0 10px rgba(255, 255, 255, 0.2)',
           }}
         />
-        
+
         {/* Animated shimmer effect */}
         {progress > 0 && progress < 100 && (
           <motion.div
@@ -245,7 +245,7 @@ function ProgressBar({ progress, status }: { progress: number; status: string })
           />
         )}
       </div>
-      
+
       {/* Progress percentage */}
       <div className="flex justify-between items-center mt-3">
         <motion.span
@@ -264,12 +264,15 @@ function ProgressBar({ progress, status }: { progress: number; status: string })
   );
 }
 
-function ProgressSteps({ progress, generationType }: { progress: number; generationType?: GenerationType }) {
+function ProgressSteps({ progress, generationType, adminBypass = true }: { progress: number; generationType?: GenerationType; adminBypass?: boolean }) {
   const isImageOnly = generationType === 'image_only';
 
-  const activeSteps = isImageOnly
-    ? progressSteps.filter(step => !step.requires3D)
-    : progressSteps;
+  const activeSteps = progressSteps.filter(step => {
+    if (step.requires3D && isImageOnly) return false;
+    if (step.requiresNFT && adminBypass) return false;
+    if (step.adminOnly && !adminBypass) return false;
+    return true;
+  });
 
   const activeCurrent = activeSteps.find((step, index) => {
     const nextStep = activeSteps[index + 1];
@@ -280,10 +283,16 @@ function ProgressSteps({ progress, generationType }: { progress: number; generat
     <div className="w-full max-w-3xl mx-auto">
       <div className="space-y-4">
         {progressSteps.map((step, index) => {
-          const isSkipped = Boolean(step.requires3D) && isImageOnly;
-          const isCompleted = !isSkipped && progress >= step.threshold;
-          const isCurrent = !isSkipped && activeCurrent === step;
-          
+          const isSkippedFor3D = Boolean(step.requires3D) && isImageOnly;
+          const isSkippedForNFT = Boolean(step.requiresNFT) && adminBypass;
+          const isHiddenAdminOnly = Boolean(step.adminOnly) && !adminBypass;
+          const isSkipped = isSkippedFor3D || isSkippedForNFT;
+          const isCompleted = !isSkipped && !isHiddenAdminOnly && progress >= step.threshold;
+          const isCurrent = !isSkipped && !isHiddenAdminOnly && activeCurrent === step;
+
+          // Don't render admin-only steps when not in admin mode
+          if (isHiddenAdminOnly) return null;
+
           return (
             <motion.div
               key={index}
@@ -307,11 +316,13 @@ function ProgressSteps({ progress, generationType }: { progress: number; generat
               >
                 {isSkipped ? '⏭️' : isCompleted ? '✅' : step.emoji}
               </motion.div>
-              
+
               <div className="flex-1">
                 <span className="font-medium">{step.label}</span>
                 {isSkipped && (
-                  <span className="ml-2 text-xs uppercase tracking-wide text-slate-400">Skipped</span>
+                  <span className="ml-2 text-xs uppercase tracking-wide text-slate-400">
+                    Skipped {isSkippedForNFT ? '(Admin Mode)' : '(Image Only)'}
+                  </span>
                 )}
                 {isCurrent && (
                   <motion.div
@@ -321,7 +332,7 @@ function ProgressSteps({ progress, generationType }: { progress: number; generat
                   />
                 )}
               </div>
-              
+
               {isCompleted && (
                 <motion.div
                   initial={{ scale: 0 }}
@@ -339,11 +350,11 @@ function ProgressSteps({ progress, generationType }: { progress: number; generat
   );
 }
 
-export default function GenerationProgressPage() {
+export default function AdminGenerationProgressPage() {
   const router = useRouter();
   const params = useParams();
   const jobId = params.jobId as string;
-  
+
   const [job, setJob] = useState<GenerationJobData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -386,7 +397,7 @@ export default function GenerationProgressPage() {
           data.job.status === 'nft_minting_failed') {
         return false; // Signal to stop polling
       }
-      
+
       return true; // Continue polling
     } catch (err: any) {
       console.error('Failed to fetch job status:', err);
@@ -417,7 +428,7 @@ export default function GenerationProgressPage() {
     const startPolling = async () => {
       // Initial fetch
       const continuePolling = await fetchJobStatus();
-      
+
       if (continuePolling && shouldContinue) {
         // Set up polling every 3 seconds
         intervalId = setInterval(async () => {
@@ -480,7 +491,7 @@ export default function GenerationProgressPage() {
           <h2 className="text-2xl font-bold text-white mb-4">Oops! Something went wrong</h2>
           <p className="text-slate-300 mb-8">{error}</p>
           <button
-            onClick={() => router.push('/generate')}
+            onClick={() => router.push('/admin/generate')}
             className="px-6 py-3 bg-gradient-to-r from-purple-600 to-cyan-600 rounded-xl text-white font-semibold hover:from-purple-700 hover:to-cyan-700 transition-all duration-200"
           >
             ← Try Again
@@ -498,7 +509,7 @@ export default function GenerationProgressPage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900/20 to-cyan-900/20 relative overflow-hidden">
       <AnimatedBackground />
       <FloatingCreationElements />
-      
+
       <div className="relative z-10 max-w-5xl mx-auto px-6 py-24">
         {/* Header */}
         <motion.div
@@ -513,14 +524,14 @@ export default function GenerationProgressPage() {
             transition={{ duration: 2, repeat: Infinity }}
           >
             <Link
-              href="/generate"
+              href="/admin/generate"
               className="w-32 h-32 rounded-full bg-gradient-to-br from-purple-500/20 to-cyan-500/20 border-2 border-purple-400/30 hover:border-purple-400/50 flex items-center justify-center text-6xl transition-all hover:scale-105 cursor-pointer"
-              title="Back to Generate"
+              title="Back to Admin Generate"
             >
               {statusEmojis[currentStatus]}
             </Link>
           </motion.div>
-          
+
           <motion.h1
             key={currentStatus}
             initial={{ opacity: 0, y: 10 }}
@@ -529,7 +540,11 @@ export default function GenerationProgressPage() {
           >
             {statusMessages[currentStatus]}
           </motion.h1>
-          
+
+          <div className="mt-2 inline-block bg-amber-500/20 border border-amber-500/50 rounded-lg px-3 py-1">
+            <span className="text-amber-300 text-xs font-medium">Admin Test Mode</span>
+          </div>
+
           {job && (
             <PromptAccordion prompt={job.prompt} />
           )}
@@ -749,16 +764,16 @@ export default function GenerationProgressPage() {
               {currentStatus === 'completed' && (
                 <div className="flex flex-col sm:flex-row gap-4 mt-8 justify-center">
                   <button
-                    onClick={() => router.push('/generate')}
+                    onClick={() => router.push('/admin/generate')}
                     className="px-6 py-3 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 rounded-xl text-white font-semibold transition-all duration-200"
                   >
                     🎭 Create Another Monster
                   </button>
                   <button
-                    onClick={() => router.push('/lab')}
+                    onClick={() => router.push('/admin')}
                     className="px-6 py-3 bg-slate-700 hover:bg-slate-600 rounded-xl text-white font-semibold transition-all duration-200"
                   >
-                    🏠 Back to Lab
+                    🏠 Back to Admin
                   </button>
                 </div>
               )}
@@ -785,16 +800,16 @@ export default function GenerationProgressPage() {
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <button
-                  onClick={() => router.push('/generate')}
+                  onClick={() => router.push('/admin/generate')}
                   className="px-6 py-3 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 rounded-xl text-white font-semibold transition-all duration-200"
                 >
                   🔄 Try Again
                 </button>
                 <button
-                  onClick={() => router.push('/lab')}
+                  onClick={() => router.push('/admin')}
                   className="px-6 py-3 bg-slate-700 hover:bg-slate-600 rounded-xl text-white font-semibold transition-all duration-200"
                 >
-                  🏠 Back to Lab
+                  🏠 Back to Admin
                 </button>
               </div>
             </motion.div>

@@ -22,6 +22,7 @@ export interface GenerateMonsterInput {
   userId: string;
   prompt: string;
   generationType: GenerationType;
+  adminBypass?: boolean; // Skip NFT prerequisites and minting for admin testing
 }
 
 export interface GenerateMonsterResult {
@@ -50,11 +51,14 @@ export interface GenerateMonsterResult {
 export async function generateMonster(
   input: GenerateMonsterInput
 ): Promise<GenerateMonsterResult> {
-  const { jobId, userId, prompt, generationType } = input;
+  const { jobId, userId, prompt, generationType, adminBypass } = input;
 
   // Step 0: Check NFT prerequisites (IPFS, blockchain, platform balance)
   // Fail fast if NFT services are unavailable before expensive operations
-  await checkNFTPrerequisites(jobId);
+  // Skip for admin bypass mode (testing without NFT minting)
+  if (!adminBypass) {
+    await checkNFTPrerequisites(jobId);
+  }
 
   // Step 1: Check S3 storage availability
   // This is a pre-flight check to fail fast if storage is down
@@ -72,8 +76,11 @@ export async function generateMonster(
   }
 
   // Step 4: Mint NFT (upload to IPFS + blockchain mint)
-  // Single responsibility: only handles IPFS and minting, not completion
-  const nftResult: MintNFTResult = await mintNFT(jobId);
+  // Skip for admin bypass mode (testing without NFT minting)
+  let nftResult: MintNFTResult | null = null;
+  if (!adminBypass) {
+    nftResult = await mintNFT(jobId);
+  }
 
   // Step 5: Mark job as complete in database
   const completeResult: CompleteJobResult = await markComplete(
@@ -93,9 +100,9 @@ export async function generateMonster(
     glbUrl: glbResult?.glbUrl,
     totalCost: completeResult.totalCost,
     completedAt: completeResult.completedAt,
-    // NFT fields
-    nftItemId: nftResult.nftItemId,
-    nftCollectionId: nftResult.nftCollectionId,
-    nftTxHash: nftResult.txHash,
+    // NFT fields (only populated when not in admin bypass mode)
+    nftItemId: nftResult?.nftItemId,
+    nftCollectionId: nftResult?.nftCollectionId,
+    nftTxHash: nftResult?.txHash,
   };
 }

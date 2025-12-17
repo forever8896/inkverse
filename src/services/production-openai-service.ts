@@ -184,7 +184,7 @@ export class ProductionOpenAIService {
       // Note: gpt-image-1 always returns base64 by default - response_format is not supported
       // See: https://platform.openai.com/docs/guides/image-generation
       const result = await this.getClient().images.generate({
-        model: 'gpt-image-1',
+        model: 'gpt-image-1.5',
         prompt,
         size: '1024x1024',
       });

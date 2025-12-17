@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useMonsterGeneration } from './useMonsterGeneration';
-import { GenerationJobData } from '@/stores/monster-generation';
+import { useMonsterGenerationStore, GenerationJobData } from '@/stores/monster-generation';
 import { MonsterStage } from '@/lib/generation-job';
 import { generateRandomMonsterRequest } from '@/lib/monster-prompts';
 import { isProcessing } from '@/lib/status-constants';
@@ -46,12 +45,12 @@ export function useMonsterAsset(userId: string | undefined, lessonId: number, cu
   const lastRefreshRef = useRef<number>(0);
   const resumeCheckedRef = useRef<string | null>(null);
 
-  const { 
-    jobs, 
-    fetchJobStatus, 
-    startPolling, 
-    stopPolling 
-  } = useMonsterGeneration();
+  const {
+    jobs,
+    fetchJobStatus,
+    startPolling,
+    stopPolling
+  } = useMonsterGenerationStore();
 
   const job = jobId ? jobs[jobId] : null;
 

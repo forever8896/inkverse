@@ -71,6 +71,9 @@ export interface GenerateMonsterRequest {
 
   // Wallet Address for NFT minting
   walletAddress?: string;
+
+  // Admin-only: bypass wallet requirement for testing
+  adminBypass?: boolean;
 }
 
 // Option Constants

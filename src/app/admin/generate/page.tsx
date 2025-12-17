@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 
 type MonsterStyle = 'cute' | 'fierce' | 'mysterious' | 'playful' | 'cosmic';
 type MonsterStage = 'egg' | 'young' | 'adult';
@@ -14,22 +13,22 @@ interface GenerateMonsterRequest {
   eyes: number;
   bodyType: 'skeletal' | 'muscular' | 'fluffy' | 'serpentine' | 'rocky';
   size: 'tiny' | 'small' | 'medium' | 'large' | 'massive';
-  
+
   // Personality & Style
   attitude: 'sassy' | 'crypto-degen' | 'rainbow' | 'wise' | 'mischievous' | 'regal' | 'robotic' | 'kawaii';
-  
+
   // Magical Abilities
   canFly: 'wings' | 'floating' | 'no';
   specialPower: 'fire' | 'ice' | 'lightning' | 'nature' | 'psychic' | 'star' | 'crystal' | 'wind';
   magicalAura: 'sparkly' | 'fiery' | 'cosmic' | 'watery' | 'floral';
-  
+
   // Appearance
   colorScheme: 'red' | 'blue' | 'green' | 'purple' | 'rainbow' | 'dark' | 'light' | 'metallic';
   texture: 'scales' | 'fur' | 'metal' | 'crystal' | 'plant' | 'ethereal';
-  
+
   // Environment
   habitat: 'mountains' | 'ocean' | 'forest' | 'space' | 'desert' | 'ruins' | 'city' | 'clouds';
-  
+
   // Keep existing for backward compatibility
   style?: MonsterStyle; // Legacy - defaults to 'cute'
   stage: MonsterStage;
@@ -156,11 +155,11 @@ function AnimatedBackground() {
 function FloatingElements() {
   const floatingEmojis = ['🧪', '⚗️', '🔬', '🧬', '✨', '🌟', '💫', '🔮'];
   const [isClient, setIsClient] = useState(false);
-  
+
   useEffect(() => {
     setIsClient(true);
   }, []);
-  
+
   // Fixed positions to avoid hydration mismatch
   const fixedPositions = [
     { left: 15, top: 20 },
@@ -172,7 +171,7 @@ function FloatingElements() {
     { left: 70, top: 85 },
     { left: 60, top: 15 },
   ];
-  
+
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
       {isClient && floatingEmojis.map((emoji, index) => {
@@ -210,7 +209,7 @@ function FloatingElements() {
   );
 }
 
-export default function GeneratePage() {
+export default function AdminGeneratePage() {
   const router = useRouter();
   const [formData, setFormData] = useState<GenerateMonsterRequest>({
     // Physical Features
@@ -250,7 +249,7 @@ export default function GeneratePage() {
   const generatePreviewText = (data: GenerateMonsterRequest): string => {
     const eyeText = data.eyes === 1 ? 'one eye' : data.eyes === 2 ? 'two eyes' : data.eyes === 3 ? 'three eyes' : 'many eyes';
     const flyText = data.canFly === 'wings' ? 'with wings for flying' : data.canFly === 'floating' ? 'that floats magically' : 'that stays on the ground';
-    
+
     return `A ${data.size} ${data.attitude} monster with ${eyeText}, ${data.bodyType} body type, ${data.texture} texture, ${data.colorScheme} colors, ${data.specialPower} powers, ${data.magicalAura} magical aura, ${flyText}, living in ${data.habitat}`;
   };
 
@@ -262,12 +261,16 @@ export default function GeneratePage() {
 
     try {
       // Send structured data to server - AI prompt will be generated server-side
+      // adminBypass: true skips wallet requirement for admin testing
       const response = await fetch('/api/generate-monster', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          adminBypass: true, // Admin testing mode - skip wallet requirement
+        }),
       });
 
       const data = await response.json();
@@ -280,9 +283,9 @@ export default function GeneratePage() {
         throw new Error('Invalid response from server');
       }
 
-      // Redirect to progress page immediately to prevent duplicate requests
-      router.push(`/generate/${data.jobId}`);
-      
+      // Redirect to admin progress page
+      router.push(`/admin/generate/${data.jobId}`);
+
     } catch (err: any) {
       console.error('Generation error:', err);
       setError(err.message || 'Something went wrong. Please try again.');
@@ -305,7 +308,7 @@ export default function GeneratePage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900/20 to-cyan-900/20 relative overflow-hidden">
       <AnimatedBackground />
       <FloatingElements />
-      
+
       <div className="relative z-10 max-w-4xl mx-auto px-6 py-24">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -329,13 +332,16 @@ export default function GeneratePage() {
               🧪
             </motion.div>
           </div>
-          
+
           <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
-            Create Your Monster
+            Admin: Test Monster Generation
           </h1>
           <p className="text-xl text-slate-300 max-w-2xl mx-auto">
-            Describe your dream creature and watch AI bring it to life in stunning 3D!
+            Test the AI generation pipeline without wallet requirements.
           </p>
+          <div className="mt-4 inline-block bg-amber-500/20 border border-amber-500/50 rounded-lg px-4 py-2">
+            <span className="text-amber-300 text-sm font-medium">Admin Mode - No wallet required</span>
+          </div>
         </motion.div>
 
         <motion.div
@@ -350,7 +356,7 @@ export default function GeneratePage() {
               <h3 className="text-2xl font-bold text-white mb-6 flex items-center">
                 👁️ Physical Features
               </h3>
-              
+
               {/* Number of Eyes */}
               <div className="mb-6">
                 <label className="block text-lg font-semibold text-white mb-4">
@@ -441,7 +447,7 @@ export default function GeneratePage() {
               <h3 className="text-2xl font-bold text-white mb-6 flex items-center">
                 🎭 Personality & Magic
               </h3>
-              
+
               {/* Attitude */}
               <div className="mb-6">
                 <label className="block text-lg font-semibold text-white mb-4">
@@ -560,7 +566,7 @@ export default function GeneratePage() {
               <h3 className="text-2xl font-bold text-white mb-6 flex items-center">
                 🎨 Appearance & Environment
               </h3>
-              
+
               {/* Stage Selection */}
               <div className="mb-6">
                 <label className="block text-lg font-semibold text-white mb-4">
@@ -741,7 +747,7 @@ export default function GeneratePage() {
               ) : (
                 <>
                   <span className="text-2xl mr-3">🎭</span>
-                  Generate My Monster
+                  Generate Test Monster
                 </>
               )}
             </motion.button>
