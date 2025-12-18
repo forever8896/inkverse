@@ -15,6 +15,7 @@ interface TutorialStep {
   noShadow?: boolean; // Don't show dark overlay (allow user to see everything)
   tooltipSize?: 'slim' | 'normal'; // Slim for tight spaces, normal for default
   forcePosition?: 'left-column' | 'right-column' | 'top-bar'; // Force specific layout positioning
+  allowScroll?: boolean; // Allow user to scroll freely without fighting scrollIntoView
 }
 
 const TUTORIAL_STEPS: TutorialStep[] = [
@@ -33,7 +34,6 @@ const TUTORIAL_STEPS: TutorialStep[] = [
     position: 'bottom',
     action: 'Select any lesson from the dropdown',
     waitForAction: true,
-    autoAdvance: true,
     checkAction: () => {
       const select = document.querySelector('.lesson-selector') as HTMLSelectElement;
       // Check if any lesson is selected (value is not empty and not the placeholder)
@@ -50,12 +50,11 @@ const TUTORIAL_STEPS: TutorialStep[] = [
   {
     id: 'select-chapter',
     title: '📂 Step 2: Explore a Chapter',
-    description: 'Now click on any chapter (the gray boxes) to expand it and see its steps. Try clicking on the first chapter!',
+    description: 'Now click on any chapter to expand it and see its steps. Try clicking on the first chapter!',
     targetSelector: '.chapters-list',
     position: 'right',
     action: 'Click on a chapter to expand it',
     waitForAction: true,
-    autoAdvance: true,
     checkAction: () => {
       // Check if any chapter steps are visible by looking for step buttons
       // More robust than checking for Tailwind class - looks for actual content structure
@@ -79,12 +78,11 @@ const TUTORIAL_STEPS: TutorialStep[] = [
   {
     id: 'select-step',
     title: '✏️ Step 3: Edit a Step',
-    description: 'Click on any step (the smaller cyan boxes) to open it in the editor. This will show you all the content and settings for that step.',
+    description: 'Click on any step to open it in the editor. This will show you all the content and settings for that step.',
     targetSelector: '.chapters-list',
     position: 'right',
     action: 'Click on a step to edit it',
     waitForAction: true,
-    autoAdvance: true,
     checkAction: () => {
       const editor = document.querySelector('.editor-panel h2');
       return editor?.textContent?.includes('Edit Step:') || false;
@@ -107,7 +105,6 @@ const TUTORIAL_STEPS: TutorialStep[] = [
     position: 'left',
     action: 'Click on "info-box" component',
     waitForAction: true,
-    autoAdvance: true,
     checkAction: () => {
       const textarea = document.querySelector('.editor-panel textarea') as HTMLTextAreaElement;
       return textarea?.value?.includes('data-component="info-box"') || false;
@@ -132,7 +129,6 @@ const TUTORIAL_STEPS: TutorialStep[] = [
     forcePosition: 'top-bar',
     action: 'Click "PREVIEW MODE"',
     waitForAction: true,
-    autoAdvance: true,
     checkAction: () => {
       const button = document.querySelector('.preview-toggle');
       return button?.textContent?.includes('EDIT MODE') || false;
@@ -147,6 +143,7 @@ const TUTORIAL_STEPS: TutorialStep[] = [
     tooltipSize: 'slim',
     forcePosition: 'left-column',
     noShadow: true,
+    allowScroll: true,
   },
   {
     id: 'observe-styling',
@@ -157,6 +154,7 @@ const TUTORIAL_STEPS: TutorialStep[] = [
     tooltipSize: 'slim',
     forcePosition: 'left-column',
     noShadow: true,
+    allowScroll: true,
   },
   {
     id: 'back-to-edit',
@@ -168,7 +166,6 @@ const TUTORIAL_STEPS: TutorialStep[] = [
     forcePosition: 'top-bar',
     action: 'Click "EDIT MODE"',
     waitForAction: true,
-    autoAdvance: true,
     checkAction: () => {
       const button = document.querySelector('.preview-toggle');
       return button?.textContent?.includes('PREVIEW MODE') || false;
@@ -251,7 +248,10 @@ export default function LessonEditorTutorial({ isActive, onComplete, onSkip }: L
   useEffect(() => {
     if (!isActive) return;
 
-    const updatePosition = () => {
+    // Track if this is the initial render for this step
+    let isInitialRender = true;
+
+    const updatePosition = (shouldScroll = false) => {
       const element = document.querySelector(step.targetSelector) as HTMLElement;
       if (element) {
         setHighlightedElement(element);
@@ -421,17 +421,20 @@ export default function LessonEditorTutorial({ isActive, onComplete, onSkip }: L
 
         setTooltipPosition({ top, left });
 
-        // Scroll element into view
-        if (step.position !== 'center') {
+        // Only scroll element into view on initial step load, not on scroll events
+        // Skip for steps with allowScroll to let users scroll freely
+        if (shouldScroll && step.position !== 'center' && !step.allowScroll) {
           element.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
         }
       }
     };
 
-    updatePosition();
+    // Initial position update with scroll
+    updatePosition(true);
+    isInitialRender = false;
 
-    // Update on resize/scroll
-    const handleUpdate = () => requestAnimationFrame(updatePosition);
+    // Update on resize/scroll - but don't re-scroll
+    const handleUpdate = () => requestAnimationFrame(() => updatePosition(false));
     window.addEventListener('resize', handleUpdate);
     window.addEventListener('scroll', handleUpdate, true);
 

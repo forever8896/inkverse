@@ -732,9 +732,9 @@ export default function LessonEditorPage() {
           </>
         ) : (
           /* Preview Mode - Matching actual lesson view */
-          <div className="col-span-9 flex">
+          <div className="col-span-9 flex h-full">
             {/* Content Preview */}
-            <div className="w-1/2 overflow-y-auto bg-slate-900 p-6">
+            <div className="w-1/2 overflow-y-auto bg-slate-900 p-6 h-full">
               {currentStep ? (
                 <div className="max-w-2xl">
                   <h2 className="text-2xl font-bold mb-4 text-purple-400">
@@ -764,7 +764,7 @@ export default function LessonEditorPage() {
             </div>
 
             {/* Code Preview */}
-            <div className="w-1/2 border-l border-slate-700 bg-slate-900 flex flex-col">
+            <div className="w-1/2 border-l border-slate-700 bg-slate-900 flex flex-col h-full">
               {/* Monster Asset Preview */}
               <div className="h-1/3 border-b border-slate-700 relative bg-slate-950/50">
                  {currentChapter && selectedStep !== null ? (
