@@ -20,7 +20,7 @@ export function WalletProviders({ children }: { children: React.ReactNode }) {
   return (
     // Type assertion due to duplicate @reactive-dot/core versions in node_modules
     <ReactiveDotProvider config={config as any}>
-      <ChainProvider chainId={"pop" as any}>
+      <ChainProvider chainId={"passethub" as any}>
         <WithSigner>
           {children}
         </WithSigner>

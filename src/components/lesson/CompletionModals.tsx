@@ -4,15 +4,13 @@
  * CompletionModals - Modal components for lesson completion flows
  *
  * Extracted from LessonLayout.tsx to improve modularity.
- * Includes: Chapter Complete, Lesson Complete, NFT Minting modals, and Confetti.
+ * Includes: Chapter Complete, Lesson Complete modals, and Confetti.
  *
  * Note: GitHubAuthModal is already a separate component and not included here.
  */
 
 import { useState, useEffect } from 'react';
 import Confetti from 'react-confetti';
-import { ConnectButton } from '@/components/web3/connect-button';
-import { MintCreatureNFT } from '@/components/MintCreatureNFT';
 import { signIn, useSession } from '@/lib/auth-client';
 import { Github, Loader2, Shield, Zap, BookOpen } from 'lucide-react';
 
@@ -32,13 +30,6 @@ interface ChapterCompleteModalProps {
 
 interface LessonCompleteModalProps {
   isOpen: boolean;
-  lessonId: number;
-  onClose: () => void;
-}
-
-interface NFTMintingModalProps {
-  isOpen: boolean;
-  lessonId: number;
   onClose: () => void;
 }
 
@@ -64,13 +55,6 @@ interface CompletionModalsProps {
   /** Lesson completion modal state */
   lessonComplete: {
     isOpen: boolean;
-    lessonId: number;
-    onClose: () => void;
-  };
-  /** NFT minting modal state */
-  nftMinting: {
-    isOpen: boolean;
-    lessonId: number;
     onClose: () => void;
   };
   /** Window dimensions for confetti */
@@ -229,7 +213,6 @@ function ChapterCompleteModal({
 
 function LessonCompleteModal({
   isOpen,
-  lessonId,
   onClose,
 }: LessonCompleteModalProps) {
   if (!isOpen) return null;
@@ -261,14 +244,6 @@ function LessonCompleteModal({
           Welcome to the world of ink! smart contracts!
         </p>
 
-        {/* Wallet Connection & NFT Minting Section */}
-        <div className="mb-6">
-          <div className="mb-4 flex justify-center">
-            <ConnectButton />
-          </div>
-          <MintCreatureNFT lessonId={lessonId} />
-        </div>
-
         <div className="flex space-x-4">
           <a
             href="https://use.ink/docs/v6/"
@@ -280,44 +255,6 @@ function LessonCompleteModal({
             <span>View ink! Docs</span>
           </a>
         </div>
-      </div>
-    </div>
-  );
-}
-
-// ============================================================================
-// NFT Minting Modal
-// ============================================================================
-
-function NFTMintingModal({ isOpen, lessonId, onClose }: NFTMintingModalProps) {
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-      <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl shadow-2xl p-10 flex flex-col items-center max-w-md border border-purple-500/30 relative">
-        <div className="text-6xl mb-6 animate-bounce">🎨</div>
-        <h2 className="text-3xl font-bold text-white mb-3 text-center">
-          Mint Your Creature NFT!
-        </h2>
-        <p className="text-lg text-purple-300 mb-6 text-center">
-          You've completed a major milestone! Mint your creature NFT as proof of
-          your progress.
-        </p>
-
-        {/* Wallet Connection & NFT Minting */}
-        <div className="w-full mb-6">
-          <div className="mb-4 flex justify-center">
-            <ConnectButton />
-          </div>
-          <MintCreatureNFT lessonId={lessonId} />
-        </div>
-
-        <button
-          onClick={onClose}
-          className="px-6 py-3 bg-gradient-to-r from-slate-700 to-slate-600 hover:from-slate-600 hover:to-slate-500 rounded-lg text-white font-semibold shadow-md transition-all duration-200"
-        >
-          Continue Without Minting →
-        </button>
       </div>
     </div>
   );
@@ -362,7 +299,7 @@ function CompletionConfetti({
 /**
  * Combined completion modals component.
  *
- * Renders chapter complete, lesson complete, NFT minting modals,
+ * Renders chapter complete, lesson complete modals,
  * and celebration confetti based on provided state.
  *
  * @example
@@ -375,13 +312,7 @@ function CompletionConfetti({
  *   }}
  *   lessonComplete={{
  *     isOpen: showCompletionModal,
- *     lessonId: lesson.id,
  *     onClose: () => setShowCompletionModal(false),
- *   }}
- *   nftMinting={{
- *     isOpen: showNFTMinting,
- *     lessonId: lesson.id,
- *     onClose: () => setShowNFTMinting(false),
  *   }}
  *   windowDimensions={windowDimensions}
  * />
@@ -390,7 +321,6 @@ function CompletionConfetti({
 export function CompletionModals({
   chapterComplete,
   lessonComplete,
-  nftMinting,
   windowDimensions,
 }: CompletionModalsProps) {
   const showConfetti = chapterComplete.isOpen || lessonComplete.isOpen;
@@ -407,14 +337,7 @@ export function CompletionModals({
 
       <LessonCompleteModal
         isOpen={lessonComplete.isOpen}
-        lessonId={lessonComplete.lessonId}
         onClose={lessonComplete.onClose}
-      />
-
-      <NFTMintingModal
-        isOpen={nftMinting.isOpen}
-        lessonId={nftMinting.lessonId}
-        onClose={nftMinting.onClose}
       />
 
       <CompletionConfetti

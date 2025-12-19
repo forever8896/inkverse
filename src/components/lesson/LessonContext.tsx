@@ -77,8 +77,6 @@ interface LessonContextValue {
   showChapterComplete: boolean;
   setShowChapterComplete: (show: boolean) => void;
   completedChapterTitle: string;
-  showNFTMinting: boolean;
-  setShowNFTMinting: (show: boolean) => void;
   moveToNextChapter: () => void;
   /** Whether auth is required to continue from the current chapter completion modal */
   chapterRequiresAuth: boolean;
@@ -177,7 +175,6 @@ export function LessonProvider({
   const [showCompletionModal, setShowCompletionModal] = useState(false);
   const [showChapterComplete, setShowChapterComplete] = useState(false);
   const [completedChapterTitle, setCompletedChapterTitle] = useState('');
-  const [showNFTMinting, setShowNFTMinting] = useState(false);
   const [chapterRequiresAuth, setChapterRequiresAuth] = useState(false);
   const [showSuccessSquink, setShowSuccessSquink] = useState(false);
 
@@ -678,8 +675,6 @@ export function LessonProvider({
     showChapterComplete,
     setShowChapterComplete,
     completedChapterTitle,
-    showNFTMinting,
-    setShowNFTMinting,
     moveToNextChapter,
     chapterRequiresAuth,
 

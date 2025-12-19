@@ -491,7 +491,7 @@ export default function NFTExplorerPage() {
   // Provide ReactiveDOT context here since this page isn't wrapped at app root
   return (
     <ReactiveDotProvider config={config as any}>
-      <ChainProvider chainId={"pop" as any}>
+      <ChainProvider chainId={"passethub" as any}>
         <WithSigner>
           <NFTExplorerContent />
         </WithSigner>

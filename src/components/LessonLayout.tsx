@@ -82,8 +82,6 @@ function LessonLayoutInner() {
     setShowCompletionModal,
     showChapterComplete,
     completedChapterTitle,
-    showNFTMinting,
-    setShowNFTMinting,
     moveToNextChapter,
     chapterRequiresAuth,
     session,
@@ -116,7 +114,7 @@ function LessonLayoutInner() {
           </div>
         </div>
 
-        {/* Completion Modals (Chapter, Lesson, NFT Minting) + Confetti */}
+        {/* Completion Modals (Chapter, Lesson) + Confetti */}
         <CompletionModals
           chapterComplete={{
             isOpen: showChapterComplete,
@@ -127,13 +125,7 @@ function LessonLayoutInner() {
           }}
           lessonComplete={{
             isOpen: showCompletionModal,
-            lessonId: lesson.id,
             onClose: () => setShowCompletionModal(false),
-          }}
-          nftMinting={{
-            isOpen: showNFTMinting,
-            lessonId: lesson.id,
-            onClose: () => setShowNFTMinting(false),
           }}
           windowDimensions={windowDimensions}
         />
