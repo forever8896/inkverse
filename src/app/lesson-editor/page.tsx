@@ -17,7 +17,7 @@ import { useLessonEditorPersistence } from '@/hooks/useLessonEditorPersistence';
 import { SaveIndicator } from '@/components/lesson-editor/SaveIndicator';
 import { DraftRecoveryModal } from '@/components/lesson-editor/DraftRecoveryModal';
 import { ActivityLog } from '@/components/lesson-editor/ActivityLog';
-import { EditorDraft, HistoryAction } from '@/lib/lesson-editor-storage';
+import { EditorDraft, HistoryAction, getActiveLessonId, loadDraft, validateAndClampIndices } from '@/lib/lesson-editor-storage';
 
 // Component palette for drag & drop
 const COMPONENT_TEMPLATES = {
@@ -97,17 +97,22 @@ export default function LessonEditorPage() {
       });
   }, []);
 
-  // Check for draft on initial mount
+  // Check for draft on initial mount - use the LAST ACTIVE lesson id, not current
   useEffect(() => {
     if (hasCheckedDraft.current) return;
     hasCheckedDraft.current = true;
 
-    const existingDraft = persistenceCheckForDraft(lesson.id ?? null);
+    // Check what lesson was last being edited
+    const activeLessonId = getActiveLessonId();
+    const draftToCheck = activeLessonId ?? lesson.id ?? null;
+
+    const existingDraft = loadDraft(draftToCheck);
     if (existingDraft) {
-      setPendingDraft(existingDraft);
+      const validatedDraft = validateAndClampIndices(existingDraft);
+      setPendingDraft(validatedDraft);
       setShowDraftRecovery(true);
     }
-  }, [lesson.id, persistenceCheckForDraft]);
+  }, [lesson.id]);
 
   // Auto-save on state changes (debounced)
   const triggerAutoSave = useCallback(() => {
@@ -147,6 +152,10 @@ export default function LessonEditorPage() {
     setChapters(pendingDraft.chapters);
     setSelectedChapter(pendingDraft.selectedChapter);
     setSelectedStep(pendingDraft.selectedStep);
+    // Sync the lesson selector dropdown
+    if (pendingDraft.lessonId) {
+      setSelectedLessonId(String(pendingDraft.lessonId));
+    }
     setShowDraftRecovery(false);
     setPendingDraft(null);
     toast.success('Draft restored successfully');
@@ -154,11 +163,16 @@ export default function LessonEditorPage() {
 
   // Handle draft discard
   const handleDiscardDraft = useCallback(() => {
-    persistenceDiscardDraft(lesson.id ?? null);
+    // Discard the draft that was pending (from the active lesson id)
+    if (pendingDraft?.lessonId !== undefined) {
+      persistenceDiscardDraft(pendingDraft.lessonId);
+    } else {
+      persistenceDiscardDraft(lesson.id ?? null);
+    }
     setShowDraftRecovery(false);
     setPendingDraft(null);
     toast.info('Draft discarded');
-  }, [persistenceDiscardDraft, lesson.id]);
+  }, [persistenceDiscardDraft, lesson.id, pendingDraft?.lessonId]);
 
   // Handle revert to history entry
   const handleRevert = useCallback((entryId: string) => {
