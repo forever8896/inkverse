@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { authClient } from '@/lib/auth-client';
 import { Lesson, Chapter, Step } from '@/lib/lesson-types';
 import LessonContent from '@/components/LessonContent';
@@ -11,6 +11,13 @@ import { validateLesson } from '@/lib/lesson-editor-validation';
 import { useMonsterAsset } from '@/hooks/useMonsterAsset';
 import { toast, Toaster } from 'sonner';
 import '@/styles/lesson-content.css';
+
+// Auto-save components and hooks
+import { useLessonEditorPersistence } from '@/hooks/useLessonEditorPersistence';
+import { SaveIndicator } from '@/components/lesson-editor/SaveIndicator';
+import { DraftRecoveryModal } from '@/components/lesson-editor/DraftRecoveryModal';
+import { ActivityLog } from '@/components/lesson-editor/ActivityLog';
+import { EditorDraft, HistoryAction } from '@/lib/lesson-editor-storage';
 
 // Component palette for drag & drop
 const COMPONENT_TEMPLATES = {
@@ -54,8 +61,30 @@ export default function LessonEditorPage() {
   const [hoveredComponent, setHoveredComponent] = useState<{ name: string; template: string; rect: DOMRect } | null>(null);
   const [copiedToClipboard, setCopiedToClipboard] = useState(false);
 
+  // Auto-save state
+  const [showDraftRecovery, setShowDraftRecovery] = useState(false);
+  const [pendingDraft, setPendingDraft] = useState<EditorDraft | null>(null);
+  const [activityLogCollapsed, setActivityLogCollapsed] = useState(false);
+
   const { data: session } = authClient.useSession();
   const asset = useMonsterAsset(session?.user?.id, lesson.id || 0);
+
+  // Initialize persistence hook
+  const persistence = useLessonEditorPersistence(lesson.id ?? null);
+
+  // Destructure stable function references to avoid re-render loops
+  const {
+    saveDraft: persistenceSaveDraft,
+    saveDraftImmediate: persistenceSaveDraftImmediate,
+    recordChange: persistenceRecordChange,
+    checkForDraft: persistenceCheckForDraft,
+    discardDraft: persistenceDiscardDraft,
+    revertTo: persistenceRevertTo,
+    clearHistory: persistenceClearHistory,
+  } = persistence;
+
+  // Track if initial load has happened
+  const hasCheckedDraft = useRef(false);
 
   // Load available lessons on mount
   useEffect(() => {
@@ -67,6 +96,91 @@ export default function LessonEditorPage() {
         toast.error('Failed to load available lessons');
       });
   }, []);
+
+  // Check for draft on initial mount
+  useEffect(() => {
+    if (hasCheckedDraft.current) return;
+    hasCheckedDraft.current = true;
+
+    const existingDraft = persistenceCheckForDraft(lesson.id ?? null);
+    if (existingDraft) {
+      setPendingDraft(existingDraft);
+      setShowDraftRecovery(true);
+    }
+  }, [lesson.id, persistenceCheckForDraft]);
+
+  // Auto-save on state changes (debounced)
+  const triggerAutoSave = useCallback(() => {
+    persistenceSaveDraft({
+      lesson,
+      chapters,
+      selectedChapter,
+      selectedStep,
+    });
+  }, [persistenceSaveDraft, lesson, chapters, selectedChapter, selectedStep]);
+
+  // Trigger auto-save when state changes
+  useEffect(() => {
+    // Skip if we haven't dismissed recovery modal yet
+    if (showDraftRecovery) return;
+    // Skip if no meaningful content
+    if (chapters.length === 0 && !lesson.title) return;
+
+    triggerAutoSave();
+  }, [lesson, chapters, selectedChapter, selectedStep, showDraftRecovery, triggerAutoSave]);
+
+  // Helper to record history and save
+  const recordHistoryAction = useCallback((action: HistoryAction, description?: string) => {
+    persistenceRecordChange(action, {
+      lesson,
+      chapters,
+      selectedChapter,
+      selectedStep,
+    }, description);
+  }, [persistenceRecordChange, lesson, chapters, selectedChapter, selectedStep]);
+
+  // Handle draft restore
+  const handleRestoreDraft = useCallback(() => {
+    if (!pendingDraft) return;
+
+    setLesson(pendingDraft.lesson);
+    setChapters(pendingDraft.chapters);
+    setSelectedChapter(pendingDraft.selectedChapter);
+    setSelectedStep(pendingDraft.selectedStep);
+    setShowDraftRecovery(false);
+    setPendingDraft(null);
+    toast.success('Draft restored successfully');
+  }, [pendingDraft]);
+
+  // Handle draft discard
+  const handleDiscardDraft = useCallback(() => {
+    persistenceDiscardDraft(lesson.id ?? null);
+    setShowDraftRecovery(false);
+    setPendingDraft(null);
+    toast.info('Draft discarded');
+  }, [persistenceDiscardDraft, lesson.id]);
+
+  // Handle revert to history entry
+  const handleRevert = useCallback((entryId: string) => {
+    const snapshot = persistenceRevertTo(entryId);
+    if (!snapshot) {
+      toast.error('Failed to revert - snapshot not found');
+      return;
+    }
+
+    setLesson(snapshot.lesson);
+    setChapters(snapshot.chapters);
+    setSelectedChapter(snapshot.selectedChapter);
+    setSelectedStep(snapshot.selectedStep);
+
+    // Record the revert action
+    recordHistoryAction(
+      { type: 'reverted', toEntryId: entryId },
+      'Reverted to earlier state'
+    );
+
+    toast.success('Reverted to earlier state');
+  }, [persistenceRevertTo, recordHistoryAction]);
 
   // Load selected lesson
   const loadExistingLesson = async (lessonId: string) => {
@@ -106,6 +220,29 @@ export default function LessonEditorPage() {
         setSelectedChapter(null);
         setSelectedStep(null);
         setSelectedLessonId(lessonId);
+
+        // Record history action for lesson load
+        persistenceRecordChange(
+          { type: 'lesson_loaded', lessonId: data.lesson.id },
+          {
+            lesson: {
+              id: data.lesson.id,
+              title: data.lesson.title,
+              description: data.lesson.description,
+              difficulty: data.lesson.difficulty,
+              duration: data.lesson.duration,
+              objectives: data.lesson.objectives,
+              completed: data.lesson.completed,
+              locked: data.lesson.locked,
+              evolutionPath: data.lesson.evolutionPath,
+            },
+            chapters: data.lesson.chapters || [],
+            selectedChapter: null,
+            selectedStep: null,
+          },
+          `Loaded lesson "${data.lesson.title}"`
+        );
+
         toast.success(`Loaded: ${data.lesson.title}`);
       } else {
         toast.error('Lesson data not found in response');
@@ -118,19 +255,27 @@ export default function LessonEditorPage() {
 
   // Add new chapter
   const addChapter = () => {
+    const newChapterIndex = chapters.length;
     const newChapter: Chapter = {
-      id: chapters.length,
+      id: newChapterIndex,
       lessonId: lesson.id || 1,
       title: 'New Chapter',
       description: '',
-      order: chapters.length,
+      order: newChapterIndex,
       concept: 'implementation',
       steps: [],
       estimatedTime: 10,
       requiresPreviousChapter: false,
     };
-    setChapters([...chapters, newChapter]);
+    const updatedChapters = [...chapters, newChapter];
+    setChapters(updatedChapters);
     setSelectedChapter(newChapter.id);
+
+    // Record history action
+    recordHistoryAction(
+      { type: 'chapter_added', chapterIndex: newChapterIndex },
+      `Added chapter ${newChapterIndex}`
+    );
   };
 
   // Add new step to selected chapter
@@ -138,12 +283,13 @@ export default function LessonEditorPage() {
     if (selectedChapter === null || selectedChapter < 0 || selectedChapter >= chapters.length) return;
 
     const chapter = chapters[selectedChapter];
+    const newStepIndex = chapter.steps.length;
     const newStep: Step = {
-      id: chapter.steps.length + 1,
+      id: newStepIndex + 1,
       chapterId: chapter.id,
       title: 'New Step',
       content: '<p>Step content here</p>',
-      order: chapter.steps.length + 1,
+      order: newStepIndex + 1,
     };
 
     const updatedChapters = [...chapters];
@@ -152,7 +298,13 @@ export default function LessonEditorPage() {
       steps: [...updatedChapters[selectedChapter].steps, newStep]
     };
     setChapters(updatedChapters);
-    setSelectedStep(updatedChapters[selectedChapter].steps.length - 1);
+    setSelectedStep(newStepIndex);
+
+    // Record history action
+    recordHistoryAction(
+      { type: 'step_added', chapterIndex: selectedChapter, stepIndex: newStepIndex },
+      `Added step to chapter ${selectedChapter}`
+    );
   };
 
   // Update lesson field
@@ -220,7 +372,9 @@ export default function LessonEditorPage() {
   // Insert component template at cursor
   const insertComponent = (template: string, componentName: string) => {
     if (selectedChapter === null || selectedStep === null) return;
-    const currentContent = chapters[selectedChapter].steps[selectedStep].content || '';
+    const step = chapters[selectedChapter]?.steps?.[selectedStep];
+    if (!step) return;
+    const currentContent = step.content || '';
     updateStep('content', currentContent + '\n\n' + template);
 
     // Show feedback animation
@@ -279,7 +433,7 @@ export default function LessonEditorPage() {
         return;
       }
 
-      setLesson({
+      const newLesson = {
         id: parsed.id,
         title: parsed.title,
         description: parsed.description,
@@ -289,11 +443,25 @@ export default function LessonEditorPage() {
         completed: parsed.completed,
         locked: parsed.locked,
         evolutionPath: parsed.evolutionPath,
-      });
+      };
+      setLesson(newLesson);
       setChapters(parsed.chapters || []);
       setSelectedChapter(null);
       setSelectedStep(null);
       setLoadedJson(''); // Clear input after successful load
+
+      // Record history action for JSON import
+      persistenceRecordChange(
+        { type: 'json_imported' },
+        {
+          lesson: newLesson,
+          chapters: parsed.chapters || [],
+          selectedChapter: null,
+          selectedStep: null,
+        },
+        'Imported lesson from JSON'
+      );
+
       toast.success('Lesson loaded successfully!');
     } catch (error) {
       if (error instanceof SyntaxError) {
@@ -314,6 +482,15 @@ export default function LessonEditorPage() {
     <div className="min-h-screen bg-slate-900 text-slate-100">
       {/* Toast notifications */}
       <Toaster position="top-right" theme="dark" richColors />
+
+      {/* Draft Recovery Modal */}
+      {showDraftRecovery && pendingDraft && (
+        <DraftRecoveryModal
+          draft={pendingDraft}
+          onRestore={handleRestoreDraft}
+          onDiscard={handleDiscardDraft}
+        />
+      )}
 
       {/* Tutorial overlay */}
       <LessonEditorTutorial
@@ -354,12 +531,20 @@ export default function LessonEditorPage() {
             <p className="text-slate-400 text-sm">Create and edit MonstersInk! lessons visually</p>
           </div>
           <div className="flex items-center gap-3">
+            {/* Save Indicator */}
+            <SaveIndicator
+              lastSaved={persistence.lastSaved}
+              isSaving={persistence.isSaving}
+              isDirty={persistence.isDirty}
+              saveError={persistence.saveError}
+              isStorageAvailable={persistence.isStorageAvailable}
+            />
             <button
               onClick={() => setShowTutorial(true)}
               className="px-4 py-2 bg-purple-600/20 hover:bg-purple-600/40 border border-purple-500/50 hover:border-purple-400 text-purple-300 hover:text-purple-100 font-pixel text-[8px] uppercase transition-all hover:shadow-lg hover:shadow-purple-500/20 rounded"
               title="Start Tutorial"
             >
-              📚 TUTORIAL
+              TUTORIAL
             </button>
             <select
               value={selectedLessonId}
@@ -377,7 +562,7 @@ export default function LessonEditorPage() {
               onClick={() => setShowPreview(!showPreview)}
               className="preview-toggle px-4 py-2 bg-cyan-600/20 hover:bg-cyan-600/40 border border-cyan-500/50 hover:border-cyan-400 text-cyan-300 hover:text-cyan-100 font-pixel text-[8px] uppercase transition-all hover:shadow-lg hover:shadow-cyan-500/20 rounded"
             >
-              {showPreview ? '✏️ EDIT MODE' : '👁️ PREVIEW MODE'}
+              {showPreview ? 'EDIT MODE' : 'PREVIEW'}
             </button>
           </div>
         </div>
@@ -394,19 +579,33 @@ export default function LessonEditorPage() {
               type="text"
               value={lesson.title || ''}
               onChange={(e) => updateLesson('title', e.target.value)}
+              onBlur={() => recordHistoryAction(
+                { type: 'lesson_field_updated', field: 'title' },
+                `Updated lesson title`
+              )}
               className="w-full bg-slate-800 border border-slate-600 rounded px-2 py-1 mb-2 text-sm"
               placeholder="Lesson Title"
             />
             <textarea
               value={lesson.description || ''}
               onChange={(e) => updateLesson('description', e.target.value)}
+              onBlur={() => recordHistoryAction(
+                { type: 'lesson_field_updated', field: 'description' },
+                `Updated lesson description`
+              )}
               className="w-full bg-slate-800 border border-slate-600 rounded px-2 py-1 mb-2 text-sm"
               placeholder="Description"
               rows={2}
             />
             <select
               value={lesson.difficulty || 'Beginner'}
-              onChange={(e) => updateLesson('difficulty', e.target.value)}
+              onChange={(e) => {
+                updateLesson('difficulty', e.target.value);
+                recordHistoryAction(
+                  { type: 'lesson_field_updated', field: 'difficulty' },
+                  `Updated lesson difficulty to ${e.target.value}`
+                );
+              }}
               className="w-full bg-slate-800 border border-slate-600 rounded px-2 py-1 text-sm"
             >
               <option>Beginner</option>
@@ -482,6 +681,14 @@ export default function LessonEditorPage() {
                       type="text"
                       value={currentChapter.title}
                       onChange={(e) => updateChapter('title', e.target.value)}
+                      onBlur={() => {
+                        if (selectedChapter !== null) {
+                          recordHistoryAction(
+                            { type: 'chapter_updated', chapterIndex: selectedChapter, field: 'title' },
+                            `Updated chapter ${selectedChapter} title`
+                          );
+                        }
+                      }}
                       className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2"
                     />
                   </div>
@@ -490,6 +697,14 @@ export default function LessonEditorPage() {
                     <textarea
                       value={currentChapter.description}
                       onChange={(e) => updateChapter('description', e.target.value)}
+                      onBlur={() => {
+                        if (selectedChapter !== null) {
+                          recordHistoryAction(
+                            { type: 'chapter_updated', chapterIndex: selectedChapter, field: 'description' },
+                            `Updated chapter ${selectedChapter} description`
+                          );
+                        }
+                      }}
                       className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2"
                       rows={3}
                     />
@@ -500,6 +715,14 @@ export default function LessonEditorPage() {
                       type="text"
                       value={currentChapter.concept}
                       onChange={(e) => updateChapter('concept', e.target.value)}
+                      onBlur={() => {
+                        if (selectedChapter !== null) {
+                          recordHistoryAction(
+                            { type: 'chapter_updated', chapterIndex: selectedChapter, field: 'concept' },
+                            `Updated chapter ${selectedChapter} concept`
+                          );
+                        }
+                      }}
                       className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2"
                       placeholder="e.g., syntax, storage, deployment"
                     />
@@ -510,6 +733,14 @@ export default function LessonEditorPage() {
                       type="number"
                       value={currentChapter.estimatedTime}
                       onChange={(e) => updateChapter('estimatedTime', parseInt(e.target.value) || 0)}
+                      onBlur={() => {
+                        if (selectedChapter !== null) {
+                          recordHistoryAction(
+                            { type: 'chapter_updated', chapterIndex: selectedChapter, field: 'estimatedTime' },
+                            `Updated chapter ${selectedChapter} time`
+                          );
+                        }
+                      }}
                       className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2"
                     />
                   </div>
@@ -524,6 +755,14 @@ export default function LessonEditorPage() {
                       type="text"
                       value={currentStep.title}
                       onChange={(e) => updateStep('title', e.target.value)}
+                      onBlur={() => {
+                        if (selectedChapter !== null && selectedStep !== null) {
+                          recordHistoryAction(
+                            { type: 'step_updated', chapterIndex: selectedChapter, stepIndex: selectedStep, field: 'title' },
+                            `Updated step title in chapter ${selectedChapter}`
+                          );
+                        }
+                      }}
                       className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2"
                     />
                   </div>
@@ -533,6 +772,14 @@ export default function LessonEditorPage() {
                     <textarea
                       value={currentStep.content}
                       onChange={(e) => updateStep('content', e.target.value)}
+                      onBlur={() => {
+                        if (selectedChapter !== null && selectedStep !== null) {
+                          recordHistoryAction(
+                            { type: 'step_updated', chapterIndex: selectedChapter, stepIndex: selectedStep, field: 'content' },
+                            `Updated step content in chapter ${selectedChapter}`
+                          );
+                        }
+                      }}
                       className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2 font-mono text-sm"
                       rows={12}
                     />
@@ -544,6 +791,14 @@ export default function LessonEditorPage() {
                       <textarea
                         value={currentStep.code || ''}
                         onChange={(e) => updateStep('code', e.target.value)}
+                        onBlur={() => {
+                          if (selectedChapter !== null && selectedStep !== null) {
+                            recordHistoryAction(
+                              { type: 'step_updated', chapterIndex: selectedChapter, stepIndex: selectedStep, field: 'code' },
+                              `Updated initial code in chapter ${selectedChapter}`
+                            );
+                          }
+                        }}
                         className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2 font-mono text-xs"
                         rows={6}
                         placeholder="Initial code template"
@@ -554,6 +809,14 @@ export default function LessonEditorPage() {
                       <textarea
                         value={currentStep.expectedCode || ''}
                         onChange={(e) => updateStep('expectedCode', e.target.value)}
+                        onBlur={() => {
+                          if (selectedChapter !== null && selectedStep !== null) {
+                            recordHistoryAction(
+                              { type: 'step_updated', chapterIndex: selectedChapter, stepIndex: selectedStep, field: 'expectedCode' },
+                              `Updated expected code in chapter ${selectedChapter}`
+                            );
+                          }
+                        }}
                         className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2 font-mono text-xs"
                         rows={6}
                         placeholder="Solution code"
@@ -566,6 +829,14 @@ export default function LessonEditorPage() {
                     <textarea
                       value={currentStep.hint || ''}
                       onChange={(e) => updateStep('hint', e.target.value)}
+                      onBlur={() => {
+                        if (selectedChapter !== null && selectedStep !== null) {
+                          recordHistoryAction(
+                            { type: 'step_updated', chapterIndex: selectedChapter, stepIndex: selectedStep, field: 'hint' },
+                            `Updated hint in chapter ${selectedChapter}`
+                          );
+                        }
+                      }}
                       className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2"
                       rows={2}
                       placeholder="Helpful hint for the student"
@@ -728,6 +999,15 @@ export default function LessonEditorPage() {
                   </button>
                 </div>
               </div>
+
+              {/* Activity Log */}
+              <ActivityLog
+                history={persistence.history}
+                onRevert={handleRevert}
+                onClearHistory={persistenceClearHistory}
+                isCollapsed={activityLogCollapsed}
+                onToggleCollapse={() => setActivityLogCollapsed(!activityLogCollapsed)}
+              />
             </div>
           </>
         ) : (
@@ -767,20 +1047,20 @@ export default function LessonEditorPage() {
             <div className="w-1/2 border-l border-slate-700 bg-slate-900 flex flex-col h-full">
               {/* Monster Asset Preview */}
               <div className="h-1/3 border-b border-slate-700 relative bg-slate-950/50">
-                 {currentChapter && selectedStep !== null ? (
+                 {currentChapter && selectedStep !== null && currentChapter.steps[selectedStep] ? (
                     <CreatureStageDisplay
                         stage={(() => {
                             const step = currentChapter.steps[selectedStep];
                             // 1. Explicit Override
-                            if (step.displayStage) return step.displayStage as 'egg' | 'young' | 'adult';
-                            
+                            if (step?.displayStage) return step.displayStage as 'egg' | 'young' | 'adult';
+
                             // 2. History (Auto)
                             const hatchIndex = currentChapter.steps.findIndex(s => s.displayStage === 'young');
                             const evoIndex = currentChapter.steps.findIndex(s => s.displayStage === 'adult');
-                            
+
                             if (evoIndex !== -1 && selectedStep >= evoIndex && asset.isModelReady) return 'adult';
                             if (hatchIndex !== -1 && selectedStep >= hatchIndex && asset.isImageReady) return 'young';
-                            
+
                             return 'egg';
                         })()}
                         imageUrl={asset.imageUrl}
