@@ -1031,9 +1031,9 @@ export default function LessonEditorPage() {
             <div className="w-1/2 overflow-y-auto bg-slate-900 p-6 h-full">
               {currentStep ? (
                 <div className="max-w-2xl">
-                  <h2 className="text-2xl font-bold mb-4 text-purple-400">
+                  <h1 className="text-2xl font-bold mb-4 text-purple-400">
                     {currentStep.title}
-                  </h2>
+                  </h1>
                   <LessonContent html={currentStep.content} />
 
                   {currentStep.hint && (
