@@ -72,25 +72,27 @@ export function LessonCreaturePanel() {
             <img src="/logo.png" alt="Monsters ink!" className="h-[80px]" />
           </Link>
 
-          <div className="flex items-center space-x-3">
-            {/* NFT Capture Button */}
-            <button
-              onClick={captureNFT}
-              disabled={isCapturing}
-              className={`flex items-center justify-center w-10 h-10 rounded-lg text-sm font-semibold transition-all duration-300 ${
-                isCapturing
-                  ? 'bg-slate-600 text-slate-400 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-lg hover:shadow-purple-500/30 hover:scale-105'
-              }`}
-              title="Create NFT"
-            >
-              {isCapturing ? (
-                <Loader2 size={16} className="animate-spin" />
-              ) : (
-                <Camera size={16} />
-              )}
-            </button>
-          </div>
+          {/* NFT Capture Button - Only show when user's monster is displayed */}
+          {(asset.imageUrl || asset.modelUrl) &&
+            !asset.isGenerating &&
+            !isProcessing(asset.status) && (
+              <button
+                onClick={captureNFT}
+                disabled={isCapturing}
+                className={`flex items-center justify-center w-10 h-10 rounded-lg text-sm font-semibold transition-all duration-300 ${
+                  isCapturing
+                    ? 'bg-slate-600 text-slate-400 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-lg hover:shadow-purple-500/30 hover:scale-105'
+                }`}
+                title="Create NFT"
+              >
+                {isCapturing ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <Camera size={16} />
+                )}
+              </button>
+            )}
         </div>
 
         {/* Smart Display - Handles lesson images, generation status, and creatures */}

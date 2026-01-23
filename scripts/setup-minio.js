@@ -68,7 +68,8 @@ async function installMinIO() {
 function startMinIOServer() {
   log('Starting MinIO server...', 'info');
   
-  const dataDir = path.join(process.cwd(), '.minio-data');
+  // Use /tmp to avoid Vercel file watcher conflicts
+  const dataDir = path.join('/tmp', 'monsters-minio-data');
   if (!fs.existsSync(dataDir)) {
     fs.mkdirSync(dataDir, { recursive: true });
   }

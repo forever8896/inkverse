@@ -2,6 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import Image from 'next/image';
+
+const MONSTER_IMAGES = [
+  '/monsters/17b3d246-bbee-460d-bf10-96ead31ac702.webp',
+  '/monsters/c779ad1c-a127-4780-8821-77c28ad70961.webp',
+  '/monsters/d0bebeab-0f60-4ebc-aaa2-8a38601485c0.webp',
+  '/monsters/f84edb46-eec8-4faa-b3ee-0586fc1f7394.webp',
+];
 
 interface NarrativeLoadingScreenProps {
   onComplete: () => void;
@@ -27,6 +35,7 @@ export function NarrativeLoadingScreen({
   const [narrativeStage, setNarrativeStage] = useState(0);
   const [isReady, setIsReady] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
+  const [currentMonster, setCurrentMonster] = useState(0);
 
   // Progress through narrative messages
   useEffect(() => {
@@ -72,6 +81,15 @@ export function NarrativeLoadingScreen({
       return () => clearTimeout(navTimer);
     }
   }, [isExiting, onComplete]);
+
+  // Cycle through monster images
+  useEffect(() => {
+    const monsterInterval = setInterval(() => {
+      setCurrentMonster((prev) => (prev + 1) % MONSTER_IMAGES.length);
+    }, 2000);
+
+    return () => clearInterval(monsterInterval);
+  }, []);
 
   return (
     <motion.div
@@ -140,6 +158,33 @@ export function NarrativeLoadingScreen({
           </div>
         </div>
       </motion.div>
+
+      {/* Monster carousel at bottom */}
+      <div className="absolute bottom-[20%] left-0 right-0 flex justify-center overflow-hidden h-32 md:h-48 pointer-events-none">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentMonster}
+            initial={{ x: -200, opacity: 0, scale: 0.8 }}
+            animate={{ x: 0, opacity: 0.6, scale: 1 }}
+            exit={{ x: 200, opacity: 0, scale: 0.8 }}
+            transition={{
+              duration: 0.8,
+              ease: [0.25, 0.46, 0.45, 0.94],
+            }}
+            className="relative w-28 h-28 md:w-48 md:h-48"
+          >
+            <Image
+              src={MONSTER_IMAGES[currentMonster]}
+              alt="Monster"
+              fill
+              className="object-contain"
+              style={{
+                filter: 'drop-shadow(0 0 30px rgba(79, 255, 176, 0.4))',
+              }}
+            />
+          </motion.div>
+        </AnimatePresence>
+      </div>
     </motion.div>
   );
 }
