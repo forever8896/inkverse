@@ -19,6 +19,8 @@ import { useCreatureDisplayStage } from '@/hooks/useCreatureDisplayStage';
 import { useToastNotifications, ToastContainer } from '@/hooks/useToastNotifications';
 import { useNFTCapture } from '@/hooks/useNFTCapture';
 import { useCodeCompilation, type CompilationError, type CompilationResult } from '@/hooks/useCodeCompilation';
+import { useLessonNavigation } from '@/hooks/useLessonNavigation';
+import { useLessonModals } from '@/hooks/useLessonModals';
 import { useAccounts } from '@reactive-dot/react';
 import { isProcessing } from '@/lib/status-constants';
 import { playSound } from '@/lib/sound-manager';
@@ -149,16 +151,50 @@ export function LessonProvider({
   initialChapter: propChapter,
   initialStep: propStep
 }: LessonProviderProps) {
-  // Initialize from props (1-based from URL route)
-  const initChapter = propChapter ? propChapter - 1 : 0;
-  const initStep = propStep ? propStep - 1 : 0;
+  // -------------------------------------------------------------------------
+  // Navigation State (extracted hook)
+  // -------------------------------------------------------------------------
+  const navigation = useLessonNavigation({
+    lesson,
+    initialChapter: propChapter,
+    initialStep: propStep,
+  });
+
+  const {
+    currentChapter,
+    currentStep,
+    currentChapterData,
+    currentStepData,
+    isTransitioning,
+    isLastStep,
+    isFirstStep,
+    setCurrentChapter,
+    setCurrentStep,
+    transitionTo,
+    goToStep: navGoToStep,
+    goToChapter: navGoToChapter,
+    navigateToPreviousStep,
+    navigateToNextStep,
+  } = navigation;
 
   // -------------------------------------------------------------------------
-  // Navigation State
+  // Modal State (extracted hook)
   // -------------------------------------------------------------------------
-  const [currentChapter, setCurrentChapter] = useState(initChapter);
-  const [currentStep, setCurrentStep] = useState(initStep);
-  const [isTransitioning, setIsTransitioning] = useState(false);
+  const modals = useLessonModals();
+
+  const {
+    showAuthModal,
+    setShowAuthModal,
+    showCompletionModal,
+    setShowCompletionModal,
+    showChapterComplete,
+    setShowChapterComplete,
+    completedChapterTitle,
+    chapterRequiresAuth,
+    setChapterRequiresAuth,
+    openChapterComplete,
+    closeChapterComplete,
+  } = modals;
 
   // -------------------------------------------------------------------------
   // Code Editor State
@@ -167,15 +203,6 @@ export function LessonProvider({
   const [isValidated, setIsValidated] = useState(false);
   const [showHint, setShowHint] = useState(false);
   const [showCodeEditor, setShowCodeEditor] = useState(true);
-
-  // -------------------------------------------------------------------------
-  // Modal State
-  // -------------------------------------------------------------------------
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [showCompletionModal, setShowCompletionModal] = useState(false);
-  const [showChapterComplete, setShowChapterComplete] = useState(false);
-  const [completedChapterTitle, setCompletedChapterTitle] = useState('');
-  const [chapterRequiresAuth, setChapterRequiresAuth] = useState(false);
   const [showSuccessSquink, setShowSuccessSquink] = useState(false);
 
   // -------------------------------------------------------------------------
@@ -209,18 +236,8 @@ export function LessonProvider({
   const playClickSound = useCallback(() => playSound('CLICK'), []);
 
   // -------------------------------------------------------------------------
-  // Derived Data
+  // Derived Data (for progressive disclosure)
   // -------------------------------------------------------------------------
-  const currentChapterData = lesson?.chapters?.[currentChapter];
-  const currentStepData = currentChapterData?.steps[currentStep];
-  const isLastStep = !!(
-    lesson?.chapters &&
-    currentChapter === lesson.chapters.length - 1 &&
-    currentChapterData &&
-    currentStep === currentChapterData.steps.length - 1
-  );
-  const isFirstStep = currentStep === 0 && currentChapter === 0;
-
   // History Calculation for progressive disclosure
   const hatchStepIndex = currentChapterData?.steps.findIndex(s => s.displayStage === 'young') ?? -1;
   const evolutionStepIndex = currentChapterData?.steps.findIndex(s => s.displayStage === 'adult') ?? -1;
@@ -303,15 +320,6 @@ export function LessonProvider({
     const stageToRetry = targetStage === 'adult' ? 'adult' : 'young';
     triggerWithWallet(currentChapterData.id, currentStepData.id, stageToRetry, true);
   }, [currentChapterData, currentStepData, targetStage, triggerWithWallet]);
-
-  // -------------------------------------------------------------------------
-  // URL Sync
-  // -------------------------------------------------------------------------
-  useEffect(() => {
-    if (!lesson?.id) return;
-    const newUrl = `/lesson/${lesson.id}/${currentChapter + 1}/${currentStep + 1}`;
-    window.history.replaceState(null, '', newUrl);
-  }, [currentChapter, currentStep, lesson?.id]);
 
   // -------------------------------------------------------------------------
   // Force refresh on reveal steps
@@ -506,22 +514,18 @@ export function LessonProvider({
   }, [currentStepData, currentChapterData, userCode, session?.user, addToast, triggerWithWallet, compile, resetCompilation, playCorrectSound, playWrongSound]);
 
   // -------------------------------------------------------------------------
-  // Navigation Functions
+  // Navigation Functions (using extracted hook)
   // -------------------------------------------------------------------------
-  const transitionTo = useCallback((action: () => void) => {
-    setIsTransitioning(true);
-    setTimeout(() => {
-      action();
-      setTimeout(() => setIsTransitioning(false), 50);
-    }, 200);
-  }, []);
+  const clearFeedbackOnNavigate = useCallback(() => {
+    setShowSuccessSquink(false);
+    resetCompilation();
+  }, [resetCompilation]);
 
   const nextStep = useCallback(async () => {
     if (!lesson || !currentChapterData || !currentStepData) return;
 
     // Clear any Squink feedback when navigating
-    setShowSuccessSquink(false);
-    resetCompilation();
+    clearFeedbackOnNavigate();
 
     if (currentStepData.triggersGeneration) {
       if (!session?.user) {
@@ -543,65 +547,38 @@ export function LessonProvider({
 
     await saveStepProgress(true);
 
-    if (currentStep < currentChapterData.steps.length - 1) {
-      transitionTo(() => setCurrentStep(currentStep + 1));
-    } else if (lesson.chapters && currentChapter < lesson.chapters.length - 1) {
-      // Check if Chapter 1 of Lesson 1 requires auth to continue
-      const requiresAuth = lesson.id === 1 && currentChapter === 0 && !session?.user;
-      setChapterRequiresAuth(requiresAuth);
+    // Try to navigate to next step
+    const movedToNextStep = navigateToNextStep();
 
-      setCompletedChapterTitle(currentChapterData.title);
-      setShowChapterComplete(true);
+    if (!movedToNextStep && lesson.chapters && currentChapter < lesson.chapters.length - 1) {
+      // End of chapter - show chapter complete modal
+      const requiresAuth = lesson.id === 1 && currentChapter === 0 && !session?.user;
+      openChapterComplete(currentChapterData.title, requiresAuth);
 
       // Play level up sound for chapter completion
       playLevelUpSound();
     }
-  }, [lesson, currentChapterData, currentStepData, currentStep, currentChapter, session?.user, addToast, triggerWithWallet, saveStepProgress, transitionTo, resetCompilation, playLevelUpSound]);
+  }, [lesson, currentChapterData, currentStepData, currentChapter, session?.user, addToast, triggerWithWallet, saveStepProgress, navigateToNextStep, clearFeedbackOnNavigate, openChapterComplete, playLevelUpSound]);
 
   const previousStep = useCallback(() => {
-    // Clear any Squink feedback when navigating
-    setShowSuccessSquink(false);
-    resetCompilation();
-
-    if (currentStep > 0) {
-      transitionTo(() => setCurrentStep(currentStep - 1));
-    } else if (currentChapter > 0 && lesson?.chapters) {
-      const prevChapter = lesson.chapters[currentChapter - 1];
-      if (prevChapter) {
-        transitionTo(() => {
-          setCurrentChapter(currentChapter - 1);
-          setCurrentStep(prevChapter.steps.length - 1);
-        });
-      }
-    }
-  }, [currentStep, currentChapter, lesson?.chapters, transitionTo, resetCompilation]);
+    navigateToPreviousStep(clearFeedbackOnNavigate);
+  }, [navigateToPreviousStep, clearFeedbackOnNavigate]);
 
   const goToStep = useCallback((stepIndex: number) => {
-    if (stepIndex !== currentStep) {
-      // Clear any Squink feedback when navigating
-      setShowSuccessSquink(false);
-      resetCompilation();
-      transitionTo(() => setCurrentStep(stepIndex));
-    }
-  }, [currentStep, transitionTo, resetCompilation]);
+    navGoToStep(stepIndex, clearFeedbackOnNavigate);
+  }, [navGoToStep, clearFeedbackOnNavigate]);
 
   const goToChapter = useCallback((chapterIndex: number) => {
-    // Clear any Squink feedback when navigating
-    setShowSuccessSquink(false);
-    resetCompilation();
-    transitionTo(() => {
-      setCurrentChapter(chapterIndex);
-      setCurrentStep(0);
-    });
-  }, [transitionTo, resetCompilation]);
+    navGoToChapter(chapterIndex, clearFeedbackOnNavigate);
+  }, [navGoToChapter, clearFeedbackOnNavigate]);
 
   const moveToNextChapter = useCallback(() => {
-    setShowChapterComplete(false);
+    closeChapterComplete();
     transitionTo(() => {
       setCurrentChapter(currentChapter + 1);
       setCurrentStep(0);
     });
-  }, [currentChapter, transitionTo]);
+  }, [currentChapter, transitionTo, closeChapterComplete, setCurrentChapter, setCurrentStep]);
 
   // -------------------------------------------------------------------------
   // Code Editor Functions

@@ -30,8 +30,8 @@ const LeftPanelDisplay = dynamic(
     loading: () => (
       <div className="w-full h-full flex items-center justify-center">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-purple-300 text-sm">Loading display...</p>
+          <div className="w-12 h-12 border-4 border-mi-cobalt border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-mi-mint text-sm">Loading display...</p>
         </div>
       </div>
     ),
@@ -133,8 +133,8 @@ function GenerationNotification({ isVisible }: { isVisible: boolean }) {
     <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-30 w-full max-w-sm px-4 pointer-events-none">
       <div className="bg-slate-900/90 backdrop-blur-md border border-purple-500/30 rounded-xl p-4 shadow-xl animate-fade-in-up flex items-center space-x-3">
         <div className="relative flex-shrink-0">
-          <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-          <div className="absolute inset-0 w-3 h-3 bg-green-500 rounded-full animate-ping opacity-75"></div>
+          <div className="w-3 h-3 bg-mi-grass rounded-full animate-pulse"></div>
+          <div className="absolute inset-0 w-3 h-3 bg-mi-grass rounded-full animate-ping opacity-75"></div>
         </div>
         <div className="flex-1">
           <p className="text-sm font-medium text-white">
@@ -171,11 +171,11 @@ function CameraShutterEffect() {
 function SuccessOverlay() {
   return (
     <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in">
-      <div className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-8 py-6 rounded-2xl shadow-2xl animate-bounce-in">
+      <div className="bg-mi-grass text-white px-8 py-6 rounded-2xl shadow-2xl animate-bounce-in">
         <div className="text-center">
           <div className="text-4xl mb-2">📸</div>
           <h3 className="text-xl font-bold mb-1">NFT Created!</h3>
-          <p className="text-green-100 text-sm">
+          <p className="text-mi-mint text-sm">
             Your creature has been captured
           </p>
         </div>

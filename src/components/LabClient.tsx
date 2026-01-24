@@ -191,9 +191,9 @@ export default function LabClient({ chapters }: { chapters: Lesson[] }) {
                       >
                         <div
                           className="w-2 h-2 rounded-full"
-                          style={{ background: '#4FFFB0' }}
+                          style={{ background: 'var(--mi-mint)' }}
                         />
-                        <span className="text-xs text-[#4FFFB0] font-mono">
+                        <span className="text-xs text-[var(--mi-mint)] font-mono">
                           {connectedWallet.name || formatAddress(connectedWallet.address)}
                         </span>
                       </div>
@@ -210,7 +210,7 @@ export default function LabClient({ chapters }: { chapters: Lesson[] }) {
                         className="object-contain mx-auto mb-6 hover:scale-105 transition-transform cursor-pointer"
                       />
                     </Link>
-                    <p className="text-[#4FFFB0] font-pixel text-xs tracking-wider">
+                    <p className="text-[var(--mi-mint)] font-pixel text-xs tracking-wider">
                       Your journey so far
                     </p>
                   </div>
@@ -287,7 +287,7 @@ export default function LabClient({ chapters }: { chapters: Lesson[] }) {
                               >
                                 ✓
                               </div>
-                              <span className="text-sm font-pixel text-[#2ECC71] tracking-wider">
+                              <span className="text-sm font-pixel text-[var(--color-mi-grass)] tracking-wider">
                                 MINTED ON-CHAIN
                               </span>
                             </div>
@@ -310,7 +310,7 @@ export default function LabClient({ chapters }: { chapters: Lesson[] }) {
                               {userMonster.nftOwnerAddress && (
                                 <div className="flex justify-between items-center">
                                   <span className="text-slate-500">Owner</span>
-                                  <span className="text-[#4FFFB0] font-mono">
+                                  <span className="text-[var(--mi-mint)] font-mono">
                                     {formatAddress(userMonster.nftOwnerAddress)}
                                   </span>
                                 </div>
@@ -350,7 +350,7 @@ export default function LabClient({ chapters }: { chapters: Lesson[] }) {
                               border: '1px solid rgba(255, 159, 28, 0.4)',
                             }}
                           >
-                            <span className="text-xs text-[#FF9F1C]">
+                            <span className="text-xs text-[var(--mi-orange)]">
                               🎨 Generated · Not yet minted
                             </span>
                           </div>
@@ -390,7 +390,7 @@ export default function LabClient({ chapters }: { chapters: Lesson[] }) {
                         {/* Call to action text */}
                         <p
                           className="text-center font-pixel text-sm tracking-wider max-w-xs"
-                          style={{ color: '#4FFFB0' }}
+                          style={{ color: 'var(--mi-mint)' }}
                         >
                           Continue your education to awaken your creature
                         </p>
@@ -471,7 +471,7 @@ export default function LabClient({ chapters }: { chapters: Lesson[] }) {
                         ) : (
                           <div
                             className={`rounded-xl overflow-hidden transition-all duration-300 ${
-                              isCurrent ? 'ring-2 ring-[#4FFFB0]/50' : ''
+                              isCurrent ? 'ring-2 ring-[var(--mi-mint)]/50' : ''
                             }`}
                             style={{
                               background: isCompleted
@@ -508,7 +508,7 @@ export default function LabClient({ chapters }: { chapters: Lesson[] }) {
                                 {!isCompleted && progressPercent > 0 && (
                                   <div className="mt-2 h-1 rounded-full bg-slate-700/50 overflow-hidden">
                                     <div
-                                      className="h-full rounded-full bg-[#4FFFB0]"
+                                      className="h-full rounded-full bg-[var(--mi-mint)]"
                                       style={{ width: `${progressPercent}%` }}
                                     />
                                   </div>
@@ -516,7 +516,7 @@ export default function LabClient({ chapters }: { chapters: Lesson[] }) {
                               </div>
                               <div className="flex items-center gap-2 flex-shrink-0">
                                 {isCompleted && (
-                                  <span className="text-xs text-[#2ECC71]">
+                                  <span className="text-xs text-[var(--color-mi-grass)]">
                                     Completed
                                   </span>
                                 )}
@@ -561,9 +561,9 @@ export default function LabClient({ chapters }: { chapters: Lesson[] }) {
                                             <span
                                               className={`w-5 h-5 rounded text-xs flex items-center justify-center ${
                                                 isChapterCompleted
-                                                  ? 'bg-[#2ECC71]/20 text-[#2ECC71]'
+                                                  ? 'bg-[var(--color-mi-grass)]/20 text-[var(--color-mi-grass)]'
                                                   : isCurrentChapter
-                                                  ? 'bg-[#4FFFB0]/20 text-[#4FFFB0]'
+                                                  ? 'bg-[var(--mi-mint)]/20 text-[var(--mi-mint)]'
                                                   : 'bg-slate-700/50 text-slate-500'
                                               }`}
                                             >
@@ -572,7 +572,7 @@ export default function LabClient({ chapters }: { chapters: Lesson[] }) {
                                             <span
                                               className={`text-sm font-medium ${
                                                 isChapterCompleted
-                                                  ? 'text-[#2ECC71]'
+                                                  ? 'text-[var(--color-mi-grass)]'
                                                   : isCurrentChapter
                                                   ? 'text-white'
                                                   : 'text-slate-400'
@@ -596,16 +596,16 @@ export default function LabClient({ chapters }: { chapters: Lesson[] }) {
                                                   onClick={() => router.push(stepUrl)}
                                                   className={`w-full text-left px-2 py-1.5 rounded flex items-center gap-2 transition-colors ${
                                                     isCurrentStep
-                                                      ? 'bg-[#1E4CDD]/30 hover:bg-[#1E4CDD]/40'
+                                                      ? 'bg-[var(--mi-cobalt)]/30 hover:bg-[var(--mi-cobalt)]/40'
                                                       : 'hover:bg-white/5'
                                                   }`}
                                                 >
                                                   <span
                                                     className={`w-4 h-4 rounded-full text-[10px] flex items-center justify-center flex-shrink-0 ${
                                                       isStepCompleted
-                                                        ? 'bg-[#2ECC71]/30 text-[#2ECC71]'
+                                                        ? 'bg-[var(--color-mi-grass)]/30 text-[var(--color-mi-grass)]'
                                                         : isCurrentStep
-                                                        ? 'bg-[#1E4CDD] text-white'
+                                                        ? 'bg-[var(--mi-cobalt)] text-white'
                                                         : 'bg-slate-700/50 text-slate-500'
                                                     }`}
                                                   >
@@ -623,7 +623,7 @@ export default function LabClient({ chapters }: { chapters: Lesson[] }) {
                                                     {step.title}
                                                   </span>
                                                   {isCurrentStep && (
-                                                    <span className="ml-auto text-[10px] text-[#4FFFB0] font-pixel">
+                                                    <span className="ml-auto text-[10px] text-[var(--mi-mint)] font-pixel">
                                                       YOU ARE HERE
                                                     </span>
                                                   )}
@@ -657,7 +657,7 @@ export default function LabClient({ chapters }: { chapters: Lesson[] }) {
                     disabled={isLoadingUserData}
                     className="inline-block px-8 py-4 rounded-xl font-pixel text-sm tracking-wider transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{
-                      background: '#1E4CDD',
+                      background: 'var(--mi-cobalt)',
                       color: 'white',
                       boxShadow: '0 0 30px rgba(30, 76, 221, 0.3)',
                     }}

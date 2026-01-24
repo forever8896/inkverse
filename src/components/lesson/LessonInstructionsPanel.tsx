@@ -108,10 +108,6 @@ export function LessonInstructionsPanel() {
 function HintTooltip({ hint, isVisible }: { hint: string; isVisible: boolean }) {
   return (
     <div className="relative">
-      <button className="hidden">
-        <span>💡</span>
-        <span className="font-medium">Show Hint</span>
-      </button>
       <div className="relative w-full flex justify-center">
         {/* Animated Toast-like Hint Overlay */}
         <div

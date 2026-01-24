@@ -138,29 +138,38 @@ export function LessonCodeEditorPanel() {
 // Sub-components
 // ============================================================================
 
+// Shared styles for editor buttons
+const EDITOR_BUTTON_STYLES = {
+  base: 'w-8 h-8 rounded-lg border transition-all duration-200 flex items-center justify-center backdrop-blur-sm',
+  interactive: 'hover:scale-105 active:scale-95',
+  disabled: 'opacity-50 cursor-not-allowed hover:scale-100 active:scale-100',
+  variants: {
+    default: 'border-slate-600/50 bg-slate-800/50 hover:bg-slate-700/70 hover:border-slate-500/70',
+    primary: 'border-purple-500/50 bg-gradient-to-r from-purple-600/20 to-cyan-600/20 hover:from-purple-600/40 hover:to-cyan-600/40 hover:border-purple-400/70 shadow-lg shadow-purple-500/20',
+    secondary: 'border-cyan-500/50 bg-cyan-600/20 hover:bg-cyan-600/40 hover:border-cyan-400/70 shadow-lg shadow-cyan-500/20',
+  },
+} as const;
+
+type EditorButtonVariant = keyof typeof EDITOR_BUTTON_STYLES.variants;
+
 interface EditorButtonProps {
   onClick: () => void;
   icon: React.ReactNode;
   tooltip: string;
-  variant: 'default' | 'primary' | 'secondary';
+  variant: EditorButtonVariant;
   disabled?: boolean;
 }
 
 function EditorButton({ onClick, icon, tooltip, variant, disabled = false }: EditorButtonProps) {
-  const variantClasses = {
-    default: 'border-slate-600/50 bg-slate-800/50 hover:bg-slate-700/70 hover:border-slate-500/70',
-    primary: 'border-purple-500/50 bg-gradient-to-r from-purple-600/20 to-cyan-600/20 hover:from-purple-600/40 hover:to-cyan-600/40 hover:border-purple-400/70 shadow-lg shadow-purple-500/20',
-    secondary: 'border-cyan-500/50 bg-cyan-600/20 hover:bg-cyan-600/40 hover:border-cyan-400/70 shadow-lg shadow-cyan-500/20',
-  };
-
-  const disabledClasses = 'opacity-50 cursor-not-allowed hover:scale-100 active:scale-100';
+  const variantClass = EDITOR_BUTTON_STYLES.variants[variant];
+  const interactiveClass = disabled ? EDITOR_BUTTON_STYLES.disabled : EDITOR_BUTTON_STYLES.interactive;
 
   return (
     <div className="relative group">
       <button
         onClick={disabled ? undefined : onClick}
         disabled={disabled}
-        className={`w-8 h-8 rounded-lg border transition-all duration-200 flex items-center justify-center backdrop-blur-sm ${disabled ? disabledClasses : 'hover:scale-105 active:scale-95'} ${variantClasses[variant]}`}
+        className={`${EDITOR_BUTTON_STYLES.base} ${interactiveClass} ${variantClass}`}
         aria-label={tooltip}
       >
         {icon}

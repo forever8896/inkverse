@@ -280,12 +280,12 @@ function CompletionConfetti({
       numberOfPieces={isChapterComplete ? 150 : 200}
       gravity={0.1}
       colors={[
-        '#9333ea',
-        '#06b6d4',
-        '#ec4899',
-        '#10b981',
-        '#f59e0b',
-        '#ef4444',
+        '#1E4CDD', // mi-cobalt
+        '#4FFFB0', // mi-mint
+        '#FFDAB9', // mi-peach
+        '#FF9F1C', // mi-orange
+        '#2ECC71', // mi-grass
+        '#240B4D', // mi-violet
       ]}
       style={{ position: 'fixed', top: 0, left: 0, zIndex: 60 }}
     />

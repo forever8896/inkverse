@@ -191,8 +191,8 @@
 
 @keyframes shutterBlade5 {
   0% { transform: translate(-50%, -50%) rotate(0deg) scale(0); }
-  50% { transform: translate(-50%, -50%) rotate(1deg) scale(1.2); }
-  50% { transform: translate(-50%, -50%) rotate(-1deg) scale(1.2); }
+  45% { transform: translate(-50%, -50%) rotate(1deg) scale(1.2); }
+  55% { transform: translate(-50%, -50%) rotate(-1deg) scale(1.2); }
   100% { transform: translate(-50%, -50%) rotate(0deg) scale(0); }
 }
 

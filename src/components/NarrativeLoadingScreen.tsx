@@ -129,7 +129,7 @@ export function NarrativeLoadingScreen({
             transition={{ duration: 0.6, ease: 'easeOut' }}
             className="text-sm md:text-base font-pixel tracking-widest px-8"
             style={{
-              color: '#4FFFB0',
+              color: 'var(--mi-mint)',
               textShadow: '0 0 20px rgba(79, 255, 176, 0.5)',
             }}
           >
@@ -146,7 +146,7 @@ export function NarrativeLoadingScreen({
             <motion.div
               className="h-full rounded-full"
               style={{
-                background: 'linear-gradient(90deg, #4FFFB0, #2dd4bf)',
+                background: 'linear-gradient(90deg, var(--mi-mint), #2dd4bf)',
                 boxShadow: '0 0 10px rgba(79, 255, 176, 0.5)',
               }}
               initial={{ width: '0%' }}

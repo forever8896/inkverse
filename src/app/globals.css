@@ -90,6 +90,15 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
+  /* Monsters Ink! Brand Colors */
+  --color-mi-mint: var(--mi-mint);
+  --color-mi-cobalt: var(--mi-cobalt);
+  --color-mi-peach: var(--mi-peach);
+  --color-mi-orange: var(--mi-orange);
+  --color-mi-violet: var(--mi-deep-violet);
+  --color-mi-grass: #2ECC71;
+  --color-mi-cream: var(--mi-cream);
 }
 
 @media (prefers-color-scheme: light) {
