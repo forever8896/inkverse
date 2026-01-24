@@ -5,17 +5,13 @@
  *
  * Contains:
  * - Logo with link back to lab
- * - NFT capture button
  * - Creature stage display
  * - Generation status notification
- * - Camera shutter effect
- * - Success overlay
  */
 
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { motion } from 'motion/react';
-import { Camera, Loader2 } from 'lucide-react';
 import { useLessonContext } from './LessonContext';
 import { isProcessing } from '@/lib/status-constants';
 
@@ -46,10 +42,6 @@ export function LessonCreaturePanel() {
     effectiveLoading,
     isDisplayRevealing,
     handleRetry,
-    captureNFT,
-    isCapturing,
-    showShutter,
-    showSuccess,
     creatureDisplayRef,
   } = useLessonContext();
 
@@ -62,7 +54,7 @@ export function LessonCreaturePanel() {
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.5, delay: 0.1, ease: 'easeOut' }}
       >
-        {/* Header: Logo and Snapshot Button */}
+        {/* Header: Logo */}
         <div className="flex justify-between items-start p-4 flex-shrink-0">
           <Link
             href="/lab"
@@ -71,28 +63,6 @@ export function LessonCreaturePanel() {
           >
             <img src="/logo.png" alt="Monsters ink!" className="h-[80px]" />
           </Link>
-
-          {/* NFT Capture Button - Only show when user's monster is displayed */}
-          {(asset.imageUrl || asset.modelUrl) &&
-            !asset.isGenerating &&
-            !isProcessing(asset.status) && (
-              <button
-                onClick={captureNFT}
-                disabled={isCapturing}
-                className={`flex items-center justify-center w-10 h-10 rounded-lg text-sm font-semibold transition-all duration-300 ${
-                  isCapturing
-                    ? 'bg-slate-600 text-slate-400 cursor-not-allowed'
-                    : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-lg hover:shadow-purple-500/30 hover:scale-105'
-                }`}
-                title="Create NFT"
-              >
-                {isCapturing ? (
-                  <Loader2 size={16} className="animate-spin" />
-                ) : (
-                  <Camera size={16} />
-                )}
-              </button>
-            )}
         </div>
 
         {/* Smart Display - Handles lesson images, generation status, and creatures */}
@@ -112,12 +82,6 @@ export function LessonCreaturePanel() {
       <GenerationNotification
         isVisible={asset.isGenerating || isProcessing(asset.status)}
       />
-
-      {/* Camera Shutter Effect */}
-      {showShutter && <CameraShutterEffect />}
-
-      {/* Success Overlay */}
-      {showSuccess && <SuccessOverlay />}
     </div>
   );
 }
@@ -142,41 +106,6 @@ function GenerationNotification({ isVisible }: { isVisible: boolean }) {
           </p>
           <p className="text-xs text-slate-400">
             Standby, it will be ready soon.
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function CameraShutterEffect() {
-  return (
-    <div className="absolute inset-0 z-50 pointer-events-none">
-      <div className="absolute inset-0 bg-black flex items-center justify-center">
-        <div className="camera-shutter">
-          <div className="shutter-blade blade-1"></div>
-          <div className="shutter-blade blade-2"></div>
-          <div className="shutter-blade blade-3"></div>
-          <div className="shutter-blade blade-4"></div>
-          <div className="shutter-blade blade-5"></div>
-          <div className="shutter-blade blade-6"></div>
-          <div className="shutter-blade blade-7"></div>
-          <div className="shutter-blade blade-8"></div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function SuccessOverlay() {
-  return (
-    <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in">
-      <div className="bg-mi-grass text-white px-8 py-6 rounded-2xl shadow-2xl animate-bounce-in">
-        <div className="text-center">
-          <div className="text-4xl mb-2">📸</div>
-          <h3 className="text-xl font-bold mb-1">NFT Created!</h3>
-          <p className="text-mi-mint text-sm">
-            Your creature has been captured
           </p>
         </div>
       </div>

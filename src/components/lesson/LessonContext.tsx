@@ -17,7 +17,6 @@ import { useSession } from '@/lib/auth-client';
 import { useMonsterAsset } from '@/hooks/useMonsterAsset';
 import { useCreatureDisplayStage } from '@/hooks/useCreatureDisplayStage';
 import { useToastNotifications, ToastContainer } from '@/hooks/useToastNotifications';
-import { useNFTCapture } from '@/hooks/useNFTCapture';
 import { useCodeCompilation, type CompilationError, type CompilationResult } from '@/hooks/useCodeCompilation';
 import { useLessonNavigation } from '@/hooks/useLessonNavigation';
 import { useLessonModals } from '@/hooks/useLessonModals';
@@ -95,11 +94,7 @@ interface LessonContextValue {
   handleRetry: () => void;
   handleWalletConnected: (address: string) => void;
 
-  // NFT capture
-  captureNFT: () => void;
-  isCapturing: boolean;
-  showShutter: boolean;
-  showSuccess: boolean;
+  // Creature display ref
   creatureDisplayRef: React.RefObject<HTMLDivElement | null>;
 
   // Toast notifications
@@ -263,14 +258,6 @@ export function LessonProvider({
   );
 
   const isDisplayRevealing = currentStepData?.displayStage === 'young' || currentStepData?.displayStage === 'adult';
-
-  // -------------------------------------------------------------------------
-  // NFT Capture
-  // -------------------------------------------------------------------------
-  const { captureNFT, isCapturing, showShutter, showSuccess } = useNFTCapture({
-    creatureDisplayRef,
-    addToast,
-  });
 
   // -------------------------------------------------------------------------
   // Generation Refs (for stable callbacks)
@@ -667,11 +654,7 @@ export function LessonProvider({
     handleRetry,
     handleWalletConnected,
 
-    // NFT capture
-    captureNFT,
-    isCapturing,
-    showShutter,
-    showSuccess,
+    // Creature display ref
     creatureDisplayRef,
 
     // Toast notifications
