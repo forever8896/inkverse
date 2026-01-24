@@ -13,7 +13,7 @@
  * All business logic is in LessonContext. This component focuses on layout and composition.
  */
 
-import { Suspense, useState, useEffect } from 'react';
+import { Suspense, useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { Lesson } from '@/lib/lessons';
@@ -91,6 +91,15 @@ function LessonLayoutInner() {
     windowDimensions,
   } = useLessonContext();
 
+  // Onboarding state: right panel hidden until user clicks left panel
+  const [showRightPanel, setShowRightPanel] = useState(false);
+
+  const handleLeftPanelClick = useCallback(() => {
+    if (!showRightPanel) {
+      setShowRightPanel(true);
+    }
+  }, [showRightPanel]);
+
   // Empty lesson state
   if (!lesson) {
     return <EmptyLessonView />;
@@ -102,12 +111,25 @@ function LessonLayoutInner() {
         {/* Full-screen Shader Background */}
         <ShaderBackground />
 
-        <div className="flex flex-1 overflow-hidden relative">
+        <div className="flex-1 overflow-hidden relative">
           {/* Left Panel: Creature Display */}
-          <LessonCreaturePanel />
+          <div
+            className={`absolute top-0 bottom-0 left-0 transition-all duration-700 ease-out ${
+              showRightPanel ? 'w-1/2' : 'w-full'
+            }`}
+            onClick={handleLeftPanelClick}
+            style={{ cursor: showRightPanel ? 'default' : 'pointer' }}
+          >
+            <LessonCreaturePanel showLogo={showRightPanel} />
+          </div>
 
           {/* Right Panel: Instructions + Code Editor + Navigation */}
-          <div className="flex flex-col p-10 min-h-0 w-1/2">
+          {/* Rendered at final size off-screen, then slides in */}
+          <div
+            className={`absolute top-0 bottom-0 right-0 w-1/2 flex flex-col py-10 px-[50px] min-h-0 transition-transform duration-700 ease-out ${
+              showRightPanel ? 'translate-x-0' : 'translate-x-full'
+            }`}
+          >
             <LessonInstructionsPanel />
             <LessonCodeEditorPanel />
             <LessonNavigation />

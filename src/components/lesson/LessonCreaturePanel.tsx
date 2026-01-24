@@ -34,7 +34,11 @@ const LeftPanelDisplay = dynamic(
   }
 );
 
-export function LessonCreaturePanel() {
+interface LessonCreaturePanelProps {
+  showLogo?: boolean;
+}
+
+export function LessonCreaturePanel({ showLogo = true }: LessonCreaturePanelProps) {
   const {
     isTransitioning,
     asset,
@@ -46,10 +50,10 @@ export function LessonCreaturePanel() {
   } = useLessonContext();
 
   return (
-    <div className="relative overflow-hidden transition-all duration-500 p-5 w-1/2">
+    <div className="relative overflow-hidden transition-all duration-500 p-5 w-full h-full">
       {/* Single bordered container for logo, button, and creature */}
       <motion.div
-        className="w-full h-full rounded-xl border border-purple-500/30 bg-slate-900 flex flex-col overflow-hidden"
+        className="w-full h-full flex flex-col overflow-hidden"
         initial={{ opacity: 0, x: -40 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.5, delay: 0.1, ease: 'easeOut' }}
@@ -58,7 +62,9 @@ export function LessonCreaturePanel() {
         <div className="flex justify-between items-start p-4 flex-shrink-0">
           <Link
             href="/lab"
-            className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
+            className={`flex items-center space-x-2 hover:opacity-80 transition-opacity duration-500 ${
+              showLogo ? 'opacity-100' : 'opacity-0'
+            }`}
             title="View all lessons"
           >
             <img src="/logo.png" alt="Monsters ink!" className="h-[80px]" />
