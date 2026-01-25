@@ -30,9 +30,21 @@ export interface MintNFTResult {
   recovered?: boolean;  // True if recovered from partial state
 }
 
+export interface MintNFTOptions {
+  /**
+   * Whether to include the 3D model in IPFS upload and NFT metadata.
+   * For young stage, we generate 3D but store it hidden (includeModel: false).
+   * For young_3d and adult stages, we include the model (includeModel: true).
+   * Defaults to true for backward compatibility.
+   */
+  includeModel?: boolean;
+}
+
 export async function mintNFT(
-  jobId: string
+  jobId: string,
+  options: MintNFTOptions = {}
 ): Promise<MintNFTResult> {
+  const { includeModel = true } = options;
   const metadata = getStepMetadata();
   const logger = new WorkflowLogger({
     jobId,
@@ -160,12 +172,15 @@ export async function mintNFT(
       await job.update({ userMessage: '📤 Uploading to IPFS...', progress: 93 });
 
       try {
+        // Conditionally include 3D model based on includeModel option
+        // For young stage: model exists in S3 but NOT included in NFT (hidden reveal)
+        // For young_3d/adult: model is included in NFT metadata
         ipfsResult = await ipfsService.prepareNFTAssets({
           jobId: job.id,
           name: `Monster #${job.id.slice(0, 8)}`,
           description: job.prompt,
           imageS3Key: job.imageS3Key!,
-          glbS3Key: job.glbS3Key || null,
+          glbS3Key: includeModel ? (job.glbS3Key || null) : null,
           style: job.style,
           stage: job.stage,
         });
@@ -204,7 +219,15 @@ export async function mintNFT(
       imageCID: ipfsResult.imageCID,
       modelCID: ipfsResult.modelCID,
       metadataCID: ipfsResult.metadataCID,
+      includeModel,
     });
+
+    // Log if model was intentionally excluded (young stage hidden reveal)
+    if (!includeModel && job.glbS3Key) {
+      logger.info('3D model generated but not included in NFT (hidden for reveal)', {
+        modelS3Key: job.glbS3Key,
+      });
+    }
 
     // ============================================================
     // FIX #1: IDEMPOTENT ID ALLOCATION

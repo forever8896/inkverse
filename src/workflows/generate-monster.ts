@@ -77,9 +77,11 @@ export async function generateMonster(
 
   // Step 4: Mint NFT (upload to IPFS + blockchain mint)
   // Skip for admin bypass mode (testing without NFT minting)
+  // NOTE: includeModel: false means 3D model is stored in S3 but NOT in NFT
+  // This enables the "hidden reveal" feature where 3D is revealed later
   let nftResult: MintNFTResult | null = null;
   if (!adminBypass) {
-    nftResult = await mintNFT(jobId);
+    nftResult = await mintNFT(jobId, { includeModel: false });
   }
 
   // Step 5: Mark job as complete in database
