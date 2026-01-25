@@ -60,6 +60,7 @@ interface LessonContextValue {
   setShowCodeEditor: (show: boolean) => void;
   showHint: boolean;
   setShowHint: (show: boolean) => void;
+  validationFailureCount: number;
 
   // Compilation
   isCompiling: boolean;
@@ -199,6 +200,7 @@ export function LessonProvider({
   const [showHint, setShowHint] = useState(false);
   const [showCodeEditor, setShowCodeEditor] = useState(true);
   const [showSuccessSquink, setShowSuccessSquink] = useState(false);
+  const [validationFailureCount, setValidationFailureCount] = useState(0);
 
   // -------------------------------------------------------------------------
   // UI State
@@ -265,6 +267,9 @@ export function LessonProvider({
   const triggerGenerationRef = useRef(asset.triggerGeneration);
   triggerGenerationRef.current = asset.triggerGeneration;
 
+  const triggerEvolutionRef = useRef(asset.triggerEvolution);
+  triggerEvolutionRef.current = asset.triggerEvolution;
+
   const forceRefreshRef = useRef(asset.forceRefresh);
   forceRefreshRef.current = asset.forceRefresh;
 
@@ -292,6 +297,30 @@ export function LessonProvider({
     pendingGenerationRef.current = { chapterId, stepId, stage, force };
     triggerGenerationRef.current(chapterId, stepId, stage, force, walletAddress);
   }, [getWalletAddress]);
+
+  // Trigger evolution (for young_3d reveal stage)
+  const triggerEvolutionWithWallet = useCallback(async (
+    targetStage: 'young_3d' | 'adult',
+    evolutionMilestone?: string
+  ) => {
+    const walletAddress = getWalletAddress();
+    if (!walletAddress) {
+      addToast({
+        type: 'error',
+        title: 'Wallet Required',
+        message: 'Please connect your wallet to evolve your monster.',
+      });
+      return;
+    }
+    const result = await triggerEvolutionRef.current(targetStage, walletAddress, evolutionMilestone);
+    if (!result.success) {
+      addToast({
+        type: 'error',
+        title: 'Evolution Failed',
+        message: result.error || 'Failed to evolve your monster.',
+      });
+    }
+  }, [getWalletAddress, addToast]);
 
   const handleWalletConnected = useCallback((address: string) => {
     asset.clearWalletRequired();
@@ -421,27 +450,16 @@ export function LessonProvider({
         // Always show success via the Squink character
         setShowSuccessSquink(true);
 
-        // Additionally handle generation triggers
-        if (currentStepData?.triggersGeneration && currentChapterData) {
-          if (!session?.user) {
-            addToast({
-              type: 'info',
-              title: '🔐 Authentication Required',
-              message: 'Please sign in to generate your unique creature.',
-            });
-            setShowAuthModal(true);
-          } else {
-            triggerWithWallet(
-              currentChapterData.id,
-              currentStepData.id,
-              currentStepData.generationStage || 'young'
-            );
-          }
-        }
+        // Reset failure count on successful validation
+        setValidationFailureCount(0);
+
         return true;
       } else {
         // Pattern validation failed - run actual compilation to get real Rust errors
         setIsValidated(false);
+
+        // Increment failure count
+        setValidationFailureCount(prev => prev + 1);
 
         // Show compiling indicator (no sound yet - wait for result)
         addToast({
@@ -498,7 +516,7 @@ export function LessonProvider({
       });
       return true;
     }
-  }, [currentStepData, currentChapterData, userCode, session?.user, addToast, triggerWithWallet, compile, resetCompilation, playCorrectSound, playWrongSound]);
+  }, [currentStepData, currentChapterData, userCode, session?.user, addToast, triggerWithWallet, triggerEvolutionWithWallet, compile, resetCompilation, playCorrectSound, playWrongSound, setValidationFailureCount]);
 
   // -------------------------------------------------------------------------
   // Navigation Functions (using extracted hook)
@@ -524,11 +542,20 @@ export function LessonProvider({
         setShowAuthModal(true);
         return;
       } else {
-        triggerWithWallet(
-          currentChapterData.id,
-          currentStepData.id,
-          currentStepData.generationStage || 'young'
-        );
+        const genStage = currentStepData.generationStage;
+
+        if (genStage === 'young_3d') {
+          // Evolution reveal - update existing NFT metadata
+          triggerEvolutionWithWallet('young_3d', currentStepData.evolutionMilestone);
+        } else {
+          // Generation - create new assets (young or adult)
+          const triggerStage: 'young' | 'adult' = genStage === 'adult' ? 'adult' : 'young';
+          triggerWithWallet(
+            currentChapterData.id,
+            currentStepData.id,
+            triggerStage
+          );
+        }
       }
     }
 
@@ -545,7 +572,7 @@ export function LessonProvider({
       // Play level up sound for chapter completion
       playLevelUpSound();
     }
-  }, [lesson, currentChapterData, currentStepData, currentChapter, session?.user, addToast, triggerWithWallet, saveStepProgress, navigateToNextStep, clearFeedbackOnNavigate, openChapterComplete, playLevelUpSound]);
+  }, [lesson, currentChapterData, currentStepData, currentChapter, session?.user, addToast, triggerWithWallet, triggerEvolutionWithWallet, saveStepProgress, navigateToNextStep, clearFeedbackOnNavigate, openChapterComplete, playLevelUpSound]);
 
   const previousStep = useCallback(() => {
     navigateToPreviousStep(clearFeedbackOnNavigate);
@@ -584,11 +611,17 @@ export function LessonProvider({
   }, [resetCompilation]);
 
   const showSolution = useCallback(() => {
-    if (currentStepData?.expectedCode) {
+    if (currentStepData?.expectedCode && validationFailureCount >= 3) {
       setUserCode(currentStepData.expectedCode);
       setIsValidated(true);
+    } else if (currentStepData?.expectedCode) {
+      addToast({
+        type: 'info',
+        title: '💡 Keep Trying!',
+        message: `Solution available after ${3 - validationFailureCount} more failed attempt${validationFailureCount + 1 === 3 ? '' : 's'}.`,
+      });
     }
-  }, [currentStepData?.expectedCode]);
+  }, [currentStepData?.expectedCode, validationFailureCount]);
 
   // -------------------------------------------------------------------------
   // Context Value
@@ -621,6 +654,7 @@ export function LessonProvider({
     setShowCodeEditor,
     showHint,
     setShowHint,
+    validationFailureCount,
 
     // Compilation
     isCompiling,

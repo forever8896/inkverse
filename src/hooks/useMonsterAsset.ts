@@ -4,6 +4,60 @@ import { MonsterStage } from '@/lib/generation-job';
 import { generateRandomMonsterRequest } from '@/lib/monster-prompts';
 import { isProcessing } from '@/lib/status-constants';
 
+/**
+ * Evolution stage types
+ */
+export type EvolutionStage = 'young' | 'young_3d' | 'adult';
+
+/**
+ * Evolution history entry from the API
+ */
+export interface EvolutionHistoryEntry {
+  id: string;
+  stage: EvolutionStage;
+  milestoneLabel?: string;
+  evolvedAt: string;
+  assetsCid?: {
+    image_cid?: string;
+    model_cid?: string;
+  };
+  txHash?: string;
+}
+
+/**
+ * User's monster data from the API
+ */
+export interface UserMonsterData {
+  id: string;
+  currentStage: EvolutionStage;
+  nftItemId?: number;
+  nftCollectionId?: number;
+  nftOwnerAddress?: string;
+  currentMetadataCid?: string;
+
+  // Current asset URLs (presigned S3)
+  currentImageUrl?: string;
+  currentModelUrl?: string;
+
+  // IPFS CIDs for on-chain metadata
+  youngImageCid?: string;
+  youngModelCid?: string;
+  adultModelCid?: string;
+
+  // Monster attributes
+  attributes?: Record<string, string | number>;
+
+  // Evolution history
+  evolutionHistory: EvolutionHistoryEntry[];
+
+  // Next evolution info (if available)
+  nextEvolution?: {
+    stage: EvolutionStage;
+    requiresGeneration: boolean;
+    canEvolve: boolean;
+  };
+}
+
 interface UseMonsterAssetReturn {
   // State
   jobId: string | null;
@@ -27,11 +81,22 @@ interface UseMonsterAssetReturn {
   // Wallet requirement state
   walletRequired: boolean; // True if generation was blocked due to missing wallet
 
+  // Evolution System
+  monster: UserMonsterData | null;
+  isLoadingMonster: boolean;
+  isEvolving: boolean;
+  evolutionError: string | null;
+  canEvolve: boolean;
+  nextEvolutionStage: EvolutionStage | null;
+
   // Actions
-  triggerGeneration: (chapterId: number, stepId: number, stage?: 'young' | 'adult', force?: boolean, walletAddress?: string) => Promise<void>;
+  triggerGeneration: (chapterId: number, stepId: number, stage?: 'young' | 'adult', force?: boolean, walletAddress?: string, evolutionMilestone?: string) => Promise<void>;
+  triggerEvolution: (targetStage: 'young_3d' | 'adult', walletAddress: string, evolutionMilestone?: string) => Promise<{ success: boolean; error?: string }>;
   refreshAssets: () => Promise<void>;
   forceRefresh: () => Promise<void>;
+  fetchMonster: () => Promise<void>;
   clearWalletRequired: () => void; // Clear the walletRequired flag
+  clearEvolutionError: () => void; // Clear evolution error
 }
 
 export function useMonsterAsset(userId: string | undefined, lessonId: number, currentStage?: MonsterStage): UseMonsterAssetReturn {
@@ -40,10 +105,17 @@ export function useMonsterAsset(userId: string | undefined, lessonId: number, cu
   const [wasResumed, setWasResumed] = useState(false);
   const [walletRequired, setWalletRequired] = useState(false);
 
+  // Evolution state
+  const [monster, setMonster] = useState<UserMonsterData | null>(null);
+  const [isLoadingMonster, setIsLoadingMonster] = useState(false);
+  const [isEvolving, setIsEvolving] = useState(false);
+  const [evolutionError, setEvolutionError] = useState<string | null>(null);
+
   // Refs for throttling and locking
   const localTriggerPending = useRef<Set<string>>(new Set());
   const lastRefreshRef = useRef<number>(0);
   const resumeCheckedRef = useRef<string | null>(null);
+  const monsterFetchedRef = useRef<boolean>(false);
 
   const {
     jobs,
@@ -53,6 +125,32 @@ export function useMonsterAsset(userId: string | undefined, lessonId: number, cu
   } = useMonsterGenerationStore();
 
   const job = jobId ? jobs[jobId] : null;
+
+  // ============================================================================
+  // FETCH USER'S MONSTER
+  // ============================================================================
+  const fetchMonster = useCallback(async () => {
+    if (!userId) return;
+
+    setIsLoadingMonster(true);
+    try {
+      const response = await fetch('/api/user/monster');
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.monster) {
+          setMonster(data.monster);
+        }
+      } else if (response.status !== 404) {
+        // 404 means no monster yet, which is expected for new users
+        console.warn('[useMonsterAsset] Failed to fetch monster:', response.status);
+      }
+    } catch (err) {
+      console.warn('[useMonsterAsset] Error fetching monster:', err);
+    } finally {
+      setIsLoadingMonster(false);
+    }
+  }, [userId]);
 
   // ============================================================================
   // MOUNT RESUME: DO NOT REMOVE THIS EFFECT
@@ -108,6 +206,16 @@ export function useMonsterAsset(userId: string | undefined, lessonId: number, cu
     checkResume();
   }, [userId, lessonId, currentStage, fetchJobStatus]);
 
+  // ============================================================================
+  // FETCH MONSTER ON MOUNT
+  // ============================================================================
+  useEffect(() => {
+    if (userId && !monsterFetchedRef.current) {
+      monsterFetchedRef.current = true;
+      fetchMonster();
+    }
+  }, [userId, fetchMonster]);
+
   // Refresh assets - delegates to fetchJobStatus which handles URL freshness
   // via urlFreshness metadata from the API (see monster-generation store)
   const refreshAssets = useCallback(async () => {
@@ -133,14 +241,26 @@ export function useMonsterAsset(userId: string | undefined, lessonId: number, cu
         startPolling(jobId);
       } else {
         stopPolling(jobId);
+
+        // Refresh monster data when job completes
+        if (job.status === 'completed') {
+          fetchMonster();
+        }
       }
     }
     return () => {
       if (jobId) stopPolling(jobId);
     };
-  }, [jobId, job?.status, startPolling, stopPolling]);
+  }, [jobId, job?.status, startPolling, stopPolling, fetchMonster]);
 
-  const triggerGeneration = useCallback(async (chapterId: number, stepId: number, stage: 'young' | 'adult' = 'young', force: boolean = false, walletAddress?: string) => {
+  const triggerGeneration = useCallback(async (
+    chapterId: number,
+    stepId: number,
+    stage: 'young' | 'adult' = 'young',
+    force: boolean = false,
+    walletAddress?: string,
+    evolutionMilestone?: string
+  ) => {
     if (!userId) return;
 
     const triggerKey = `${lessonId}-${chapterId}-${stepId}`;
@@ -163,6 +283,7 @@ export function useMonsterAsset(userId: string | undefined, lessonId: number, cu
           chapterId,
           stepId,
           walletAddress, // Pass wallet address for NFT minting
+          evolutionMilestone, // Pass milestone for evolution tracking
         })
       });
 
@@ -213,9 +334,77 @@ export function useMonsterAsset(userId: string | undefined, lessonId: number, cu
     }
   }, [userId, lessonId, fetchJobStatus, startPolling]);
 
+  // ============================================================================
+  // TRIGGER EVOLUTION
+  // ============================================================================
+  const triggerEvolution = useCallback(async (
+    targetStage: 'young_3d' | 'adult',
+    walletAddress: string,
+    evolutionMilestone?: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    if (!userId || !monster) {
+      return { success: false, error: 'No monster to evolve' };
+    }
+
+    setIsEvolving(true);
+    setEvolutionError(null);
+
+    try {
+      const response = await fetch('/api/evolve-monster', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          stage: targetStage,
+          walletAddress,
+          evolutionMilestone,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        const errorMsg = data.error || 'Evolution failed';
+        setEvolutionError(errorMsg);
+        return { success: false, error: errorMsg };
+      }
+
+      // For young_3d (reveal), the response is immediate
+      // For adult, we may get a job ID to track
+      if (data.jobId) {
+        // Adult evolution - track the job
+        setJobId(data.jobId);
+        await fetchJobStatus(data.jobId);
+        startPolling(data.jobId);
+      } else {
+        // young_3d reveal - refresh monster data immediately
+        await fetchMonster();
+      }
+
+      return { success: true };
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Evolution failed';
+      setEvolutionError(errorMsg);
+      return { success: false, error: errorMsg };
+    } finally {
+      setIsEvolving(false);
+    }
+  }, [userId, monster, fetchJobStatus, startPolling, fetchMonster]);
+
   const clearWalletRequired = useCallback(() => {
     setWalletRequired(false);
   }, []);
+
+  const clearEvolutionError = useCallback(() => {
+    setEvolutionError(null);
+  }, []);
+
+  // Compute evolution availability
+  const canEvolve = monster?.nextEvolution?.canEvolve ?? false;
+  const nextEvolutionStage = monster?.nextEvolution?.stage ?? null;
+
+  // Determine current asset URLs - prefer monster data if available
+  const currentImageUrl = monster?.currentImageUrl || job?.imageUrl || null;
+  const currentModelUrl = monster?.currentModelUrl || job?.glbUrl || null;
 
   return {
     jobId,
@@ -223,19 +412,30 @@ export function useMonsterAsset(userId: string | undefined, lessonId: number, cu
     progress: job?.progress || 0,
     error: job?.errorMessage || null,
 
-    imageUrl: job?.imageUrl || null,
-    modelUrl: job?.glbUrl || null,
+    imageUrl: currentImageUrl,
+    modelUrl: currentModelUrl,
 
     isGenerating: job ? isProcessing(job.status) : false,
-    isImageReady: !!job?.imageUrl,
-    isModelReady: !!job?.glbUrl,
+    isImageReady: !!currentImageUrl,
+    isModelReady: !!currentModelUrl,
     isLoadingInitialState,
     wasResumed,
     walletRequired,
 
+    // Evolution system
+    monster,
+    isLoadingMonster,
+    isEvolving,
+    evolutionError,
+    canEvolve,
+    nextEvolutionStage,
+
     triggerGeneration,
+    triggerEvolution,
     refreshAssets,
     forceRefresh,
+    fetchMonster,
     clearWalletRequired,
+    clearEvolutionError,
   };
 }

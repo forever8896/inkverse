@@ -337,6 +337,100 @@ export class NFTsPalletService {
   }
 
   /**
+   * Update NFT metadata on-chain (for evolution)
+   * @param collectionId NFT collection ID
+   * @param itemId NFT item ID
+   * @param metadataUri New IPFS metadata URI
+   */
+  async setMetadata(
+    collectionId: number,
+    itemId: number,
+    metadataUri: string
+  ): Promise<{ success: boolean; txHash?: string; blockHash?: string; error?: string }> {
+    console.log(`[NFTsPallet] Setting metadata for collection ${collectionId}, item ${itemId}`);
+
+    try {
+      await this.connect();
+
+      const metadataTx = this.api!.tx.nfts.setMetadata(
+        collectionId,
+        itemId,
+        metadataUri
+      );
+
+      return new Promise((resolve, reject) => {
+        let resolved = false;
+
+        // Timeout after 2 minutes
+        const timeout = setTimeout(() => {
+          if (!resolved) {
+            resolved = true;
+            resolve({
+              success: false,
+              error: 'Transaction timeout after 120 seconds',
+            });
+          }
+        }, 120000);
+
+        metadataTx.signAndSend(
+          this.platformAccount!,
+          ({ status, dispatchError }) => {
+            console.log(`[NFTsPallet] setMetadata Tx status: ${status.type}`);
+
+            if (status.isFinalized) {
+              clearTimeout(timeout);
+
+              if (dispatchError) {
+                let errorMsg = dispatchError.toString();
+
+                if (dispatchError.isModule) {
+                  try {
+                    const decoded = this.api!.registry.findMetaError(
+                      dispatchError.asModule
+                    );
+                    errorMsg = `${decoded.section}.${decoded.name}: ${decoded.docs.join(' ')}`;
+                  } catch {
+                    // Use default error message
+                  }
+                }
+
+                if (!resolved) {
+                  resolved = true;
+                  resolve({
+                    success: false,
+                    error: errorMsg,
+                  });
+                }
+                return;
+              }
+
+              if (!resolved) {
+                resolved = true;
+                resolve({
+                  success: true,
+                  txHash: metadataTx.hash.toHex(),
+                  blockHash: status.asFinalized.toHex(),
+                });
+              }
+            }
+          }
+        ).catch((error) => {
+          clearTimeout(timeout);
+          if (!resolved) {
+            resolved = true;
+            reject(error instanceof Error ? error : new Error(String(error)));
+          }
+        });
+      });
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
+
+  /**
    * Get collection ID
    */
   getCollectionId(): number {

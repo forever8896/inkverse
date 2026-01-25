@@ -20,6 +20,12 @@ export type GenerationStatus =
   | 'converting_3d'
   | 'conversion_failed'
   | 'conversion_retrying'
+  | 'minting_nft'
+  | 'nft_minting_retrying'
+  | 'nft_mint_failed'
+  | 'evolving'
+  | 'evolution_retrying'
+  | 'evolution_failed'
   | 'completed'
   | 'failed_permanent'
   | 'failed' // Legacy/General
@@ -37,6 +43,8 @@ export const FAILED_STATUSES = [
   'failed_permanent',
   'image_generation_failed',
   'conversion_failed',
+  'nft_mint_failed',
+  'evolution_failed',
 ] as const;
 
 /**
@@ -46,8 +54,12 @@ export const PROCESSING_STATUSES = [
   'pending',
   'generating_image',
   'converting_3d',
+  'minting_nft',
+  'evolving',
   'image_generation_retrying',
   'conversion_retrying',
+  'nft_minting_retrying',
+  'evolution_retrying',
   'waiting_on_storage',
 ] as const;
 
@@ -65,6 +77,8 @@ export const TERMINAL_STATUSES = [
 export const RETRYING_STATUSES = [
   'image_generation_retrying',
   'conversion_retrying',
+  'nft_minting_retrying',
+  'evolution_retrying',
 ] as const;
 
 // =============================================================================
@@ -121,6 +135,12 @@ export const STATUS_MESSAGES: Record<GenerationStatus, string> = {
   converting_3d: 'Building your monster in 3D...',
   conversion_retrying: 'Retrying 3D conversion...',
   conversion_failed: '3D conversion failed',
+  minting_nft: 'Minting your NFT on-chain...',
+  nft_minting_retrying: 'Retrying NFT minting...',
+  nft_mint_failed: 'NFT minting failed',
+  evolving: 'Evolving your monster...',
+  evolution_retrying: 'Retrying evolution...',
+  evolution_failed: 'Evolution failed',
   completed: 'Your monster is ready!',
   failed: 'Something went wrong...',
   failed_permanent: 'Generation failed permanently',
@@ -138,6 +158,12 @@ export const STATUS_EMOJIS: Record<GenerationStatus, string> = {
   converting_3d: '🏗️',
   conversion_retrying: '🏗️',
   conversion_failed: '❌',
+  minting_nft: '⛓️',
+  nft_minting_retrying: '⛓️',
+  nft_mint_failed: '❌',
+  evolving: '🦋',
+  evolution_retrying: '🦋',
+  evolution_failed: '❌',
   completed: '✨',
   failed: '💥',
   failed_permanent: '💥',

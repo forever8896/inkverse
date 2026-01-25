@@ -46,6 +46,7 @@ export function LessonCodeEditorPanel() {
     showSuccessSquink,
     dismissSquink,
     playClickSound,
+    validationFailureCount,
   } = useLessonContext();
 
   // Handler for async validation
@@ -100,8 +101,9 @@ export function LessonCodeEditorPanel() {
               <EditorButton
                 onClick={() => { playClickSound(); showSolution(); }}
                 icon={<HelpIcon />}
-                tooltip="Show Solution"
+                tooltip={validationFailureCount >= 3 ? 'Show Solution' : `Locked (${3 - validationFailureCount} more attempt${3 - validationFailureCount === 1 ? '' : 's'})`}
                 variant="secondary"
+                disabled={validationFailureCount < 3}
               />
             )}
           </div>

@@ -95,6 +95,21 @@ export async function POST(request: NextRequest) {
         });
       }
 
+      // Handle 5xx errors from external service as service unavailable
+      if (submitResponse.status >= 500) {
+        console.error('[Compile API] External service error:', submitResponse.status, errorData);
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Code validation service is temporarily unavailable',
+            serviceUnavailable: true,
+            errors: [],
+            warnings: [],
+          },
+          { status: 503 }
+        );
+      }
+
       return NextResponse.json(
         { error: errorData.message || 'Failed to submit compilation job' },
         { status: submitResponse.status }
@@ -110,20 +125,38 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('[Compile API] Error:', error);
 
-    // Check if the code checker is unreachable
-    if (error instanceof TypeError && error.message.includes('fetch')) {
+    // Treat any connection/network errors as service unavailable
+    // This includes fetch failures, timeouts, DNS errors, etc.
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const isNetworkError =
+      error instanceof TypeError ||
+      errorMessage.includes('fetch') ||
+      errorMessage.includes('ECONNREFUSED') ||
+      errorMessage.includes('ETIMEDOUT') ||
+      errorMessage.includes('network');
+
+    if (isNetworkError) {
       return NextResponse.json(
         {
+          success: false,
           error: 'Code validation service unavailable',
           serviceUnavailable: true,
+          errors: [],
+          warnings: [],
         },
         { status: 503 }
       );
     }
 
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+      {
+        success: false,
+        error: 'Code validation service unavailable',
+        serviceUnavailable: true,
+        errors: [],
+        warnings: [],
+      },
+      { status: 503 }
     );
   }
 }

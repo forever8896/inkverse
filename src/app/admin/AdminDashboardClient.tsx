@@ -38,6 +38,13 @@ const adminMenuItems = [
     color: 'from-purple-500 to-pink-500'
   },
   {
+    title: 'Model Rigging',
+    description: 'Apply auto-rigging and animations to 3D models',
+    href: '/admin/rigging',
+    icon: '🦴',
+    color: 'from-cyan-500 to-teal-500'
+  },
+  {
     title: 'Lesson Editor',
     description: 'Create and edit interactive lessons content',
     href: '/lesson-editor',

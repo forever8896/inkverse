@@ -191,6 +191,7 @@ export const ERROR_HANDLERS: Record<ErrorType, Omit<JobError, 'currentRetries' |
 export type MonsterStyle = 'cute' | 'fierce' | 'mysterious' | 'playful' | 'cosmic';
 export type MonsterStage = 'egg' | 'young' | 'adult';
 export type GenerationType = 'full' | 'image_only';
+export type EvolutionType = 'mint' | 'reveal' | 'generate_evolve';
 export type GenerationStatus =
   | 'pending'
   | 'checking_prerequisites'
@@ -250,6 +251,9 @@ export interface GenerationJobData {
   id: string;
   userId: string;
   workflowRunId?: string; // Vercel Workflow Run ID for durable execution
+  monsterId?: string; // Link to user_monsters for evolution tracking
+  evolutionType: EvolutionType; // mint, reveal, or generate_evolve
+  evolutionMilestone?: string; // Human-readable milestone label
   prompt: string;
   style: MonsterStyle;
   stage: MonsterStage;
@@ -296,12 +300,18 @@ export interface CreateJobParams {
   stage: MonsterStage;
   generationType: GenerationType;
   nftOwnerAddress?: string; // Wallet address for NFT minting (stored at job creation)
+  monsterId?: string; // Link to user_monsters for evolution tracking
+  evolutionType?: EvolutionType; // mint, reveal, or generate_evolve (defaults to 'mint')
+  evolutionMilestone?: string; // Human-readable milestone label
 }
 
 export interface UpdateJobParams {
   status?: GenerationStatus;
   progress?: number;
   workflowRunId?: string; // Vercel Workflow Run ID
+  monsterId?: string; // Link to user_monsters
+  evolutionType?: EvolutionType;
+  evolutionMilestone?: string;
   errorMessage?: string;
   userMessage?: string;
   imageS3Key?: string;
@@ -384,6 +394,9 @@ export class GenerationJob {
   get id(): string { return this.data.id; }
   get userId(): string { return this.data.userId; }
   get workflowRunId(): string | undefined { return this.data.workflowRunId; }
+  get monsterId(): string | undefined { return this.data.monsterId; }
+  get evolutionType(): EvolutionType { return this.data.evolutionType; }
+  get evolutionMilestone(): string | undefined { return this.data.evolutionMilestone; }
   get prompt(): string { return this.data.prompt; }
   get style(): MonsterStyle { return this.data.style; }
   get stage(): MonsterStage { return this.data.stage; }
@@ -429,6 +442,9 @@ export class GenerationJob {
           id,
           user_id,
           workflow_run_id,
+          monster_id,
+          evolution_type,
+          evolution_milestone,
           prompt,
           style,
           stage,
@@ -438,12 +454,15 @@ export class GenerationJob {
           total_cost,
           retry_count,
           nft_owner_address
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
         RETURNING *
       `, [
         jobId,
         params.userId,
         null, // workflow_run_id - will be set after start() call
+        params.monsterId || null,
+        params.evolutionType || 'mint',
+        params.evolutionMilestone || null,
         params.prompt,
         params.style,
         params.stage,
@@ -474,6 +493,9 @@ export class GenerationJob {
       id: row.id,
       userId: row.user_id,
       workflowRunId: row.workflow_run_id,
+      monsterId: row.monster_id ?? undefined,
+      evolutionType: row.evolution_type ?? 'mint',
+      evolutionMilestone: row.evolution_milestone ?? undefined,
       prompt: row.prompt,
       style: row.style,
       stage: row.stage,
@@ -569,6 +591,9 @@ export class GenerationJob {
           id,
           user_id,
           workflow_run_id,
+          monster_id,
+          evolution_type,
+          evolution_milestone,
           prompt,
           style,
           stage,
@@ -578,12 +603,15 @@ export class GenerationJob {
           total_cost,
           retry_count,
           nft_owner_address
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
         RETURNING *
       `, [
         jobId,
         params.userId,
         null,
+        params.monsterId || null,
+        params.evolutionType || 'mint',
+        params.evolutionMilestone || null,
         params.prompt,
         params.style,
         params.stage,
@@ -722,6 +750,24 @@ export class GenerationJob {
         updates.push(`workflow_run_id = $${paramIndex++}`);
         values.push(params.workflowRunId);
         this.data.workflowRunId = params.workflowRunId;
+      }
+
+      if (params.monsterId !== undefined) {
+        updates.push(`monster_id = $${paramIndex++}`);
+        values.push(params.monsterId);
+        this.data.monsterId = params.monsterId;
+      }
+
+      if (params.evolutionType !== undefined) {
+        updates.push(`evolution_type = $${paramIndex++}`);
+        values.push(params.evolutionType);
+        this.data.evolutionType = params.evolutionType;
+      }
+
+      if (params.evolutionMilestone !== undefined) {
+        updates.push(`evolution_milestone = $${paramIndex++}`);
+        values.push(params.evolutionMilestone);
+        this.data.evolutionMilestone = params.evolutionMilestone;
       }
 
       if (params.errorMessage !== undefined) {
@@ -1373,6 +1419,9 @@ export class GenerationJob {
       id: this.data.id,
       userId: this.data.userId,
       workflowRunId: this.data.workflowRunId,
+      monsterId: this.data.monsterId,
+      evolutionType: this.data.evolutionType,
+      evolutionMilestone: this.data.evolutionMilestone,
       prompt: this.data.prompt,
       style: this.data.style,
       stage: this.data.stage,

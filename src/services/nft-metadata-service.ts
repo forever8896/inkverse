@@ -161,6 +161,36 @@ export class NFTMetadataService {
   }
 
   /**
+   * Upload a buffer directly to IPFS (for evolution system)
+   * @param buffer File buffer to upload
+   * @param filename Filename for the upload
+   * @param contentType MIME type of the file
+   */
+  async uploadAsset(buffer: Buffer, filename: string, contentType: string): Promise<string> {
+    console.log(`[NFTMetadata] Uploading ${filename} (${buffer.length} bytes) to IPFS...`);
+
+    const uint8Array = new Uint8Array(buffer);
+    const file = new File([uint8Array], filename, { type: contentType });
+    const upload = await this.pinata.upload.public.file(file);
+
+    console.log(`[NFTMetadata] Asset uploaded to IPFS: ${upload.cid}`);
+    return upload.cid;
+  }
+
+  /**
+   * Upload any metadata object to IPFS (for evolution system)
+   * More flexible than uploadMetadataToIPFS which requires NFTMetadata type
+   */
+  async uploadMetadata(metadata: Record<string, unknown>): Promise<string> {
+    console.log(`[NFTMetadata] Uploading metadata object to IPFS...`);
+
+    const upload = await this.pinata.upload.public.json(metadata);
+
+    console.log(`[NFTMetadata] Metadata uploaded: ${upload.cid}`);
+    return upload.cid;
+  }
+
+  /**
    * Test IPFS connectivity via Pinata API authentication endpoint
    * This is more reliable than gateway testing and doesn't require gateway keys
    */

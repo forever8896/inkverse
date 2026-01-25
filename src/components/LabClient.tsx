@@ -340,6 +340,19 @@ export default function LabClient({ chapters }: { chapters: Lesson[] }) {
                                 </div>
                               )}
                             </div>
+
+                            {/* View Full Experience Button */}
+                            <button
+                              onClick={() => router.push('/my-monster')}
+                              className="w-full mt-3 py-2.5 rounded-lg font-pixel text-[10px] uppercase tracking-wider transition-all hover:scale-[1.02]"
+                              style={{
+                                background: 'rgba(79, 255, 176, 0.15)',
+                                border: '1px solid rgba(79, 255, 176, 0.3)',
+                                color: 'var(--mi-mint)',
+                              }}
+                            >
+                              View Full Experience
+                            </button>
                           </div>
                         ) : (
                           /* Not yet minted badge */

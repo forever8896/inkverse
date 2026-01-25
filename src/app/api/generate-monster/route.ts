@@ -9,6 +9,7 @@ import { GenerationJob } from '@/lib/generation-job';
 import { auth } from '@/lib/auth';
 import { generatePromptFromStructuredData, type GenerateMonsterRequest } from '@/lib/monster-prompts';
 import { NFTsPalletService } from '@/services/nfts-pallet-service';
+import { UserMonster } from '@/lib/user-monster';
 
 // Rate limiting constants
 const MAX_ACTIVE_JOBS_PER_USER = 2;
@@ -364,6 +365,35 @@ export async function POST(request: NextRequest) {
       stepId: body.stepId
     } : undefined;
 
+    // EVOLUTION SYSTEM: Create or get user_monsters record for young stage
+    let monsterId: string | undefined;
+    if (body.stage === 'young' && !adminBypass) {
+      try {
+        // Get or create monster record for this user
+        const monster = await UserMonster.getOrCreate({
+          userId: session.user.id,
+          nftOwnerAddress: walletAddress,
+          generationPrompt: aiPrompt,
+          generationStyle: body.style,
+          attributes: {
+            style: body.style,
+            bodyType: body.bodyType,
+            size: body.size,
+            specialPower: body.specialPower,
+            colorScheme: body.colorScheme,
+            texture: body.texture,
+            attitude: body.attitude,
+            habitat: body.habitat,
+          }
+        });
+        monsterId = monster.id;
+        console.log(`[API] Using monster ${monsterId} for generation`);
+      } catch (error) {
+        console.warn('[API] Failed to create user_monsters record:', error);
+        // Continue without monster ID - backward compatible
+      }
+    }
+
     // Create the generation job
     // FIX #4: Store wallet address at job creation time (not at mint time)
     // This ensures security - we use the wallet from when the job was created
@@ -376,6 +406,9 @@ export async function POST(request: NextRequest) {
         stage: body.stage,
         generationType,
         nftOwnerAddress: walletAddress || undefined, // undefined for admin bypass (no NFT minting)
+        monsterId, // Link to user_monsters record (evolution system)
+        evolutionType: 'mint', // First generation = mint new NFT
+        evolutionMilestone: body.evolutionMilestone || (body.stage === 'young' ? 'First Contract Compiled' : undefined),
       }, lessonContext);
     } catch (error: any) {
       // Handle race condition (unique constraint violation)
@@ -435,7 +468,7 @@ export async function POST(request: NextRequest) {
       `✅ [API] Created generation job ${job.id} for user ${session.user.id}`
     );
 
-    // Start Workflow
+    // Start Workflow (original working workflow)
     const { start } = await import('workflow/api');
     const { generateMonster } = await import('@/workflows/generate-monster');
 

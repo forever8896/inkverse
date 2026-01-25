@@ -181,7 +181,8 @@
           "difficulty": "easy",
           "estimatedTime": 3,
           "triggersGeneration": true,
-          "generationStage": "young"
+          "generationStage": "young",
+          "evolutionMilestone": "First ink! Contract Storage"
         },
         {
           "id": 10,
@@ -385,7 +386,11 @@
           "image": "/creatures/first_awake.png",
           "content": "\n<h1>Call Your Contract! 🎮</h1>\n\n<p>Now let's interact with your deployed Flipper contract!</p>\n\n<h2>Reading the Value (Free! 💰)</h2>\n<div style=\"background: #1e293b; border: 1px solid #475569; border-radius: 8px; padding: 12px; margin: 12px 0; font-family: monospace;\">\n<code>pop call contract --contract &lt;ADDRESS&gt; --message get</code>\n</div>\n\n<p>This calls the <code>get()</code> function. Since it uses <code>&self</code>, it's a <strong>dry-run</strong> - no gas needed!</p>\n\n<div data-component=\"info-box\">\n<strong>Output:</strong><br>\n<code>Result: true</code>\n</div>\n\n<h2>Flipping the Value (Costs Gas ⛽)</h2>\n<div style=\"background: #1e293b; border: 1px solid #475569; border-radius: 8px; padding: 12px; margin: 12px 0; font-family: monospace;\">\n<code>pop call contract --contract &lt;ADDRESS&gt; --message flip --execute</code>\n</div>\n\n<p>The <code>--execute</code> flag means \"submit this as a transaction.\" It:</p>\n<ul>\n  <li>✅ Modifies blockchain state</li>\n  <li>✅ Costs gas (test tokens on local chain)</li>\n  <li>✅ Waits for block confirmation</li>\n  <li>✅ Returns a transaction hash</li>\n</ul>\n\n<h2>Verify the Flip:</h2>\n<div style=\"background: #1e293b; border: 1px solid #475569; border-radius: 8px; padding: 12px; margin: 12px 0; font-family: monospace;\">\n<code>pop call contract --contract &lt;ADDRESS&gt; --message get</code>\n</div>\n\n<div data-component=\"info-box\">\n<strong>Output:</strong><br>\n<code>Result: false&nbsp;&nbsp;// It flipped! 🎉</code>\n</div>\n\n<h2>Testing Before Executing:</h2>\n<div data-component=\"highlight-box\">\n<strong>💡 Pro Tip:</strong> Always test with <code>--dry-run</code> first!<br><br>\n<code>pop call contract --contract &lt;ADDRESS&gt; --message flip --dry-run</code><br><br>\nThis simulates the call without spending gas.\n</div>\n\n<p><strong>Congratulations!</strong> 🎊 You've successfully:</p>\n<ul>\n  <li>✅ Written a complete ink! smart contract</li>\n  <li>✅ Compiled it to PolkaVM bytecode</li>\n  <li>✅ Deployed it to a blockchain</li>\n  <li>✅ Interacted with it using read and write functions</li>\n</ul>\n\n<p><strong>Next:</strong> Generate your unique creature NFT!</p>\n          ",
           "difficulty": "medium",
-          "estimatedTime": 3
+          "estimatedTime": 3,
+          "triggersGeneration": true,
+          "generationStage": "young_3d",
+          "evolutionMilestone": "Contract Deployment Mastery",
+          "displayStage": "young_3d"
         }
       ]
     },
@@ -410,6 +415,7 @@
           "estimatedTime": 2,
           "triggersGeneration": true,
           "generationStage": "adult",
+          "evolutionMilestone": "Lesson 1 Complete - Flipper Master",
           "displayStage": "adult"
         }
       ]

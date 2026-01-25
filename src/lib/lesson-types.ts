@@ -4,6 +4,22 @@ export interface ValidationRule {
   message?: string;
 }
 
+/**
+ * Evolution stages for monster NFT progression
+ * Each stage represents a milestone in the learning journey
+ *
+ * - young: Generate 2D+3D, mint NFT with 2D only
+ * - young_3d: Reveal existing 3D, update NFT metadata
+ * - adult: Generate new adult 3D, update NFT metadata
+ */
+export type GenerationStage = 'young' | 'young_3d' | 'adult';
+
+/**
+ * Display stages for the creature in lessons
+ * Controls what visual is shown at each step
+ */
+export type DisplayStage = 'egg' | 'young' | 'young_3d' | 'adult';
+
 export interface Step {
   id: number;
   chapterId?: number; // Added for Editor compatibility
@@ -20,9 +36,10 @@ export interface Step {
   requiresAuth?: boolean; // Added for Editor
   
   // Asset Lifecycle Flags
-  triggersGeneration?: boolean; 
-  generationStage?: 'young' | 'adult'; 
-  displayStage?: 'egg' | 'young' | 'adult'; // Explicit display override
+  triggersGeneration?: boolean;
+  generationStage?: GenerationStage;
+  evolutionMilestone?: string;  // Human-readable label for evolution history
+  displayStage?: DisplayStage; // Explicit display override
 }
 
 // Chapter structure for lessons that include multiple chapters
@@ -82,7 +99,8 @@ export interface LessonStep {
   requiresAuth?: boolean;
   
   // Asset Lifecycle Flags (Added to LessonStep as well)
-  triggersGeneration?: boolean; 
-  generationStage?: 'young' | 'adult'; 
-  displayStage?: 'egg' | 'young' | 'adult'; 
+  triggersGeneration?: boolean;
+  generationStage?: GenerationStage;
+  evolutionMilestone?: string;  // Human-readable label for evolution history
+  displayStage?: DisplayStage;
 }

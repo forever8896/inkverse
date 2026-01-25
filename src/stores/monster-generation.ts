@@ -18,15 +18,21 @@ export interface GenerationJobData {
   style: 'cute' | 'fierce' | 'mysterious' | 'playful' | 'cosmic';
   stage: 'egg' | 'young' | 'adult';
   generationType: 'full' | 'image_only';
-  status: 
-    | 'pending' 
-    | 'generating_image' 
+  status:
+    | 'pending'
+    | 'generating_image'
     | 'image_generation_failed'
     | 'image_generation_retrying'
-    | 'converting_3d' 
+    | 'converting_3d'
     | 'conversion_failed'
     | 'conversion_retrying'
-    | 'completed' 
+    | 'minting_nft'
+    | 'nft_minting_retrying'
+    | 'nft_mint_failed'
+    | 'evolving'
+    | 'evolution_retrying'
+    | 'evolution_failed'
+    | 'completed'
     | 'failed_permanent'
     | 'failed' // Legacy/General
     | 'waiting_on_storage';

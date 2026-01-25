@@ -57,6 +57,138 @@ export const OPENAI_PRICING = {
 } as const;
 
 // ============================================================================
+// TRIPO AI PRICING (2025) - Rigging & Animation
+// ============================================================================
+
+/**
+ * Tripo AI Animation API Pricing
+ *
+ * Used for automatic rigging and animation of 3D models
+ * Prices are estimates based on Tripo's credit system
+ *
+ * API Docs: https://docs.tripo3d.ai/
+ */
+export const TRIPO_PRICING = {
+  /**
+   * PreRigCheck operation
+   * Checks if a model can be rigged and determines rig type
+   * Cost: Free (estimation)
+   */
+  PRE_RIG_CHECK: 0.00,
+
+  /**
+   * Rig operation for biped models
+   * Applies skeleton rigging to humanoid models
+   * Cost: ~$0.10 per rig
+   */
+  RIG_BIPED: 0.10,
+
+  /**
+   * Rig operation for quadruped models
+   * Applies skeleton rigging to four-legged creatures
+   * Cost: ~$0.10 per rig
+   */
+  RIG_QUADRUPED: 0.10,
+
+  /**
+   * Rig operation for other model types
+   * Applies skeleton rigging to hexapod, octopod, avian, serpentine, aquatic
+   * Cost: ~$0.10 per rig
+   */
+  RIG_OTHER: 0.10,
+
+  /**
+   * Retarget operation for single animation
+   * Applies one preset animation to a rigged model
+   * Cost: ~$0.05 per animation
+   */
+  RETARGET_SINGLE: 0.05,
+
+  /**
+   * Retarget operation for batch animations
+   * Applies up to 5 animations to a rigged model
+   * Cost: ~$0.20 per batch
+   */
+  RETARGET_BATCH: 0.20,
+
+  /**
+   * Import model operation
+   * Uploads and imports external GLB to Tripo's system
+   * Cost: Free (estimation)
+   */
+  IMPORT_MODEL: 0.00,
+} as const;
+
+/**
+ * Available animation presets by rig type
+ */
+export const TRIPO_ANIMATION_PRESETS = {
+  biped: [
+    'preset:idle',
+    'preset:walk',
+    'preset:run',
+    'preset:dive',
+    'preset:climb',
+    'preset:jump',
+    'preset:slash',
+    'preset:shoot',
+    'preset:hurt',
+    'preset:fall',
+    'preset:turn',
+  ],
+  quadruped: ['preset:quadruped:walk'],
+  hexapod: ['preset:hexapod:walk'],
+  octopod: ['preset:octopod:walk'],
+  serpentine: ['preset:serpentine:march'],
+  aquatic: ['preset:aquatic:march'],
+  avian: [], // No presets available yet
+} as const;
+
+export type RigType = keyof typeof TRIPO_ANIMATION_PRESETS;
+
+/**
+ * Calculate rigging cost based on rig type
+ * @param rigType - The detected rig type
+ * @returns Cost in USD
+ */
+export function calculateRiggingCost(rigType: RigType): number {
+  switch (rigType) {
+    case 'biped':
+      return TRIPO_PRICING.RIG_BIPED;
+    case 'quadruped':
+      return TRIPO_PRICING.RIG_QUADRUPED;
+    default:
+      return TRIPO_PRICING.RIG_OTHER;
+  }
+}
+
+/**
+ * Calculate animation cost based on number of animations
+ * @param animationCount - Number of animations to apply (1-5)
+ * @returns Cost in USD
+ */
+export function calculateAnimationCost(animationCount: number): number {
+  if (animationCount <= 0) return 0;
+  if (animationCount === 1) return TRIPO_PRICING.RETARGET_SINGLE;
+  return TRIPO_PRICING.RETARGET_BATCH;
+}
+
+/**
+ * Calculate total rigging pipeline cost
+ * @param rigType - The detected rig type
+ * @param animationCount - Number of animations to apply
+ * @returns Total cost in USD
+ */
+export function calculateTotalRiggingCost(
+  rigType: RigType,
+  animationCount: number = 0
+): number {
+  const rigCost = calculateRiggingCost(rigType);
+  const animCost = calculateAnimationCost(animationCount);
+  return TRIPO_PRICING.PRE_RIG_CHECK + TRIPO_PRICING.IMPORT_MODEL + rigCost + animCost;
+}
+
+// ============================================================================
 // FAL.AI PRICING (2025)
 // ============================================================================
 

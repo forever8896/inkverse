@@ -69,6 +69,9 @@ export interface GenerateMonsterRequest {
   chapterId?: number;
   stepId?: number;
 
+  // Evolution System
+  evolutionMilestone?: string;
+
   // Wallet Address for NFT minting
   walletAddress?: string;
 

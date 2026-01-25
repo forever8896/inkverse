@@ -29,8 +29,11 @@ export function useLeftPanelDisplay() {
   const hasLessonImage = currentStepData?.image;
 
   // Decision hierarchy:
-  if (hasGeneratedCreature && !isGenerationInProgress) {
-    // Show the creature - generation is complete
+  // Only show creature if we have assets AND the stage is appropriate (not 'egg')
+  // The 'egg' stage means the user hasn't reached the reveal milestone yet,
+  // so we should show lesson images instead of the generated creature
+  if (hasGeneratedCreature && !isGenerationInProgress && targetStage !== 'egg') {
+    // Show the creature - generation is complete and user has reached reveal stage
     return {
       type: 'creature' as const,
       stage: targetStage,

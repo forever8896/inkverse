@@ -20,7 +20,7 @@ const MonsterViewer = dynamic(() => import('./MonsterViewer'), {
 });
 
 interface CreatureStageDisplayProps {
-  stage: 'egg' | 'young' | 'adult';
+  stage: 'egg' | 'young' | 'young_3d' | 'adult';
   imageUrl: string | null;
   modelUrl: string | null;
   isRevealing: boolean; // True if we are currently in a Reveal Step
@@ -91,8 +91,8 @@ export const CreatureStageDisplay: React.FC<CreatureStageDisplayProps> = ({
     );
   }
 
-  // 3D Model (Adult / Evolution)
-  if (stage === 'adult' && modelUrl) {
+  // 3D Model (Young 3D Reveal / Adult Evolution)
+  if ((stage === 'adult' || stage === 'young_3d') && modelUrl) {
     return (
       <motion.div
         initial={{ opacity: 0 }}
@@ -114,8 +114,8 @@ export const CreatureStageDisplay: React.FC<CreatureStageDisplayProps> = ({
     );
   }
 
-  // 2D Image (Young / Hatch)
-  if ((stage === 'young' || stage === 'adult') && imageUrl) {
+  // 2D Image (Young / Hatch) - also fallback for young_3d/adult if 3D model not available
+  if ((stage === 'young' || stage === 'young_3d' || stage === 'adult') && imageUrl) {
     return (
       <motion.div
         layoutId="creature-display"

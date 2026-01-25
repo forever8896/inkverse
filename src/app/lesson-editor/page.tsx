@@ -890,16 +890,31 @@ export default function LessonEditorPage() {
                     </label>
 
                     {currentStep.triggersGeneration && (
-                        <div className="ml-6 mt-2 p-2 bg-purple-900/20 rounded border border-purple-500/30">
-                            <label className="block text-xs text-purple-300 mb-1 font-semibold">Generation Stage</label>
-                            <select
-                                value={currentStep.generationStage || 'young'}
-                                onChange={(e) => updateStep('generationStage', e.target.value)}
-                                className="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 text-xs text-white"
-                            >
-                                <option value="young">🐣 Young (Baby)</option>
-                                <option value="adult">🦕 Adult (Mature)</option>
-                            </select>
+                        <div className="ml-6 mt-2 p-2 bg-purple-900/20 rounded border border-purple-500/30 space-y-3">
+                            <div>
+                                <label className="block text-xs text-purple-300 mb-1 font-semibold">Generation Stage</label>
+                                <select
+                                    value={currentStep.generationStage || 'young'}
+                                    onChange={(e) => updateStep('generationStage', e.target.value)}
+                                    className="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 text-xs text-white"
+                                >
+                                    <option value="young">🐣 Young (Generate 2D+3D, mint NFT)</option>
+                                    <option value="adult">🦕 Adult (Generate new 3D, update NFT)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-xs text-purple-300 mb-1 font-semibold">Evolution Milestone</label>
+                                <input
+                                    type="text"
+                                    value={currentStep.evolutionMilestone || ''}
+                                    onChange={(e) => updateStep('evolutionMilestone', e.target.value || undefined)}
+                                    placeholder="e.g., First Contract Compiled"
+                                    className="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 text-xs text-white placeholder:text-slate-500"
+                                />
+                                <p className="text-[10px] text-slate-500 mt-1">
+                                    Human-readable label recorded in NFT evolution history
+                                </p>
+                            </div>
                         </div>
                     )}
 
@@ -912,7 +927,8 @@ export default function LessonEditorPage() {
                       >
                           <option value="">Auto (Timeline History)</option>
                           <option value="egg">🥚 Force Egg (Incubating)</option>
-                          <option value="young">🐣 Force Young (2D)</option>
+                          <option value="young">🐣 Force Young (2D only)</option>
+                          <option value="young_3d">🦋 Force Young 3D (Revealed)</option>
                           <option value="adult">🦕 Force Adult (3D)</option>
                       </select>
                       <p className="text-[10px] text-slate-500">
