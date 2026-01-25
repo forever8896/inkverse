@@ -237,7 +237,12 @@ export default function Home() {
     <>
       {/* Darkness transition overlay */}
       <AnimatePresence>
-        {showDarkness && <NarrativeLoadingScreen onComplete={handleTransitionComplete} />}
+        {showDarkness && (
+          <NarrativeLoadingScreen
+            onComplete={handleTransitionComplete}
+            preloadModelUrl="/monsters/sample_3d.glb"
+          />
+        )}
       </AnimatePresence>
 
       {/* Main landing page */}

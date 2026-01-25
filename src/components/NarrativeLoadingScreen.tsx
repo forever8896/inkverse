@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import Image from 'next/image';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 const MONSTER_IMAGES = [
   '/monsters/17b3d246-bbee-460d-bf10-96ead31ac702.webp',
@@ -11,66 +12,107 @@ const MONSTER_IMAGES = [
   '/monsters/f84edb46-eec8-4faa-b3ee-0586fc1f7394.webp',
 ];
 
+// Messages shown at different loading progress stages
+const LOADING_MESSAGES = [
+  { threshold: 0, message: 'Your creature stirs...' },
+  { threshold: 25, message: 'A bond is forming...' },
+  { threshold: 50, message: 'Preparing your workspace...' },
+  { threshold: 75, message: 'Almost there...' },
+  { threshold: 100, message: 'Ready to learn together.' },
+];
+
 interface NarrativeLoadingScreenProps {
   onComplete: () => void;
-  messages?: string[];
-  /** Duration per message in ms (default: 1500) */
-  messageDuration?: number;
+  /** Path to GLB model to preload during loading screen */
+  preloadModelUrl?: string;
 }
 
 /**
- * Shared narrative loading screen used for route transitions.
- * Shows narrative messages with a progress bar in a minimal, atmospheric style.
+ * Loading screen that shows real progress based on 3D model download.
+ * Shows narrative messages tied to actual loading progress.
  */
 export function NarrativeLoadingScreen({
   onComplete,
-  messages = [
-    'Your creature stirs...',
-    'A bond is forming...',
-    'Preparing your workspace...',
-    'Ready to learn together.',
-  ],
-  messageDuration = 1500,
+  preloadModelUrl,
 }: NarrativeLoadingScreenProps) {
-  const [narrativeStage, setNarrativeStage] = useState(0);
-  const [isReady, setIsReady] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(0);
   const [isExiting, setIsExiting] = useState(false);
   const [currentMonster, setCurrentMonster] = useState(0);
+  const [modelLoaded, setModelLoaded] = useState(!preloadModelUrl);
+  const [loadError, setLoadError] = useState(false);
 
-  // Progress through narrative messages
+  // Get current message based on loading progress
+  const currentMessage = useMemo(() => {
+    // Find the highest threshold that's <= current progress
+    const matchingMessages = LOADING_MESSAGES.filter(
+      (m) => loadingProgress >= m.threshold
+    );
+    return matchingMessages[matchingMessages.length - 1]?.message || LOADING_MESSAGES[0].message;
+  }, [loadingProgress]);
+
+  // Preload 3D model with progress tracking
   useEffect(() => {
-    const interval = setInterval(() => {
-      setNarrativeStage((prev) => {
-        if (prev >= messages.length - 1) {
-          clearInterval(interval);
-          return prev;
+    if (!preloadModelUrl) {
+      // No model to load, complete immediately
+      setLoadingProgress(100);
+      setModelLoaded(true);
+      return;
+    }
+
+    let isMounted = true;
+    let lastProgressUpdate = 0;
+    const loader = new GLTFLoader();
+
+    loader.load(
+      preloadModelUrl,
+      () => {
+        if (!isMounted) return;
+        setLoadingProgress(100);
+        setModelLoaded(true);
+      },
+      (progressEvent) => {
+        if (!isMounted) return;
+        // Calculate actual loading progress from bytes
+        if (progressEvent.lengthComputable && progressEvent.total > 0) {
+          const progress = (progressEvent.loaded / progressEvent.total) * 100;
+          setLoadingProgress(Math.round(progress));
+        } else {
+          // Fallback: increment slowly based on time, not per-event
+          // This prevents rapid jumping when Content-Length is missing
+          const now = Date.now();
+          if (now - lastProgressUpdate > 500) {
+            lastProgressUpdate = now;
+            setLoadingProgress((prev) => Math.min(prev + 2, 90));
+          }
         }
-        return prev + 1;
-      });
-    }, messageDuration);
+      },
+      (error) => {
+        if (!isMounted) return;
+        // Log in development only
+        if (process.env.NODE_ENV === 'development') {
+          console.error('[Loading] Failed to preload 3D model:', error);
+        }
+        setLoadError(true);
+        setLoadingProgress(100);
+        setModelLoaded(true); // Continue anyway on error
+      }
+    );
 
-    return () => clearInterval(interval);
-  }, [messages.length, messageDuration]);
+    return () => {
+      isMounted = false;
+    };
+  }, [preloadModelUrl]);
 
-  // Mark as ready after all messages have been shown
+  // Start exit animation when model is fully loaded
   useEffect(() => {
-    const totalDuration = messages.length * messageDuration;
-    const readyTimer = setTimeout(() => {
-      setIsReady(true);
-    }, totalDuration);
-
-    return () => clearTimeout(readyTimer);
-  }, [messages.length, messageDuration]);
-
-  // Start exit animation when ready
-  useEffect(() => {
-    if (isReady && narrativeStage >= messages.length - 1 && !isExiting) {
+    if (modelLoaded && loadingProgress >= 100 && !isExiting) {
+      // Small delay to show 100% before exiting
       const exitTimer = setTimeout(() => {
         setIsExiting(true);
       }, 800);
       return () => clearTimeout(exitTimer);
     }
-  }, [isReady, narrativeStage, messages.length, isExiting]);
+  }, [modelLoaded, loadingProgress, isExiting]);
 
   // Call onComplete after exit animation
   useEffect(() => {
@@ -98,6 +140,9 @@ export function NarrativeLoadingScreen({
       initial={{ opacity: 0 }}
       animate={{ opacity: isExiting ? 0 : 1 }}
       transition={{ duration: isExiting ? 0.6 : 0.8 }}
+      role="status"
+      aria-live="polite"
+      aria-label={`Loading: ${loadingProgress}% complete. ${currentMessage}`}
     >
       {/* Subtle ambient glow */}
       <div
@@ -119,10 +164,10 @@ export function NarrativeLoadingScreen({
         }}
         transition={{ duration: 0.5 }}
       >
-        {/* Narrative text */}
+        {/* Narrative text - changes based on loading progress */}
         <AnimatePresence mode="wait">
           <motion.p
-            key={narrativeStage}
+            key={currentMessage}
             initial={{ opacity: 0, y: 15, filter: 'blur(4px)' }}
             animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
             exit={{ opacity: 0, y: -15, filter: 'blur(4px)' }}
@@ -133,12 +178,20 @@ export function NarrativeLoadingScreen({
               textShadow: '0 0 20px rgba(79, 255, 176, 0.5)',
             }}
           >
-            {messages[narrativeStage]}
+            {currentMessage}
           </motion.p>
         </AnimatePresence>
 
-        {/* Progress bar */}
-        <div className="mt-10 w-48 mx-auto">
+        {/* Loading percentage */}
+        <motion.p
+          className="mt-4 font-pixel text-[10px] tracking-wider"
+          style={{ color: '#94a3b8' }}
+        >
+          {loadError ? 'Loading...' : `${loadingProgress}%`}
+        </motion.p>
+
+        {/* Progress bar - real loading progress */}
+        <div className="mt-4 w-48 mx-auto">
           <div
             className="h-1 rounded-full overflow-hidden"
             style={{ background: 'rgba(79, 255, 176, 0.15)' }}
@@ -151,9 +204,9 @@ export function NarrativeLoadingScreen({
               }}
               initial={{ width: '0%' }}
               animate={{
-                width: `${((narrativeStage + 1) / messages.length) * 100}%`,
+                width: `${loadingProgress}%`,
               }}
-              transition={{ duration: 0.6, ease: 'easeOut' }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
             />
           </div>
         </div>

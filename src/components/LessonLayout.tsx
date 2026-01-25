@@ -16,10 +16,12 @@
 import { Suspense, useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
+import { motion, AnimatePresence } from 'motion/react';
 import { Lesson } from '@/lib/lessons';
 import GitHubAuthModal from '@/components/GitHubAuthModal';
 import { WalletRequiredOverlay } from '@/components/WalletRequiredOverlay';
 import { CompletionModals } from '@/components/lesson/CompletionModals';
+import { OnboardingOverlay } from '@/components/OnboardingOverlay';
 import '@/styles/lesson-content.css';
 import '@/styles/lesson-animations.css';
 
@@ -29,6 +31,15 @@ import { LessonCreaturePanel } from '@/components/lesson/LessonCreaturePanel';
 import { LessonInstructionsPanel } from '@/components/lesson/LessonInstructionsPanel';
 import { LessonCodeEditorPanel } from '@/components/lesson/LessonCodeEditorPanel';
 import { LessonNavigation } from '@/components/lesson/LessonNavigation';
+
+// Dynamic import for WelcomeModelViewer (heavy 3D component)
+const WelcomeModelViewer = dynamic(
+  () => import('@/components/WelcomeModelViewer').then(mod => ({ default: mod.WelcomeModelViewer })),
+  {
+    ssr: false,
+    loading: () => null, // Model should be preloaded, so no loading state needed
+  }
+);
 
 // ============================================================================
 // PERFORMANCE: Dynamic imports for heavy components
@@ -85,24 +96,75 @@ function LessonLayoutInner() {
     moveToNextChapter,
     chapterRequiresAuth,
     session,
+    isAuthLoading,
     asset,
     handleWalletConnected,
     addToast,
     windowDimensions,
   } = useLessonContext();
 
-  // Onboarding state: right panel hidden until user clicks left panel
+  // Onboarding state: right panel hidden until onboarding completes
   const [showRightPanel, setShowRightPanel] = useState(false);
+  const [onboardingComplete, setOnboardingComplete] = useState(false);
+  const [hasExistingProgress, setHasExistingProgress] = useState<boolean | null>(null);
 
+  // Check if user has existing progress (skip onboarding if they do)
+  useEffect(() => {
+    // Wait for auth to settle before checking
+    if (isAuthLoading) return;
+
+    // No session = new user, show onboarding
+    if (!session?.user) {
+      setHasExistingProgress(false);
+      return;
+    }
+
+    // Check for existing progress via API
+    fetch('/api/user/lab-data')
+      .then(res => res.json())
+      .then(data => {
+        const hasProgress = !!(data.data?.currentPosition);
+        setHasExistingProgress(hasProgress);
+        // If user has progress, skip onboarding and show right panel
+        if (hasProgress) {
+          setOnboardingComplete(true);
+          setShowRightPanel(true);
+        }
+      })
+      .catch(() => {
+        // On error, assume new user
+        setHasExistingProgress(false);
+      });
+  }, [session?.user, isAuthLoading]);
+
+  // Handle onboarding completion
+  const handleOnboardingComplete = useCallback(() => {
+    setOnboardingComplete(true);
+    setShowRightPanel(true);
+  }, []);
+
+  // Legacy click handler for non-onboarding flow (returning users)
   const handleLeftPanelClick = useCallback(() => {
-    if (!showRightPanel) {
+    if (!showRightPanel && onboardingComplete) {
       setShowRightPanel(true);
     }
-  }, [showRightPanel]);
+  }, [showRightPanel, onboardingComplete]);
+
+  // Determine if we should show onboarding
+  const showOnboarding = hasExistingProgress === false && !onboardingComplete;
 
   // Empty lesson state
   if (!lesson) {
     return <EmptyLessonView />;
+  }
+
+  // Still checking for progress
+  if (hasExistingProgress === null) {
+    return (
+      <div className="h-screen w-screen bg-slate-900 flex flex-col overflow-hidden">
+        <ShaderBackground />
+      </div>
+    );
   }
 
   return (
@@ -112,16 +174,46 @@ function LessonLayoutInner() {
         <ShaderBackground />
 
         <div className="flex-1 overflow-hidden relative">
-          {/* Left Panel: Creature Display */}
+          {/* Left Panel: Creature Display OR 3D Model during onboarding */}
           <div
             className={`absolute top-0 bottom-0 left-0 transition-all duration-700 ease-out ${
               showRightPanel ? 'w-1/2' : 'w-full'
             }`}
             onClick={handleLeftPanelClick}
-            style={{ cursor: showRightPanel ? 'default' : 'pointer' }}
+            style={{ cursor: showRightPanel || showOnboarding ? 'default' : 'pointer' }}
           >
-            <LessonCreaturePanel showLogo={showRightPanel} />
+            <AnimatePresence mode="wait">
+              {showOnboarding ? (
+                <motion.div
+                  key="welcome-model"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.5 }}
+                  className="absolute inset-0 flex items-center justify-center"
+                >
+                  <WelcomeModelViewer modelUrl="/monsters/sample_3d.glb" />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="creature-panel"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.5 }}
+                  className="h-full"
+                >
+                  <LessonCreaturePanel showLogo={showRightPanel} />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
+
+          {/* Onboarding Overlay - shown at bottom during onboarding */}
+          <AnimatePresence>
+            {showOnboarding && (
+              <OnboardingOverlay onComplete={handleOnboardingComplete} />
+            )}
+          </AnimatePresence>
 
           {/* Right Panel: Instructions + Code Editor + Navigation */}
           {/* Rendered at final size off-screen, then slides in */}
