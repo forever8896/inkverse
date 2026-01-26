@@ -12,61 +12,64 @@
 
 /* Typography */
 .lesson-content h1 {
-  font-size: 1.125rem;
+  font-size: 1rem;
   font-weight: 700;
   color: rgb(233 213 255);
-  margin-bottom: 1rem;
-  line-height: 1.25;
+  margin-bottom: 1.25rem;
+  line-height: 1.3;
+  text-wrap: balance;
 }
 
 .lesson-content h2 {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 600;
   color: rgb(192 132 252);
-  margin-bottom: 0.75rem;
-  margin-top: 1rem;
+  margin-bottom: 1rem;
+  margin-top: 1.75rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  text-wrap: balance;
 }
 
 .lesson-content h3 {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 500;
   color: rgb(103 232 249);
-  margin-bottom: 0.5rem;
-  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+  margin-top: 1.25rem;
+  text-wrap: balance;
 }
 
 .lesson-content p {
-  margin-bottom: 1rem;
-  font-size: 1rem;
-  line-height: 1.5;
+  margin-bottom: 1.5rem;
+  font-size: 0.9375rem;
+  line-height: 1.7;
   color: rgb(226 232 240);
 }
 
 /* Lists */
 .lesson-content ul {
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
   list-style: none;
 }
 
 .lesson-content ul li {
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.5rem;
 }
 
 .lesson-content ol {
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
   list-style: decimal;
   list-style-position: inside;
 }
 
 .lesson-content ol li {
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.5rem;
 }
 
 .lesson-content li {
   color: rgb(226 232 240);
-  line-height: 1.25;
+  line-height: 1.5;
   padding-left: 0.25rem;
   font-size: 0.875rem;
 }
@@ -104,14 +107,14 @@
 /* Blockquotes */
 .lesson-content blockquote {
   border-left: 4px solid rgb(168 85 247);
-  padding-left: 0.75rem;
+  padding-left: 1rem;
   font-style: italic;
   color: rgb(203 213 225);
   background-color: rgba(30 41 59 / 0.3);
-  padding-top: 0.5rem;
-  padding-bottom: 0.5rem;
-  margin-top: 0.75rem;
-  margin-bottom: 0.75rem;
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
 }
 
 /* Tables */
@@ -142,9 +145,9 @@
   background-color: rgb(30 41 59);
   border: 1px solid rgb(71 85 105);
   border-radius: 0.5rem;
-  padding: 1rem;
-  margin-top: 1rem;
-  margin-bottom: 1rem;
+  padding: 1.25rem;
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
 }
 
 /* Success Box (Green) - Positive messages, achievements */
@@ -152,9 +155,9 @@
   background-color: rgba(6 78 59 / 0.3);
   border: 1px solid rgb(5 150 105);
   border-radius: 0.5rem;
-  padding: 1rem;
-  margin-top: 1rem;
-  margin-bottom: 1rem;
+  padding: 1.25rem;
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
   color: rgb(209 250 229);
 }
 
@@ -163,9 +166,9 @@
   background-color: rgba(124 45 18 / 0.3);
   border: 1px solid rgb(234 88 12);
   border-radius: 0.5rem;
-  padding: 1rem;
-  margin-top: 1rem;
-  margin-bottom: 1rem;
+  padding: 1.25rem;
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
   color: rgb(254 215 170);
 }
 
@@ -174,9 +177,9 @@
   background-color: rgba(88 28 135 / 0.3);
   border: 1px solid rgb(168 85 247);
   border-radius: 0.5rem;
-  padding: 1rem;
-  margin-top: 1rem;
-  margin-bottom: 1rem;
+  padding: 1.25rem;
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
   color: rgb(243 232 255);
 }
 
@@ -185,9 +188,9 @@
   background-color: rgb(15 23 42);
   border: 1px solid rgb(51 65 85);
   border-radius: 0.5rem;
-  padding: 0.75rem;
-  margin-top: 0.75rem;
-  margin-bottom: 0.75rem;
+  padding: 1rem;
+  margin-top: 1.25rem;
+  margin-bottom: 1.25rem;
   font-family: ui-monospace, monospace;
   font-size: 0.875rem;
   color: rgb(203 213 225);
@@ -199,9 +202,9 @@
   background-color: rgb(30 41 59);
   border: 1px solid rgb(71 85 105);
   border-radius: 0.5rem;
-  padding: 0.75rem;
-  margin-top: 0.75rem;
-  margin-bottom: 0.75rem;
+  padding: 1rem;
+  margin-top: 1.25rem;
+  margin-bottom: 1.25rem;
   font-family: ui-monospace, monospace;
   font-size: 0.875rem;
   color: rgb(203 213 225);

@@ -18,18 +18,12 @@ import dynamic from 'next/dynamic';
 import gsap from 'gsap';
 
 // Dynamic import for 3D model viewer (heavy component)
+// No loading state - model is preloaded during NarrativeLoadingScreen
 const WelcomeModelViewer = dynamic(
   () => import('@/components/WelcomeModelViewer').then(mod => ({ default: mod.WelcomeModelViewer })),
   {
     ssr: false,
-    loading: () => (
-      <div className="w-full h-full flex items-center justify-center">
-        <div
-          className="w-16 h-16 rounded-full animate-pulse"
-          style={{ background: 'rgba(79, 255, 176, 0.2)' }}
-        />
-      </div>
-    ),
+    loading: () => null,
   }
 );
 

@@ -43,7 +43,7 @@ export function LessonInstructionsPanel() {
             className="flex-1 overflow-y-auto transition-all duration-300"
           >
             {/* Step title rendered as H1 */}
-            <h1 className="text-2xl font-bold mb-4 text-purple-400">
+            <h1 className="text-base font-bold mb-6 text-purple-400 text-balance">
               {currentStepData.title}
             </h1>
             <LessonContent html={currentStepData.content} />

@@ -13,40 +13,9 @@
 
 import { Suspense, useRef, useState, useMemo, useEffect } from 'react';
 import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
-import { OrbitControls, Html, useProgress } from '@react-three/drei';
+import { OrbitControls } from '@react-three/drei';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import * as THREE from 'three';
-
-function Loader() {
-  const { progress } = useProgress();
-  return (
-    <Html center>
-      <div className="text-center">
-        <div className="mb-2">
-          <div
-            className="w-24 h-1 rounded-full overflow-hidden"
-            style={{ background: 'rgba(79, 255, 176, 0.15)' }}
-          >
-            <div
-              className="h-full rounded-full transition-all duration-300"
-              style={{
-                width: `${progress}%`,
-                background: 'linear-gradient(90deg, var(--mi-mint), #2dd4bf)',
-                boxShadow: '0 0 10px rgba(79, 255, 176, 0.5)',
-              }}
-            />
-          </div>
-        </div>
-        <p
-          className="font-pixel text-[8px] tracking-wider"
-          style={{ color: 'var(--mi-mint)' }}
-        >
-          {Math.round(progress)}%
-        </p>
-      </div>
-    </Html>
-  );
-}
 
 interface ModelProps {
   url: string;
@@ -131,7 +100,8 @@ export function WelcomeModelViewer({
         />
         <pointLight position={[-10, -10, -10]} intensity={2.5} />
 
-        <Suspense fallback={<Loader />}>
+        {/* No fallback - model is preloaded during NarrativeLoadingScreen */}
+        <Suspense fallback={null}>
           <Model url={modelUrl} />
         </Suspense>
 

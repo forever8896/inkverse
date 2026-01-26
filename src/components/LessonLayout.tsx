@@ -110,9 +110,20 @@ function LessonLayoutInner() {
   const [onboardingScreen, setOnboardingScreen] = useState(0);
 
   // Check if user has existing progress (skip onboarding if they do)
+  // Debug: Run `localStorage.setItem('debug_force_onboarding', 'true')` in console to always show intro
   useEffect(() => {
     // Wait for auth to settle before checking
     if (isAuthLoading) return;
+
+    // Debug override: force onboarding to show
+    const forceOnboarding = typeof window !== 'undefined'
+      && localStorage.getItem('debug_force_onboarding') === 'true';
+
+    if (forceOnboarding) {
+      console.log('[Debug] Forcing onboarding flow (localStorage.debug_force_onboarding = true)');
+      setHasExistingProgress(false);
+      return;
+    }
 
     // No session = new user, show onboarding
     if (!session?.user) {
@@ -133,7 +144,8 @@ function LessonLayoutInner() {
         // Don't update state if aborted
         if (abortController.signal.aborted) return;
 
-        const hasProgress = !!(data.data?.currentPosition);
+        // API returns { success, currentPosition, monster } directly
+        const hasProgress = !!(data.currentPosition);
         setHasExistingProgress(hasProgress);
         // If user has progress, skip onboarding and show right panel
         if (hasProgress) {
@@ -153,11 +165,32 @@ function LessonLayoutInner() {
     };
   }, [session?.user, isAuthLoading]);
 
-  // Handle onboarding completion
-  const handleOnboardingComplete = useCallback(() => {
+  // Handle onboarding completion - also save initial progress
+  const handleOnboardingComplete = useCallback(async () => {
     setOnboardingComplete(true);
     setShowRightPanel(true);
-  }, []);
+
+    // Immediately save initial step progress so user won't see onboarding on refresh
+    if (session?.user && lesson?.chapters?.[0]?.steps?.[0]) {
+      const firstChapter = lesson.chapters[0];
+      const firstStep = firstChapter.steps[0];
+      try {
+        await fetch('/api/progress/step', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            lessonId: lesson.id,
+            chapterId: firstChapter.id,
+            stepId: firstStep.id,
+            completed: false,
+            validationPassed: false,
+          }),
+        });
+      } catch (error) {
+        console.error('Failed to save initial progress:', error);
+      }
+    }
+  }, [session?.user, lesson]);
 
   // Handle onboarding screen changes
   const handleOnboardingScreenChange = useCallback((screen: number) => {
@@ -198,7 +231,7 @@ function LessonLayoutInner() {
           {/* Left Panel: Creature Display OR 3D Model during onboarding */}
           <div
             className={`absolute top-0 bottom-0 left-0 transition-all duration-700 ease-out ${
-              showRightPanel ? 'w-1/2' : 'w-full'
+              showRightPanel ? 'w-1/2 min-[1200px]:w-[calc(100%-700px)]' : 'w-full'
             }`}
             onClick={handleLeftPanelClick}
             style={{ cursor: showRightPanel || showOnboarding ? 'default' : 'pointer' }}
@@ -241,8 +274,9 @@ function LessonLayoutInner() {
 
           {/* Right Panel: Instructions + Code Editor + Navigation */}
           {/* Rendered at final size off-screen, then slides in */}
+          {/* Max 600px on large screens (1200px+) to prevent overly long text lines */}
           <div
-            className={`absolute top-0 bottom-0 right-0 w-1/2 flex flex-col py-10 px-[50px] min-h-0 transition-transform duration-700 ease-out ${
+            className={`absolute top-0 bottom-0 right-0 w-1/2 min-[1200px]:w-[700px] flex flex-col py-10 px-[50px] min-h-0 transition-transform duration-700 ease-out ${
               showRightPanel ? 'translate-x-0' : 'translate-x-full'
             }`}
           >

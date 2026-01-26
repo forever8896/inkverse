@@ -20,13 +20,10 @@ export function LessonNavigation() {
     currentStep,
     currentChapterData,
     currentStepData,
-    isTransitioning,
     isValidated,
     isLastStep,
     nextStep,
     previousStep,
-    goToStep,
-    goToChapter,
     setShowCompletionModal,
     playClickSound,
   } = useLessonContext();
@@ -69,49 +66,13 @@ export function LessonNavigation() {
         )}
       </div>
 
-      {/* Chapter & Step Indicators */}
-      <div className="flex flex-col items-center space-y-2">
-        {/* Chapter Title */}
-        <div className="text-xs text-slate-400">
-          Chapter {currentChapter + 1}: {currentChapterData?.title}
-        </div>
-
-        {/* Step Indicators for Current Chapter */}
-        <div className="flex space-x-2">
-          {currentChapterData && Array.from({ length: currentChapterData.steps.length }, (_, i) => (
-            <button
-              key={i}
-              onClick={() => { playClickSound(); goToStep(i); }}
-              className={`w-3 h-3 rounded-full transition-all duration-200 hover:scale-110 ${
-                i === currentStep
-                  ? 'bg-gradient-to-r from-purple-400 to-cyan-400 shadow-lg shadow-purple-400/30'
-                  : i < currentStep
-                    ? 'bg-gradient-to-r from-pink-400 to-pink-400 shadow-md shadow-green-400/20'
-                    : 'bg-slate-600 hover:bg-slate-500'
-              }`}
-              title={`Step ${i + 1}`}
-            />
-          ))}
-        </div>
-
-        {/* Chapter Indicators */}
-        <div className="flex space-x-1">
-          {lesson?.chapters?.map((chapter, idx) => (
-            <button
-              key={chapter.id}
-              onClick={() => { playClickSound(); goToChapter(idx); }}
-              className={`w-2 h-2 rounded-full transition-all duration-200 hover:scale-125 ${
-                idx === currentChapter
-                  ? 'bg-purple-500'
-                  : idx < currentChapter
-                    ? 'bg-emerald-500'
-                    : 'bg-slate-700 hover:bg-slate-600'
-              }`}
-              title={`Chapter ${idx + 1}: ${chapter.title}`}
-            />
-          ))}
-        </div>
-      </div>
+      {/* Progress Indicator */}
+      <ProgressIndicator
+        lesson={lesson}
+        currentChapter={currentChapter}
+        currentStep={currentStep}
+        currentChapterData={currentChapterData}
+      />
 
       {/* Next/Complete Button */}
       {isLastStep ? (
@@ -132,6 +93,44 @@ export function LessonNavigation() {
 // ============================================================================
 // Sub-components
 // ============================================================================
+
+interface ProgressIndicatorProps {
+  lesson: ReturnType<typeof useLessonContext>['lesson'];
+  currentChapter: number;
+  currentStep: number;
+  currentChapterData: ReturnType<typeof useLessonContext>['currentChapterData'];
+}
+
+function ProgressIndicator({ lesson, currentChapter, currentStep, currentChapterData }: ProgressIndicatorProps) {
+  // Calculate total steps and current position across all chapters
+  const totalSteps = lesson?.chapters?.reduce((acc, ch) => acc + ch.steps.length, 0) ?? 0;
+  const stepsBeforeCurrentChapter = lesson?.chapters
+    ?.slice(0, currentChapter)
+    .reduce((acc, ch) => acc + ch.steps.length, 0) ?? 0;
+  const overallCurrentStep = stepsBeforeCurrentChapter + currentStep + 1;
+  const progressPercent = totalSteps > 0 ? (overallCurrentStep / totalSteps) * 100 : 0;
+
+  const stepsInCurrentChapter = currentChapterData?.steps.length ?? 0;
+
+  return (
+    <div className="flex flex-col items-center gap-2 min-w-[200px]">
+      {/* Text progress */}
+      <div className="text-sm text-slate-300">
+        <span className="text-slate-500">Chapter {currentChapter + 1}</span>
+        <span className="text-slate-600 mx-2">·</span>
+        <span>Step {currentStep + 1} of {stepsInCurrentChapter}</span>
+      </div>
+
+      {/* Progress bar */}
+      <div className="w-full h-1 bg-slate-700/50 rounded-full overflow-hidden">
+        <div
+          className="h-full bg-gradient-to-r from-purple-500 to-cyan-500 rounded-full transition-all duration-500 ease-out"
+          style={{ width: `${progressPercent}%` }}
+        />
+      </div>
+    </div>
+  );
+}
 
 // Shared styles for navigation buttons
 const NAV_BUTTON_STYLES = {

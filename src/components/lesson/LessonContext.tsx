@@ -430,6 +430,37 @@ export function LessonProvider({
   }, [lesson, currentChapterData, currentStepData, session?.user, userCode, isValidated]);
 
   // -------------------------------------------------------------------------
+  // Track Step Visits (for skipping onboarding on refresh)
+  // -------------------------------------------------------------------------
+  useEffect(() => {
+    // Only track if user is logged in and we have lesson data
+    if (!session?.user || !lesson || !currentChapterData || !currentStepData) return;
+
+    // Save progress as "visited" (not completed) - this creates a record
+    // so the user won't see onboarding again on refresh
+    const trackVisit = async () => {
+      try {
+        await fetch('/api/progress/step', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            lessonId: lesson.id,
+            chapterId: currentChapterData.id,
+            stepId: currentStepData.id,
+            completed: false,
+            validationPassed: false,
+          }),
+        });
+      } catch (error) {
+        // Silent fail - this is just for tracking, not critical
+        console.error('Failed to track step visit:', error);
+      }
+    };
+
+    trackVisit();
+  }, [session?.user, lesson?.id, currentChapterData?.id, currentStepData?.id]);
+
+  // -------------------------------------------------------------------------
   // Validate Code
   // -------------------------------------------------------------------------
   const validateUserCode = useCallback(async (): Promise<boolean> => {
