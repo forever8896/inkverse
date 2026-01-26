@@ -3,14 +3,24 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
+import dynamic from 'next/dynamic';
 import { Lesson, LessonChapter } from '@/lib/lesson-types';
 import { useSession } from '@/lib/auth-client';
 import { useAccounts } from '@reactive-dot/react';
 import type { LabDataResponse, UserMonster, UserProgress } from '@/app/api/user/lab-data/route';
-import { playSound } from '@/lib/sound-manager';
 import { NarrativeLoadingScreen } from '@/components/NarrativeLoadingScreen';
+
+// Lazy load 3D viewer for performance (~500KB Three.js)
+const MonsterViewer = dynamic(() => import('./MonsterViewer'), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full flex items-center justify-center">
+      <div className="w-8 h-8 border-2 border-mi-mint border-t-transparent rounded-full animate-spin" />
+    </div>
+  ),
+});
 
 // Floating particles for atmosphere (matching landing page)
 function FloatingParticles() {
@@ -64,7 +74,6 @@ function formatAddress(address: string): string {
 export default function LabClient({ chapters }: { chapters: Lesson[] }) {
   const [isLoading, setIsLoading] = useState(true);
   const [showContent, setShowContent] = useState(false);
-  const [isShaking, setIsShaking] = useState(false);
   const [expandedLesson, setExpandedLesson] = useState<number | null>(null);
 
   // User data state
@@ -121,15 +130,6 @@ export default function LabClient({ chapters }: { chapters: Lesson[] }) {
       }
     })();
   }, [session?.user?.id, isSessionLoading]);
-
-
-  const handleCreatureClick = useCallback(() => {
-    if (isShaking) return;
-    // Play shake sound
-    playSound('MONSTER_SHAKE_LG');
-    setIsShaking(true);
-    setTimeout(() => setIsShaking(false), 600);
-  }, [isShaking]);
 
   const handleLoadingComplete = () => {
     setIsLoading(false);
@@ -238,37 +238,42 @@ export default function LabClient({ chapters }: { chapters: Lesson[] }) {
                             }}
                           />
                           
-                          <motion.button
-                            type="button"
-                            animate={
-                              isShaking
-                                ? {
-                                    x: [0, -10, 10, -10, 10, -5, 5, 0],
-                                    rotate: [0, -3, 3, -3, 3, -1, 1, 0],
-                                    scale: [1, 1.05, 1.05, 1.05, 1.05, 1.02, 1.02, 1],
-                                  }
-                                : { scale: [1, 1.02, 1] }
-                            }
-                            transition={
-                              isShaking
-                                ? { duration: 0.6, ease: 'easeInOut' }
-                                : { duration: 3, repeat: Infinity, ease: 'easeInOut' }
-                            }
-                            onClick={handleCreatureClick}
-                            className="cursor-pointer bg-transparent border-none p-0 outline-none focus:outline-none"
-                          >
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={userMonster.imageUrl!}
-                              alt="Your Monster"
-                              width={280}
-                              height={280}
-                              className="object-contain relative z-10 pointer-events-none rounded-lg"
+                          {userMonster.modelUrl ? (
+                            /* 3D Model Display */
+                            <div
+                              className="relative z-10"
                               style={{
+                                width: 364,
+                                height: 364,
                                 filter: 'drop-shadow(0 0 30px rgba(79, 255, 176, 0.4))',
                               }}
-                            />
-                          </motion.button>
+                            >
+                              <MonsterViewer
+                                modelUrl={userMonster.modelUrl}
+                                className="w-full h-full"
+                                height=""
+                                autoRotate={true}
+                                showControls={false}
+                                minimal={true}
+                                enableZoom={false}
+                              />
+                            </div>
+                          ) : (
+                            /* 2D Image Fallback */
+                            <div className="relative z-10">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={userMonster.imageUrl!}
+                                alt="Your Monster"
+                                width={280}
+                                height={280}
+                                className="object-contain rounded-lg"
+                                style={{
+                                  filter: 'drop-shadow(0 0 30px rgba(79, 255, 176, 0.4))',
+                                }}
+                              />
+                            </div>
+                          )}
                         </div>
 
                         {/* NFT Metadata Card */}

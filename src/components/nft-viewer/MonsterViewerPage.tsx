@@ -1,18 +1,14 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { motion } from 'motion/react';
+import { useState, useCallback, useMemo } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
-import { ArrowLeft, Share2 } from 'lucide-react';
+import { ArrowLeft, Share2, ExternalLink, Copy, Check, Clock, Sparkles, Eye } from 'lucide-react';
 
 import ShaderBackground from '@/components/ShaderBackground';
-import Monster2DDisplay from './Monster2DDisplay';
-import MonsterMetadataCard from './MonsterMetadataCard';
-import NFTDetailsCard from './NFTDetailsCard';
 import ShareModal from './ShareModal';
 import EmptyState from './EmptyState';
-import EvolutionTimeline from './EvolutionTimeline';
 import { useIPFSMetadata } from '@/hooks/useIPFSMetadata';
 import type { MonsterStage, MonsterStyle, NFTAttribute } from '@/lib/ipfs-utils';
 import type { MonsterData } from '@/app/api/my-monster/route';
@@ -24,7 +20,10 @@ const MonsterViewer = dynamic(() => import('@/components/MonsterViewer'), {
   ssr: false,
   loading: () => (
     <div className="w-full h-full flex items-center justify-center">
-      <div className="animate-pulse text-slate-500">Loading 3D viewer...</div>
+      <div
+        className="w-10 h-10 border-2 border-t-transparent rounded-full animate-spin"
+        style={{ borderColor: '#4FFFB0', borderTopColor: 'transparent' }}
+      />
     </div>
   ),
 });
@@ -55,48 +54,68 @@ interface MonsterViewerPageProps {
   walletAddress?: string;
 }
 
-// Floating particles for atmosphere
-function FloatingParticles() {
-  const [isClient, setIsClient] = useState(false);
+// Design system colors
+const COLORS = {
+  mint: '#4FFFB0',
+  peach: '#FFDAB9',
+  violet: '#240B4D',
+  orange: '#FF9F1C',
+  grass: '#2ECC71',
+  // Backgrounds
+  bgDeep: '#0f0520',
+  bgCard: 'rgba(36, 11, 77, 0.4)',
+  bgCardHover: 'rgba(36, 11, 77, 0.6)',
+  border: 'rgba(79, 255, 176, 0.1)',
+  borderHover: 'rgba(79, 255, 176, 0.2)',
+  // Text
+  textMuted: 'rgba(255, 218, 185, 0.6)', // peach at 60%
+  textSecondary: 'rgba(255, 218, 185, 0.8)', // peach at 80%
+};
 
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
+// Stage display config
+const STAGE_CONFIG: Record<EvolutionStage, {
+  label: string;
+  color: string;
+  bg: string;
+  description: string;
+}> = {
+  young: {
+    label: 'Young',
+    color: COLORS.mint,
+    bg: 'rgba(79, 255, 176, 0.12)',
+    description: '2D Sprite Generated'
+  },
+  young_3d: {
+    label: '3D Form',
+    color: COLORS.mint,
+    bg: 'rgba(79, 255, 176, 0.12)',
+    description: '3D Model Unlocked'
+  },
+  adult: {
+    label: 'Adult',
+    color: COLORS.orange,
+    bg: 'rgba(255, 159, 28, 0.12)',
+    description: 'Final Evolution'
+  },
+};
 
-  if (!isClient) return null;
+// All stages in order
+const ALL_STAGES: EvolutionStage[] = ['young', 'young_3d', 'adult'];
 
-  return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {Array.from({ length: 12 }).map((_, i) => {
-        const size = 2 + Math.random() * 3;
-        return (
-          <motion.div
-            key={i}
-            className="absolute rounded-full"
-            style={{
-              width: size,
-              height: size,
-              background: `rgba(79, 255, 176, ${0.15 + Math.random() * 0.2})`,
-              boxShadow: `0 0 ${size * 2}px rgba(79, 255, 176, 0.2)`,
-              left: `${Math.random() * 100}%`,
-            }}
-            initial={{ top: '100%', opacity: 0 }}
-            animate={{
-              top: '-5%',
-              opacity: [0, 0.8, 0.8, 0],
-            }}
-            transition={{
-              duration: 10 + Math.random() * 8,
-              repeat: Infinity,
-              delay: Math.random() * 8,
-              ease: 'linear',
-            }}
-          />
-        );
-      })}
-    </div>
-  );
+// Utility to truncate addresses
+function truncateAddress(address: string): string {
+  if (address.length <= 16) return address;
+  return `${address.slice(0, 8)}...${address.slice(-6)}`;
 }
+
+// Format date
+function formatDate(isoString: string): string {
+  const date = new Date(isoString);
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+// IPFS gateway
+const IPFS_GATEWAY = 'https://gateway.pinata.cloud/ipfs/';
 
 // ============================================================================
 // Component
@@ -111,16 +130,16 @@ export default function MonsterViewerPage({
   walletAddress,
 }: MonsterViewerPageProps) {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [viewingStage, setViewingStage] = useState<EvolutionStage | null>(null);
 
-  // Fetch IPFS metadata
+  // Fetch IPFS metadata for current/default view
   const {
     metadata,
     resolvedImageUrl,
     resolvedModelUrl,
     has3DModel,
     isLoading: isMetadataLoading,
-    error: metadataError,
-    usingFallback,
   } = useIPFSMetadata({
     metadataCid: monster?.metadataCid,
     fallbackImageUrl: monster?.imageUrl,
@@ -128,276 +147,383 @@ export default function MonsterViewerPage({
     autoFetch: !!monster,
   });
 
-  // Handle evolution trigger
-  const handleEvolve = useCallback(async () => {
-    if (!onEvolve || !evolutionData?.nextEvolution || !walletAddress) {
-      console.warn('[MonsterViewerPage] Cannot evolve: missing required data');
-      return;
+  // Get the stage we're actually viewing
+  const activeViewStage = viewingStage || evolutionData?.currentStage || 'young';
+
+  // Get assets for the viewing stage
+  const viewingAssets = useMemo(() => {
+    if (!evolutionData || !viewingStage) {
+      // Use current assets
+      return { imageUrl: resolvedImageUrl, modelUrl: resolvedModelUrl };
     }
 
-    const targetStage = evolutionData.nextEvolution.stage as 'young_3d' | 'adult';
-    await onEvolve(targetStage, walletAddress);
-  }, [onEvolve, evolutionData?.nextEvolution, walletAddress]);
+    // Find the history entry for the viewing stage
+    const historyEntry = evolutionData.evolutionHistory.find(h => h.stage === viewingStage);
+    if (historyEntry?.assets) {
+      return {
+        imageUrl: historyEntry.assets.image_cid ? `${IPFS_GATEWAY}${historyEntry.assets.image_cid}` : resolvedImageUrl,
+        modelUrl: historyEntry.assets.model_cid ? `${IPFS_GATEWAY}${historyEntry.assets.model_cid}` : (viewingStage === 'young' ? null : resolvedModelUrl),
+      };
+    }
+
+    // Fallback to current assets
+    return { imageUrl: resolvedImageUrl, modelUrl: resolvedModelUrl };
+  }, [viewingStage, evolutionData, resolvedImageUrl, resolvedModelUrl]);
+
+  // Determine if we should show 3D for the viewing stage
+  // For public pages (no evolutionData), show 3D if modelUrl is available
+  // For user pages, respect the evolution stage
+  const shouldShow3DForViewing = useMemo(() => {
+    // If no evolution data (public page), show 3D if model is available
+    if (!evolutionData) {
+      return !!viewingAssets.modelUrl;
+    }
+    // For user pages, check the stage
+    const stage = viewingStage || evolutionData.currentStage;
+    return stage === 'young_3d' || stage === 'adult';
+  }, [viewingStage, evolutionData, viewingAssets.modelUrl]);
+
+  // Copy to clipboard
+  const copyToClipboard = useCallback((text: string, field: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedField(field);
+    setTimeout(() => setCopiedField(null), 2000);
+  }, []);
+
+  // Check if a stage is unlocked (has been reached)
+  const isStageUnlocked = useCallback((stage: EvolutionStage) => {
+    if (!evolutionData) return stage === 'young';
+    const stageIndex = ALL_STAGES.indexOf(stage);
+    const currentIndex = ALL_STAGES.indexOf(evolutionData.currentStage);
+    return stageIndex <= currentIndex;
+  }, [evolutionData]);
+
+  // Get history entry for a stage
+  const getHistoryEntry = useCallback((stage: EvolutionStage) => {
+    return evolutionData?.evolutionHistory.find(h => h.stage === stage);
+  }, [evolutionData]);
 
   // No monster found
   if (!monster) {
     return (
-      <div
-        className="min-h-screen relative"
-        style={{
-          background: 'linear-gradient(180deg, #240B4D 0%, #1a0a3a 50%, #0f0520 100%)',
-        }}
-      >
+      <div className="h-screen w-screen overflow-hidden relative" style={{ background: COLORS.bgDeep }}>
         <ShaderBackground />
-        <FloatingParticles />
         <EmptyState />
       </div>
     );
   }
 
   // Build share URL
-  const shareUrl =
-    typeof window !== 'undefined'
-      ? `${window.location.origin}/monster/${monster.id}`
-      : '';
+  const shareUrl = typeof window !== 'undefined' ? `${window.location.origin}/monster/${monster.id}` : '';
 
-  // Get monster name - prioritize NFT item ID from evolution data
+  // Get monster name
   const nftItemId = evolutionData?.nftItemId || monster.nft?.itemId;
-  const monsterName =
-    metadata?.name || (nftItemId ? `Monster #${nftItemId}` : 'Your Monster');
+  const monsterName = metadata?.name || (nftItemId ? `Monster #${nftItemId}` : 'Your Monster');
 
-  // Get attributes from metadata or create defaults
+  // Current stage config
+  const currentStage = evolutionData?.currentStage || (monster.stage as EvolutionStage) || 'young';
+  const viewingConfig = STAGE_CONFIG[activeViewStage];
+
+  // Get attributes
   const attributes: NFTAttribute[] = metadata?.attributes || [
     { trait_type: 'Style', value: monster.style },
-    { trait_type: 'Stage', value: evolutionData?.currentStage || monster.stage },
-    { trait_type: 'Has 3D Model', value: has3DModel ? 'Yes' : 'No' },
+    { trait_type: 'Stage', value: currentStage },
   ];
 
-  // Check if we should show 3D based on evolution stage
-  const shouldShow3D = evolutionData
-    ? (evolutionData.currentStage === 'young_3d' || evolutionData.currentStage === 'adult')
-    : has3DModel;
-
   return (
-    <div
-      className="min-h-screen relative"
-      style={{
-        background: 'linear-gradient(180deg, #240B4D 0%, #1a0a3a 50%, #0f0520 100%)',
-      }}
-    >
+    <div className="h-screen w-screen overflow-hidden relative" style={{ background: COLORS.bgDeep }}>
       <ShaderBackground />
-      <FloatingParticles />
 
-      {/* Header */}
-      <header className="relative z-20 flex items-center justify-between px-4 md:px-8 py-4">
-        <Link
-          href="/lab"
-          className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors"
-        >
-          <ArrowLeft size={20} />
-          <span className="text-sm">Back to Lab</span>
-        </Link>
+      {/* Bento Grid Container */}
+      <div className="relative z-10 h-full w-full p-4 md:p-6">
+        <div className="h-full w-full max-w-[1600px] mx-auto grid grid-rows-[auto_1fr] gap-4">
 
-        <h1 className="hidden md:block font-pixel text-xs text-[var(--mi-mint)] uppercase tracking-widest">
-          Monster Viewer
-        </h1>
+          {/* Header Row */}
+          <header className="flex items-center justify-between">
+            <Link
+              href="/lab"
+              className="flex items-center gap-2 hover:text-white transition-colors text-sm"
+              style={{ color: COLORS.textMuted }}
+            >
+              <ArrowLeft size={18} />
+              <span className="hidden sm:inline">Back to Lab</span>
+            </Link>
 
-        <button
-          onClick={() => setIsShareModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-pixel uppercase tracking-wider transition-all hover:scale-105"
-          style={{
-            background: 'rgba(79, 255, 176, 0.15)',
-            border: '1px solid rgba(79, 255, 176, 0.3)',
-            color: 'var(--mi-mint)',
-          }}
-        >
-          <Share2 size={14} />
-          <span className="hidden sm:inline">Share</span>
-        </button>
-      </header>
+            <h1 className="font-pixel text-[10px] uppercase tracking-widest" style={{ color: COLORS.mint }}>
+              {monsterName}
+            </h1>
 
-      {/* Main Content */}
-      <main className="relative z-10 px-4 md:px-8 pb-8">
-        <div className="max-w-7xl mx-auto">
-          {/* Desktop: 60/40 split | Mobile: Stacked */}
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 lg:gap-8">
-            {/* Viewer Panel - 60% on desktop */}
-            <div className="lg:col-span-3">
-              <div
-                className="rounded-2xl overflow-hidden"
-                style={{
-                  background: 'rgba(0, 0, 0, 0.3)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  minHeight: '500px',
-                }}
-              >
-                {/* Loading State */}
-                {isMetadataLoading && (
-                  <div className="w-full h-[500px] flex items-center justify-center">
-                    <div className="text-center">
-                      <div className="animate-spin w-8 h-8 border-2 border-[var(--mi-mint)] border-t-transparent rounded-full mx-auto mb-4" />
-                      <p className="text-slate-400 text-sm">Loading monster...</p>
-                    </div>
-                  </div>
-                )}
+            <button
+              onClick={() => setIsShareModalOpen(true)}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-pixel uppercase tracking-wider transition-all hover:scale-105"
+              style={{
+                background: `${COLORS.mint}26`, // 15% opacity
+                border: `1px solid ${COLORS.mint}4D`, // 30% opacity
+                color: COLORS.mint,
+              }}
+            >
+              <Share2 size={12} />
+              <span className="hidden sm:inline">Share</span>
+            </button>
+          </header>
 
-                {/* 3D Viewer */}
-                {!isMetadataLoading && shouldShow3D && has3DModel && resolvedModelUrl && (
-                  <MonsterViewer
-                    modelUrl={resolvedModelUrl}
-                    height="h-[500px]"
-                    showControls={true}
-                    autoRotate={true}
-                  />
-                )}
+          {/* Main Bento Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 min-h-0">
 
-                {/* 2D Display (when 3D not revealed or not available) */}
-                {!isMetadataLoading && (!shouldShow3D || !has3DModel || !resolvedModelUrl) && (
-                  <div className="p-8 min-h-[500px] flex items-center justify-center relative">
-                    <Monster2DDisplay
-                      imageUrl={resolvedImageUrl}
-                      alt={monsterName}
-                    />
-                    {/* 3D Not Revealed Badge */}
-                    {evolutionData?.currentStage === 'young' && has3DModel && (
-                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
-                        <div
-                          className="px-4 py-2 rounded-lg text-xs font-pixel uppercase tracking-wider"
-                          style={{
-                            background: 'rgba(255, 159, 28, 0.2)',
-                            border: '1px solid rgba(255, 159, 28, 0.3)',
-                            color: 'var(--mi-orange)',
-                          }}
-                        >
-                          3D Model Hidden - Evolve to Reveal
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Fallback Notice */}
-              {usingFallback && !isMetadataLoading && (
-                <div
-                  className="mt-2 px-3 py-2 rounded-lg text-xs text-center"
-                  style={{
-                    background: 'rgba(255, 159, 28, 0.1)',
-                    border: '1px solid rgba(255, 159, 28, 0.2)',
-                    color: 'var(--mi-orange)',
-                  }}
+            {/* Left: Monster Viewer - floating, no background */}
+            <div className="lg:col-span-2 flex items-center justify-center relative">
+              {/* Viewing indicator */}
+              {viewingStage && viewingStage !== currentStage && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="absolute top-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 px-3 py-1.5 rounded-full text-xs"
+                  style={{ background: viewingConfig.bg, color: viewingConfig.color }}
                 >
-                  Using cached assets (IPFS temporarily unavailable)
-                </div>
+                  <Eye size={12} />
+                  Viewing: {viewingConfig.label}
+                  <button
+                    onClick={() => setViewingStage(null)}
+                    className="ml-1 hover:opacity-70 transition-opacity"
+                  >
+                    ✕
+                  </button>
+                </motion.div>
               )}
+
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeViewStage}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.3 }}
+                  className="w-full h-full flex items-center justify-center"
+                >
+                  {isMetadataLoading ? (
+                    <div
+                      className="w-10 h-10 border-2 border-t-transparent rounded-full animate-spin"
+                      style={{ borderColor: COLORS.mint, borderTopColor: 'transparent' }}
+                    />
+                  ) : shouldShow3DForViewing && viewingAssets.modelUrl ? (
+                    <MonsterViewer
+                      modelUrl={viewingAssets.modelUrl}
+                      className="w-full h-full"
+                      height=""
+                      showControls={false}
+                      autoRotate={true}
+                      minimal={true}
+                    />
+                  ) : viewingAssets.imageUrl ? (
+                    <motion.img
+                      src={viewingAssets.imageUrl}
+                      alt={monsterName}
+                      className="max-w-full max-h-full object-contain"
+                      style={{ filter: `drop-shadow(0 0 40px ${COLORS.mint}4D)` }}
+                    />
+                  ) : (
+                    <div className="text-sm" style={{ color: COLORS.textMuted }}>No image available</div>
+                  )}
+                </motion.div>
+              </AnimatePresence>
             </div>
 
-            {/* Info Panel - 40% on desktop */}
-            <div className="lg:col-span-2 space-y-4">
-              {/* Metadata Card */}
-              <MonsterMetadataCard
-                name={monsterName}
-                itemId={nftItemId}
-                stage={(evolutionData?.currentStage || monster.stage) as MonsterStage}
-                style={monster.style as MonsterStyle}
-                attributes={attributes}
-              />
+            {/* Right: Info Cards Stack */}
+            <div className="flex flex-col gap-3 min-h-0 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent pr-1">
 
-              {/* Evolution Timeline (when evolution data is available) */}
-              {evolutionData && (
-                <EvolutionTimeline
-                  currentStage={evolutionData.currentStage}
-                  evolutionHistory={evolutionData.evolutionHistory.map(entry => ({
-                    id: `${entry.stage}-${entry.timestamp}`,
-                    stage: entry.stage,
-                    milestoneLabel: entry.milestone ?? undefined,
-                    evolvedAt: entry.timestamp,
-                    assetsCid: entry.assets ?? undefined,
-                    txHash: entry.txHash ?? undefined,
-                  }))}
-                  nextEvolution={evolutionData.nextEvolution ?? undefined}
-                  onEvolve={onEvolve && walletAddress ? handleEvolve : undefined}
-                  isEvolving={isEvolving}
-                />
-              )}
+              {/* Monster Info Card */}
+              <div
+                className="rounded-xl p-4 flex-shrink-0"
+                style={{
+                  background: COLORS.bgCard,
+                  border: `1px solid ${COLORS.border}`,
+                }}
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <span
+                    className="px-3 py-1 rounded-full text-[10px] font-pixel uppercase tracking-wider"
+                    style={{ background: STAGE_CONFIG[currentStage].bg, color: STAGE_CONFIG[currentStage].color }}
+                  >
+                    {STAGE_CONFIG[currentStage].label}
+                  </span>
+                  {nftItemId && (
+                    <span className="text-xs font-mono" style={{ color: COLORS.textMuted }}>#{nftItemId}</span>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  {attributes.slice(0, 4).map((attr, i) => (
+                    <div key={i} className="text-xs">
+                      <span className="block" style={{ color: COLORS.textMuted }}>{attr.trait_type}</span>
+                      <span className="text-white">{String(attr.value)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
 
               {/* NFT Details Card */}
               {monster.nft && (
-                <NFTDetailsCard
-                  nft={{
-                    itemId: monster.nft.itemId,
-                    collectionId: monster.nft.collectionId,
-                    ownerAddress: evolutionData?.nftOwnerAddress || monster.nft.ownerAddress,
-                    txHash: monster.nft.txHash,
-                    blockHash: monster.nft.blockHash,
-                    mintedAt: monster.nft.mintedAt,
-                  }}
-                />
-              )}
-
-              {/* Not Minted Notice (for public view of non-minted monsters) */}
-              {!monster.nft && !evolutionData?.nftItemId && (
                 <div
-                  className="rounded-xl p-5"
+                  className="rounded-xl p-4 flex-shrink-0"
                   style={{
-                    background: 'rgba(255, 159, 28, 0.1)',
-                    border: '1px solid rgba(255, 159, 28, 0.25)',
+                    background: `rgba(46, 204, 113, 0.08)`,
+                    border: `1px solid rgba(46, 204, 113, 0.2)`,
                   }}
                 >
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg">🎨</span>
-                    <span className="text-sm text-[var(--mi-orange)]">
-                      Not yet minted on-chain
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: COLORS.grass }} />
+                    <span className="text-[10px] font-pixel uppercase tracking-wider" style={{ color: COLORS.grass }}>
+                      On-Chain
                     </span>
+                  </div>
+
+                  <div className="space-y-2 text-xs">
+                    <div className="flex justify-between items-center">
+                      <span style={{ color: COLORS.textMuted }}>Collection</span>
+                      <span className="text-white font-mono">#{monster.nft.collectionId}</span>
+                    </div>
+
+                    {(evolutionData?.nftOwnerAddress || monster.nft.ownerAddress) && (
+                      <div className="flex justify-between items-center gap-2">
+                        <span style={{ color: COLORS.textMuted }}>Owner</span>
+                        <button
+                          onClick={() => copyToClipboard(evolutionData?.nftOwnerAddress || monster.nft!.ownerAddress, 'owner')}
+                          className="flex items-center gap-1 text-white font-mono transition-colors"
+                          style={{ ['--hover-color' as string]: COLORS.mint }}
+                          onMouseEnter={(e) => e.currentTarget.style.color = COLORS.mint}
+                          onMouseLeave={(e) => e.currentTarget.style.color = 'white'}
+                        >
+                          {truncateAddress(evolutionData?.nftOwnerAddress || monster.nft.ownerAddress)}
+                          {copiedField === 'owner' ? <Check size={10} style={{ color: COLORS.grass }} /> : <Copy size={10} />}
+                        </button>
+                      </div>
+                    )}
+
+                    {monster.nft.txHash && (
+                      <div className="flex justify-between items-center gap-2">
+                        <span style={{ color: COLORS.textMuted }}>Tx</span>
+                        <a
+                          href={`https://assethub-polkadot.subscan.io/extrinsic/${monster.nft.txHash}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 text-white font-mono transition-colors"
+                          onMouseEnter={(e) => e.currentTarget.style.color = COLORS.mint}
+                          onMouseLeave={(e) => e.currentTarget.style.color = 'white'}
+                        >
+                          {truncateAddress(monster.nft.txHash)}
+                          <ExternalLink size={10} />
+                        </a>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
 
-              {/* Continue Learning CTA */}
-              {!isPublic && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.4 }}
+              {/* Evolution Journey - Enhanced */}
+              {evolutionData && (
+                <div
+                  className="rounded-xl p-4 flex-shrink-0"
+                  style={{
+                    background: COLORS.bgCard,
+                    border: `1px solid ${COLORS.border}`,
+                  }}
                 >
-                  <Link
-                    href="/lab"
-                    className="flex items-center justify-center w-full py-4 rounded-xl font-pixel text-sm uppercase tracking-wider transition-all hover:scale-[1.02]"
-                    style={{
-                      background: 'var(--mi-cobalt)',
-                      color: 'white',
-                      boxShadow: '0 0 30px rgba(30, 76, 221, 0.3)',
-                    }}
-                  >
-                    Continue Learning
-                  </Link>
-                </motion.div>
+                  <div className="flex items-center gap-2 mb-4">
+                    <Sparkles size={14} style={{ color: COLORS.mint }} />
+                    <span className="text-[10px] font-pixel uppercase tracking-wider" style={{ color: COLORS.textSecondary }}>
+                      Evolution Journey
+                    </span>
+                  </div>
+
+                  {/* Evolution Stages */}
+                  <div className="space-y-2">
+                    {ALL_STAGES.map((stage, index) => {
+                      const config = STAGE_CONFIG[stage];
+                      const isUnlocked = isStageUnlocked(stage);
+                      const isCurrent = evolutionData.currentStage === stage;
+                      const isViewing = viewingStage === stage || (!viewingStage && isCurrent);
+                      const historyEntry = getHistoryEntry(stage);
+
+                      return (
+                        <motion.button
+                          key={stage}
+                          onClick={() => isUnlocked && setViewingStage(stage)}
+                          disabled={!isUnlocked}
+                          className={`w-full text-left rounded-lg p-3 transition-all ${
+                            isUnlocked ? 'cursor-pointer hover:scale-[1.02]' : 'cursor-not-allowed opacity-40'
+                          } ${isViewing ? 'ring-1' : ''}`}
+                          style={{
+                            background: isViewing ? config.bg : 'rgba(255, 255, 255, 0.02)',
+                            border: `1px solid ${isViewing ? config.color + '40' : 'rgba(255, 255, 255, 0.04)'}`,
+                            ringColor: config.color,
+                          }}
+                          whileHover={isUnlocked ? { scale: 1.02 } : {}}
+                          whileTap={isUnlocked ? { scale: 0.98 } : {}}
+                        >
+                          <div className="flex items-center justify-between">
+                            {/* Stage Name */}
+                            <div className="flex items-center gap-2">
+                              <span
+                                className="text-sm font-medium"
+                                style={{ color: isUnlocked ? config.color : COLORS.textMuted }}
+                              >
+                                {config.label}
+                              </span>
+                              {isCurrent && (
+                                <span className="px-1.5 py-0.5 rounded text-[8px] font-pixel uppercase bg-white/10 text-white">
+                                  Current
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Timestamp */}
+                            {isUnlocked && historyEntry?.timestamp && (
+                              <div className="flex items-center gap-1 text-[10px]" style={{ color: COLORS.textMuted }}>
+                                <Clock size={10} />
+                                {formatDate(historyEntry.timestamp)}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Description or locked message */}
+                          <p className="text-[10px] mt-1" style={{ color: COLORS.textMuted }}>
+                            {isUnlocked ? config.description : 'Continue learning to unlock'}
+                          </p>
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Next Evolution Hint */}
+                  {evolutionData.nextEvolution && (
+                    <div className="mt-3 pt-3" style={{ borderTop: `1px solid ${COLORS.border}` }}>
+                      <p className="text-[10px] text-center" style={{ color: COLORS.textMuted }}>
+                        Next: <span style={{ color: STAGE_CONFIG[evolutionData.nextEvolution.stage].color }}>
+                          {STAGE_CONFIG[evolutionData.nextEvolution.stage].label}
+                        </span>
+                        {evolutionData.nextEvolution.requiresGeneration && ' • Requires Generation'}
+                      </p>
+                    </div>
+                  )}
+                </div>
               )}
 
-              {/* Public CTA */}
-              {isPublic && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.4 }}
-                >
-                  <Link
-                    href="/lesson/1/1/1"
-                    className="flex items-center justify-center w-full py-4 rounded-xl font-pixel text-sm uppercase tracking-wider transition-all hover:scale-[1.02]"
-                    style={{
-                      background: 'var(--mi-cobalt)',
-                      color: 'white',
-                      boxShadow: '0 0 30px rgba(30, 76, 221, 0.3)',
-                    }}
-                  >
-                    Create Your Own Monster
-                  </Link>
-                </motion.div>
-              )}
+              {/* CTA Button */}
+              <Link
+                href="/lab"
+                className="flex items-center justify-center py-3 rounded-xl font-pixel text-[10px] uppercase tracking-wider transition-all hover:scale-[1.02] flex-shrink-0"
+                style={{
+                  background: `${COLORS.mint}1A`,
+                  border: `1px solid ${COLORS.mint}4D`,
+                  color: COLORS.mint,
+                }}
+              >
+                {isPublic ? 'Create Your Own' : 'Continue Learning'}
+              </Link>
             </div>
           </div>
         </div>
-      </main>
+      </div>
 
       {/* Share Modal */}
       <ShareModal

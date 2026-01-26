@@ -51,6 +51,7 @@ function renderDisplayContent(display: LeftPanelDisplay) {
           status={display.status || 'unknown'}
           error={display.error}
           onRetry={display.onRetry}
+          isEvolving={display.isEvolving}
         />
       );
 
@@ -72,11 +73,19 @@ function GenerationStatusDisplay({
   status,
   error,
   onRetry,
+  isEvolving,
 }: {
   status: string;
   error: string | null;
   onRetry: () => void;
+  isEvolving?: boolean;
 }) {
+  const title = isEvolving ? 'Evolving Monster...' : 'Synthesizing DNA...';
+  const subtitle = isEvolving
+    ? 'Unlocking your 3D model on the blockchain.'
+    : 'Your unique creature is being generated in the bio-chamber.';
+  const errorText = isEvolving ? 'Evolution Failed. Retry?' : 'Generation Failed. Retry?';
+
   return (
     <div className="relative w-full h-full flex flex-col items-center justify-center overflow-hidden">
       <div className="absolute inset-0 bg-grid-slate-800/[0.2] bg-[length:20px_20px]" />
@@ -90,10 +99,10 @@ function GenerationStatusDisplay({
         <div className="w-16 h-16 mb-4 border-4 border-purple-500 border-t-transparent rounded-full animate-spin shadow-[0_0_15px_rgba(168,85,247,0.5)]" />
 
         <h3 className="text-xl font-bold text-white mb-2">
-          Synthesizing DNA...
+          {title}
         </h3>
         <p className="text-sm text-purple-200 max-w-xs">
-          Your unique creature is being generated in the bio-chamber.
+          {subtitle}
         </p>
 
         {error && (
@@ -101,7 +110,7 @@ function GenerationStatusDisplay({
             onClick={onRetry}
             className="mt-6 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-200 text-xs rounded border border-red-500/50 transition-colors"
           >
-            Generation Failed. Retry?
+            {errorText}
           </button>
         )}
       </motion.div>

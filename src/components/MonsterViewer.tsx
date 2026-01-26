@@ -183,6 +183,8 @@ interface MonsterViewerProps {
   height?: string;
   showControls?: boolean;
   autoRotate?: boolean;
+  minimal?: boolean; // No border, background, or container styling
+  enableZoom?: boolean; // Allow zooming with scroll wheel
 }
 
 export default function MonsterViewer({
@@ -191,6 +193,8 @@ export default function MonsterViewer({
   height = "h-96",
   showControls = true,
   autoRotate = true,
+  minimal = false,
+  enableZoom = true,
 }: MonsterViewerProps) {
   const [modelExists, setModelExists] = useState(true);
   const [modelError, setModelError] = useState<string | null>(null);
@@ -212,9 +216,13 @@ export default function MonsterViewer({
     setModelExists(false);
   }, []);
 
+  const containerClasses = minimal
+    ? `${className} ${height} relative overflow-hidden`
+    : `${className} ${height} relative bg-slate-900 rounded-xl border border-slate-600 overflow-hidden`;
+
   if (!modelUrl) {
     return (
-      <div className={`${className} ${height} bg-slate-900 rounded-xl border border-slate-600 flex items-center justify-center`}>
+      <div className={minimal ? `${className} ${height} flex items-center justify-center` : `${className} ${height} bg-slate-900 rounded-xl border border-slate-600 flex items-center justify-center`}>
         <div className="text-center text-slate-400">
           <div className="text-4xl mb-4">🎮</div>
           <p>3D Model not available</p>
@@ -224,11 +232,11 @@ export default function MonsterViewer({
   }
 
   return (
-    <div className={`${className} ${height} relative bg-slate-900 rounded-xl border border-slate-600 overflow-hidden`}>
+    <div className={containerClasses}>
       <Canvas
         camera={{ position: [0, 0, 5], fov: 50 }}
         shadows
-        className="bg-gradient-to-b from-slate-900 to-slate-800"
+        className={minimal ? "" : "bg-gradient-to-b from-slate-900 to-slate-800"}
       >
         <ambientLight intensity={0.6 * lightIntensity} />
         <directionalLight
@@ -294,8 +302,8 @@ export default function MonsterViewer({
         </Suspense>
 
         <OrbitControls
-          enablePan={true}
-          enableZoom={true}
+          enablePan={enableZoom}
+          enableZoom={enableZoom}
           enableRotate={true}
           minDistance={1}
           maxDistance={20}

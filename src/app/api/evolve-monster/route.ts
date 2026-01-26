@@ -12,6 +12,7 @@ import { auth } from '@/lib/auth';
 import { UserMonster, EvolutionStage, STAGE_TRANSITIONS } from '@/lib/user-monster';
 import { EvolutionHistory } from '@/lib/evolution-history';
 import { NFTsPalletService } from '@/services/nfts-pallet-service';
+import { GenerationJob } from '@/lib/generation-job';
 
 export interface EvolveMonsterRequest {
   stage: 'young_3d' | 'adult';
@@ -130,16 +131,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if monster is minted
+    // RECOVERY: Sync NFT data from GenerationJob if missing from UserMonster
+    // This handles cases where the old workflow saved NFT data to job but not monster
     if (!monster.isMinted()) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Monster has not been minted yet. Complete the minting process first.',
-          code: 'NOT_MINTED'
-        },
-        { status: 400 }
-      );
+      console.log(`[Evolve] Monster ${monster.id} missing nftItemId, attempting recovery from GenerationJob`);
+
+      const recoveredNFTData = await recoverNFTDataFromJob(session.user.id, monster);
+
+      if (!recoveredNFTData) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Monster has not been minted yet. Complete the minting process first.',
+            code: 'NOT_MINTED'
+          },
+          { status: 400 }
+        );
+      }
+
+      console.log(`[Evolve] Successfully recovered NFT data for monster ${monster.id}:`, recoveredNFTData);
     }
 
     console.log(`[Evolve] Starting evolution for monster ${monster.id} from ${monster.currentStage} to ${stage}`);
@@ -355,6 +365,67 @@ async function handleAdultGeneration(
       },
       { status: 500 }
     );
+  }
+}
+
+/**
+ * Recover NFT data from GenerationJob if missing from UserMonster
+ * This handles data inconsistency from the old workflow that saved NFT data
+ * to GenerationJob but not to UserMonster
+ */
+async function recoverNFTDataFromJob(
+  userId: string,
+  monster: UserMonster
+): Promise<{ nftItemId: number; nftCollectionId: number; nftOwnerAddress?: string } | null> {
+  try {
+    // Find completed generation jobs for this user with NFT data
+    const jobs = await GenerationJob.findByUserId(userId);
+
+    // Look for a completed job with NFT data
+    const mintedJob = jobs.find(job => {
+      const jobData = job.toJSON();
+      return (
+        jobData.status === 'completed' &&
+        jobData.nftItemId !== undefined &&
+        jobData.nftItemId !== null
+      );
+    });
+
+    if (!mintedJob) {
+      console.log(`[Evolve] No completed job with NFT data found for user ${userId}`);
+      return null;
+    }
+
+    const jobData = mintedJob.toJSON();
+    console.log(`[Evolve] Found minted job ${mintedJob.id} with nftItemId ${jobData.nftItemId}`);
+
+    // Sync NFT data to monster record
+    await monster.update({
+      nftItemId: jobData.nftItemId,
+      nftCollectionId: jobData.nftCollectionId ?? 11,
+      nftOwnerAddress: jobData.nftOwnerAddress ?? undefined,
+      currentMetadataCid: jobData.nftMetadataCid ?? undefined,
+      youngImageCid: jobData.nftImageCid ?? undefined,
+    });
+
+    // Also sync S3 keys if missing
+    if (!monster.youngImageS3Key && jobData.imageS3Key) {
+      await monster.update({ youngImageS3Key: jobData.imageS3Key });
+    }
+    if (!monster.youngModelS3Key && jobData.glbS3Key) {
+      await monster.update({ youngModelS3Key: jobData.glbS3Key });
+    }
+
+    console.log(`[Evolve] Synced NFT data from job ${mintedJob.id} to monster ${monster.id}`);
+
+    return {
+      nftItemId: jobData.nftItemId!,
+      nftCollectionId: jobData.nftCollectionId ?? 11,
+      nftOwnerAddress: jobData.nftOwnerAddress,
+    };
+  } catch (error) {
+    console.error(`[Evolve] Failed to recover NFT data from job:`, error);
+    return null;
   }
 }
 

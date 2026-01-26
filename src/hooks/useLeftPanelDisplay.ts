@@ -23,7 +23,7 @@ export function useLeftPanelDisplay() {
   // 1. Has this lesson ever triggered generation and generation is complete?
   const hasGeneratedCreature = asset.imageUrl || asset.modelUrl;
   const isGenerationInProgress =
-    isProcessing(asset.status) || asset.isGenerating;
+    isProcessing(asset.status) || asset.isGenerating || asset.isEvolving;
 
   // 2. Does this step have a lesson image?
   const hasLessonImage = currentStepData?.image;
@@ -51,8 +51,9 @@ export function useLeftPanelDisplay() {
     return {
       type: 'generation' as const,
       status: asset.status || 'unknown',
-      error: asset.error,
+      error: asset.error || asset.evolutionError,
       onRetry: handleRetry,
+      isEvolving: asset.isEvolving,
     };
   }
 

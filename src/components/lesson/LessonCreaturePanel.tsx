@@ -84,9 +84,10 @@ export function LessonCreaturePanel({ showLogo = true }: LessonCreaturePanelProp
         </div>
       </motion.div>
 
-      {/* Generation Notification Toast */}
+      {/* Generation/Evolution Notification Toast */}
       <GenerationNotification
-        isVisible={asset.isGenerating || isProcessing(asset.status)}
+        isVisible={asset.isGenerating || asset.isEvolving || isProcessing(asset.status)}
+        isEvolving={asset.isEvolving}
       />
     </div>
   );
@@ -96,8 +97,13 @@ export function LessonCreaturePanel({ showLogo = true }: LessonCreaturePanelProp
 // Sub-components
 // ============================================================================
 
-function GenerationNotification({ isVisible }: { isVisible: boolean }) {
+function GenerationNotification({ isVisible, isEvolving }: { isVisible: boolean; isEvolving?: boolean }) {
   if (!isVisible) return null;
+
+  const title = isEvolving ? 'Evolving your monster...' : 'Creating your unique monster...';
+  const subtitle = isEvolving
+    ? 'Unlocking 3D model, standby.'
+    : 'Standby, it will be ready soon.';
 
   return (
     <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-30 w-full max-w-sm px-4 pointer-events-none">
@@ -108,10 +114,10 @@ function GenerationNotification({ isVisible }: { isVisible: boolean }) {
         </div>
         <div className="flex-1">
           <p className="text-sm font-medium text-white">
-            Creating your unique monster...
+            {title}
           </p>
           <p className="text-xs text-slate-400">
-            Standby, it will be ready soon.
+            {subtitle}
           </p>
         </div>
       </div>

@@ -4,6 +4,7 @@ import { query } from '@/lib/postgres';
 import { successResponse, unauthorizedResponse, internalErrorResponse } from '@/lib/api-response';
 import { logError } from '@/types/errors';
 import { getLessonById } from '@/lib/lessons-server';
+import { S3Service } from '@/services/s3-service';
 
 export interface UserMonster {
   id: string;
@@ -60,25 +61,21 @@ export async function GET(request: NextRequest) {
 
     console.log('[Lab Data] Position rows:', positionRows);
 
-    // Get user's latest completed monster with NFT data
+    // Get user's monster from user_monsters table (canonical source)
+    // This ensures consistency with /api/user/monster endpoint
     const { rows: monsterRows } = await query(`
       SELECT
         id,
-        image_url,
-        glb_url,
-        stage,
-        status,
+        current_stage,
+        young_image_s3_key,
+        young_model_s3_key,
+        adult_model_s3_key,
         nft_item_id,
         nft_collection_id,
         nft_owner_address,
-        nft_minted_at
-      FROM monster_generations
+        created_at
+      FROM user_monsters
       WHERE user_id = $1
-        AND status = 'completed'
-        AND (image_url IS NOT NULL OR glb_url IS NOT NULL)
-      ORDER BY
-        CASE WHEN nft_minted_at IS NOT NULL THEN 0 ELSE 1 END,
-        completed_at DESC
       LIMIT 1
     `, [userId]);
 
@@ -115,19 +112,46 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const monster: UserMonster | null = monsterRows[0]
-      ? {
-          id: monsterRows[0].id,
-          imageUrl: monsterRows[0].image_url,
-          modelUrl: monsterRows[0].glb_url,
-          stage: monsterRows[0].stage,
-          status: monsterRows[0].status,
-          nftItemId: monsterRows[0].nft_item_id,
-          nftCollectionId: monsterRows[0].nft_collection_id,
-          nftOwnerAddress: monsterRows[0].nft_owner_address,
-          nftMintedAt: monsterRows[0].nft_minted_at?.toISOString() ?? null,
+    // Generate fresh presigned URLs from S3 keys
+    let monster: UserMonster | null = null;
+    if (monsterRows[0]) {
+      const row = monsterRows[0];
+      let imageUrl: string | null = null;
+      let modelUrl: string | null = null;
+
+      // Generate fresh presigned URLs (old ones expire after 2 hours)
+      try {
+        const s3Service = S3Service.getInstance();
+
+        // Always get image URL if available
+        if (row.young_image_s3_key) {
+          imageUrl = await s3Service.getPresignedUrl(row.young_image_s3_key, { expiresIn: 7200 });
         }
-      : null;
+
+        // Get model URL based on current stage
+        const stage = row.current_stage;
+        if (stage === 'young_3d' && row.young_model_s3_key) {
+          modelUrl = await s3Service.getPresignedUrl(row.young_model_s3_key, { expiresIn: 7200 });
+        } else if (stage === 'adult' && row.adult_model_s3_key) {
+          modelUrl = await s3Service.getPresignedUrl(row.adult_model_s3_key, { expiresIn: 7200 });
+        }
+      } catch (s3Error) {
+        console.error('[Lab Data] Failed to generate presigned URLs:', s3Error);
+        // Continue without URLs - the UI will show a placeholder
+      }
+
+      monster = {
+        id: row.id,
+        imageUrl,
+        modelUrl,
+        stage: row.current_stage,
+        status: 'completed', // user_monsters only contains completed monsters
+        nftItemId: row.nft_item_id,
+        nftCollectionId: row.nft_collection_id,
+        nftOwnerAddress: row.nft_owner_address,
+        nftMintedAt: row.created_at?.toISOString() ?? null,
+      };
+    }
 
     return successResponse({
       currentPosition,
