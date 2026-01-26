@@ -57,6 +57,10 @@ export class S3Service {
         secretAccessKey: config.secretAccessKey,
       },
       forcePathStyle: config.forcePathStyle, // Required for MinIO
+      // Disable checksum features for MinIO compatibility
+      // AWS SDK v3 adds x-amz-checksum-mode=ENABLED which MinIO doesn't support
+      requestChecksumCalculation: 'WHEN_REQUIRED',
+      responseChecksumValidation: 'WHEN_REQUIRED',
     });
 
     this.bucket = config.bucket;

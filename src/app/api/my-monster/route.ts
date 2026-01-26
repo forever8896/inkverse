@@ -10,6 +10,7 @@ import {
 import { logError } from '@/types/errors';
 import type { MonsterStage, MonsterStyle } from '@/lib/ipfs-utils';
 import type { EvolutionStage } from '@/lib/user-monster';
+import { S3Service } from '@/services/s3-service';
 
 // ============================================================================
 // Types
@@ -127,7 +128,8 @@ export async function GET(request: NextRequest) {
 
     const userMonster = monsterRows[0];
 
-    // Get the latest completed generation job for S3 URLs
+    // Get the latest completed generation job for S3 keys
+    // We fetch S3 keys instead of URLs so we can generate fresh presigned URLs
     const { rows: genRows } = await query<{
       id: string;
       style: MonsterStyle;
@@ -142,8 +144,8 @@ export async function GET(request: NextRequest) {
       nft_block_hash: string;
       nft_minted_at: Date;
       nft_owner_address: string;
-      image_url: string | null;
-      glb_url: string | null;
+      image_s3_key: string | null;
+      glb_s3_key: string | null;
       created_at: Date;
       completed_at: Date;
     }>(
@@ -176,6 +178,22 @@ export async function GET(request: NextRequest) {
     // young = 2D only (3D hidden), young_3d/adult = 3D visible
     const shouldShowModel = currentStage === 'young_3d' || currentStage === 'adult';
 
+    // Generate fresh presigned URLs from S3 keys (old URLs expire after 2 hours)
+    let freshImageUrl: string | null = null;
+    let freshModelUrl: string | null = null;
+    try {
+      const s3Service = S3Service.getInstance();
+      if (genRow?.image_s3_key) {
+        freshImageUrl = await s3Service.getPresignedUrl(genRow.image_s3_key, { expiresIn: 7200 });
+      }
+      if (shouldShowModel && genRow?.glb_s3_key) {
+        freshModelUrl = await s3Service.getPresignedUrl(genRow.glb_s3_key, { expiresIn: 7200 });
+      }
+    } catch (s3Error) {
+      console.error('[My Monster] Failed to generate presigned URLs:', s3Error);
+      // Continue without URLs - IPFS CIDs can be used as fallback
+    }
+
     // Build evolution history
     const evolutionHistory: EvolutionHistoryEntry[] = historyRows.map(h => ({
       id: h.id,
@@ -205,9 +223,9 @@ export async function GET(request: NextRequest) {
       imageCid: userMonster.young_image_cid || genRow?.nft_image_cid || null,
       // Model CID only if evolution stage allows
       modelCid: shouldShowModel ? (userMonster.young_model_cid || genRow?.nft_model_cid || null) : null,
-      // S3 fallback URLs - only include modelUrl if stage allows
-      imageUrl: genRow?.image_url || null,
-      modelUrl: shouldShowModel ? (genRow?.glb_url || null) : null,
+      // S3 fallback URLs - use fresh presigned URLs
+      imageUrl: freshImageUrl,
+      modelUrl: freshModelUrl,
       // NFT on-chain data
       nft: genRow ? {
         itemId: userMonster.nft_item_id || genRow.nft_item_id,
@@ -254,8 +272,7 @@ async function getFallbackFromGenerations(userId: string) {
     nft_block_hash: string;
     nft_minted_at: Date;
     nft_owner_address: string;
-    image_url: string | null;
-    glb_url: string | null;
+    image_s3_key: string | null;
     created_at: Date;
     completed_at: Date;
   }>(
@@ -271,6 +288,17 @@ async function getFallbackFromGenerations(userId: string) {
 
   const row = rows[0];
 
+  // Generate fresh presigned URL from S3 key
+  let freshImageUrl: string | null = null;
+  try {
+    if (row.image_s3_key) {
+      const s3Service = S3Service.getInstance();
+      freshImageUrl = await s3Service.getPresignedUrl(row.image_s3_key, { expiresIn: 7200 });
+    }
+  } catch (s3Error) {
+    console.error('[My Monster Fallback] Failed to generate presigned URL:', s3Error);
+  }
+
   // Legacy: assume young stage (no 3D in NFT)
   const monster: MonsterData = {
     id: row.id,
@@ -280,7 +308,7 @@ async function getFallbackFromGenerations(userId: string) {
     metadataCid: row.nft_metadata_cid,
     imageCid: row.nft_image_cid,
     modelCid: null, // Don't show model for legacy
-    imageUrl: row.image_url,
+    imageUrl: freshImageUrl,
     modelUrl: null, // Don't show model for legacy
     nft: {
       itemId: row.nft_item_id,
