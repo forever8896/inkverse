@@ -237,6 +237,9 @@ const MonacoCodeEditor = forwardRef<MonacoCodeEditorRef, MonacoCodeEditorProps>(
           { token: 'attribute', foreground: 'f97316' }, // orange for ink attributes
         ],
         colors: {
+          // Remove focus border
+          'focusBorder': '#00000000',
+
           // Transparent background for glass effect
           'editor.background': '#0f172a00', // completely transparent - let container handle the glass effect
           'editor.foreground': '#f1f5f9',

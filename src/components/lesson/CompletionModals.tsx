@@ -190,17 +190,15 @@ function ChapterCompleteModal({
         <h2 className="text-3xl font-bold text-white mb-3 text-center">
           Chapter Complete!
         </h2>
-        <p className="text-xl text-purple-300 mb-6 text-center font-semibold">
+        <p className="text-xl text-purple-300 mb-4 text-center font-semibold">
           {chapterTitle}
         </p>
-        <div className="bg-purple-600/20 border border-purple-500/50 rounded-lg p-4 mb-6 text-center">
-          <p className="text-slate-200">Your progress has been saved! ✨</p>
-        </div>
+        <p className="text-slate-400 text-sm mb-6">Your progress has been saved</p>
         <button
           onClick={onContinue}
-          className="px-8 py-3 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 rounded-lg text-white font-semibold shadow-lg transition-all duration-200 hover:scale-105"
+          className="px-6 py-3 bg-[#4FFFB0]/20 hover:bg-[#4FFFB0]/40 border border-[#4FFFB0]/50 hover:border-[#4FFFB0] text-[#4FFFB0] hover:text-white font-pixel text-[10px] uppercase tracking-wider rounded-lg transition-all hover:shadow-lg hover:shadow-[#4FFFB0]/20"
         >
-          Continue to Next Chapter →
+          Continue to Next Chapter
         </button>
       </div>
     </div>

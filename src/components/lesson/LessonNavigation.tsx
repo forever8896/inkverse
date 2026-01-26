@@ -60,7 +60,7 @@ export function LessonNavigation() {
           </svg>
         </button>
         {(currentStep > 0 || currentChapter > 0) && (
-          <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-slate-900/90 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none border border-slate-700/50 backdrop-blur-sm">
+          <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-slate-900/90 text-white font-pixel text-[7px] uppercase tracking-wider rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none border border-slate-700/50 backdrop-blur-sm">
             Previous Step
           </div>
         )}
@@ -115,7 +115,7 @@ function ProgressIndicator({ lesson, currentChapter, currentStep, currentChapter
   return (
     <div className="flex flex-col items-center gap-2 min-w-[200px]">
       {/* Text progress */}
-      <div className="text-sm text-slate-300">
+      <div className="font-pixel text-[8px] uppercase tracking-wider text-slate-300">
         <span className="text-slate-500">Chapter {currentChapter + 1}</span>
         <span className="text-slate-600 mx-2">·</span>
         <span>Step {currentStep + 1} of {stepsInCurrentChapter}</span>
@@ -177,7 +177,7 @@ function NavButton({
       >
         {icon}
       </button>
-      <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-slate-900/90 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none border border-slate-700/50 backdrop-blur-sm">
+      <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-slate-900/90 text-white font-pixel text-[7px] uppercase tracking-wider rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none border border-slate-700/50 backdrop-blur-sm">
         {disabled && disabledTooltip ? disabledTooltip : tooltip}
       </div>
     </div>

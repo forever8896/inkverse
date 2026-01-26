@@ -23,8 +23,8 @@ const MonacoCodeEditor = dynamic(
     loading: () => (
       <div className="h-full rounded-xl border border-slate-600/50 bg-slate-800/50 animate-pulse flex items-center justify-center">
         <div className="text-center text-slate-400">
-          <div className="text-3xl mb-2">🧬</div>
-          <div className="text-sm">Loading editor...</div>
+          <div className="text-2xl mb-3">🧬</div>
+          <div className="font-pixel text-[8px] uppercase tracking-wider">Loading editor</div>
         </div>
       </div>
     )
@@ -73,7 +73,7 @@ export function LessonCodeEditorPanel() {
       {/* Editor Header */}
       <div className="p-3 flex-shrink-0">
         <div className="flex items-center justify-between">
-          <h4 className="text-base font-semibold transition-all duration-300">
+          <h4 className="font-pixel text-[8px] uppercase tracking-wider text-slate-400 transition-all duration-300">
             Workspace
           </h4>
           <div className="flex space-x-2">
@@ -176,7 +176,7 @@ function EditorButton({ onClick, icon, tooltip, variant, disabled = false }: Edi
       >
         {icon}
       </button>
-      <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-slate-900/90 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none border border-slate-700/50 backdrop-blur-sm">
+      <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-slate-900/90 text-white font-pixel text-[7px] uppercase tracking-wider rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none border border-slate-700/50 backdrop-blur-sm">
         {tooltip}
       </div>
     </div>

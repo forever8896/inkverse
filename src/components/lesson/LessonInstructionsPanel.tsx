@@ -43,8 +43,22 @@ export function LessonInstructionsPanel() {
             className="flex-1 overflow-y-auto transition-all duration-300"
           >
             {/* Step title rendered as H1 */}
-            <h1 className="text-base font-bold mb-6 text-purple-400 text-balance">
-              {currentStepData.title}
+            <h1 className="font-normal mb-6 text-purple-400 text-balance" style={{ fontSize: '0.6rem', lineHeight: 1.4 }}>
+              {(() => {
+                const title = currentStepData.title || '';
+                const emojiMatch = title.match(/^(\p{Emoji_Presentation}|\p{Emoji}\uFE0F?)/u);
+                if (emojiMatch) {
+                  const emoji = emojiMatch[0];
+                  const rest = title.slice(emoji.length).replace(/^\s+/, '');
+                  return (
+                    <>
+                      <span style={{ display: 'inline-block', transform: 'translateY(-1px)' }}>{emoji}</span>
+                      {rest && ` ${rest}`}
+                    </>
+                  );
+                }
+                return title;
+              })()}
             </h1>
             <LessonContent html={currentStepData.content} />
           </div>
@@ -58,10 +72,9 @@ export function LessonInstructionsPanel() {
           {currentStepData?.hint && (
             <button
               onClick={() => setShowHint(!showHint)}
-              className="flex items-center space-x-2 text-amber-400 hover:text-amber-300 transition-all duration-200 bg-amber-500/10 hover:bg-amber-500/20 px-3 py-1.5 rounded-lg border border-amber-500/30 hover:border-amber-500/50 text-sm"
+              className="px-2 py-1 bg-[#FF9F1C]/20 hover:bg-[#FF9F1C]/40 border border-[#FF9F1C]/50 hover:border-[#FF9F1C] text-[#FF9F1C] hover:text-white font-pixel text-[8px] uppercase tracking-wider rounded transition-all hover:shadow-lg hover:shadow-[#FF9F1C]/20"
             >
-              <span>💡</span>
-              <span className="font-medium">Show Hint</span>
+              {showHint ? 'Hide Hint' : 'Show Hint'}
             </button>
           )}
 
@@ -69,25 +82,9 @@ export function LessonInstructionsPanel() {
           {currentStepData?.code !== undefined && (
             <button
               onClick={() => setShowCodeEditor(!showCodeEditor)}
-              className="flex items-center space-x-2 text-cyan-400 hover:text-cyan-300 transition-all duration-200 bg-cyan-500/10 hover:bg-cyan-500/20 px-3 py-1.5 rounded-lg border border-cyan-500/30 hover:border-cyan-500/50 text-sm"
-              title={showCodeEditor ? 'Hide Code Editor' : 'Show Code Editor'}
-              aria-label={showCodeEditor ? 'Hide Code Editor' : 'Show Code Editor'}
+              className="px-2 py-1 bg-[#4FFFB0]/20 hover:bg-[#4FFFB0]/40 border border-[#4FFFB0]/50 hover:border-[#4FFFB0] text-[#4FFFB0] hover:text-white font-pixel text-[8px] uppercase tracking-wider rounded transition-all hover:shadow-lg hover:shadow-[#4FFFB0]/20"
             >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="text-cyan-300"
-              >
-                <polyline points="16 18 22 12 16 6" />
-                <polyline points="8 6 2 12 8 18" />
-              </svg>
-              <span className="font-medium">{showCodeEditor ? 'Hide Code' : 'Show Code'}</span>
+              {showCodeEditor ? 'Hide Code' : 'Show Code'}
             </button>
           )}
         </div>
@@ -118,16 +115,13 @@ function HintTooltip({ hint, isVisible }: { hint: string; isVisible: boolean }) 
           } w-[min(90vw,420px)]`}
           aria-live="polite"
         >
-          <div className="p-4 bg-gradient-to-r from-amber-900/80 to-yellow-900/70 border border-amber-600/60 rounded-lg shadow-xl backdrop-blur-lg flex items-start space-x-3 pointer-events-auto">
-            <span className="text-lg mt-0.5">💡</span>
-            <div>
-              <h4 className="text-amber-300 font-semibold mb-1 text-sm">
-                Hint
-              </h4>
-              <p className="text-amber-100 leading-relaxed text-sm">
-                {hint}
-              </p>
-            </div>
+          <div className="p-4 bg-[#FF9F1C]/10 border border-[#FF9F1C]/40 rounded-lg shadow-xl backdrop-blur-lg pointer-events-auto">
+            <h4 className="font-pixel text-[8px] uppercase tracking-wider text-[#FF9F1C] mb-2">
+              Hint
+            </h4>
+            <p className="text-slate-200 leading-relaxed text-sm">
+              {hint}
+            </p>
           </div>
         </div>
       </div>
