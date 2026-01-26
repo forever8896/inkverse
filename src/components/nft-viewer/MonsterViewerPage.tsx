@@ -36,11 +36,11 @@ const MonsterViewer = dynamic(() => import('@/components/MonsterViewer'), {
 interface EvolutionData {
   currentStage: EvolutionStage;
   evolutionHistory: EvolutionHistoryEntry[];
-  nextEvolution?: {
+  nextEvolution: {
     stage: EvolutionStage;
     requiresGeneration: boolean;
     canEvolve: boolean;
-  };
+  } | null;
   monsterId: string;
   nftItemId?: number;
   nftOwnerAddress?: string;
@@ -310,12 +310,12 @@ export default function MonsterViewerPage({
                   evolutionHistory={evolutionData.evolutionHistory.map(entry => ({
                     id: `${entry.stage}-${entry.timestamp}`,
                     stage: entry.stage,
-                    milestoneLabel: entry.milestone,
+                    milestoneLabel: entry.milestone ?? undefined,
                     evolvedAt: entry.timestamp,
-                    assetsCid: entry.assets,
-                    txHash: entry.txHash,
+                    assetsCid: entry.assets ?? undefined,
+                    txHash: entry.txHash ?? undefined,
                   }))}
-                  nextEvolution={evolutionData.nextEvolution}
+                  nextEvolution={evolutionData.nextEvolution ?? undefined}
                   onEvolve={onEvolve && walletAddress ? handleEvolve : undefined}
                   isEvolving={isEvolving}
                 />

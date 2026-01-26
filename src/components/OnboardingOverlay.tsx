@@ -20,32 +20,47 @@ import gsap from 'gsap';
 
 const ONBOARDING_SCREENS = [
   {
-    title: 'Welcome to Monsters Ink!',
-    subtitle: 'Learn to code ink! smart contracts by evolving your own unique monster.',
+    title: 'Meet your monster.',
+    subtitle: 'A unique companion that belongs to you — and evolves as you learn ink!',
   },
   {
-    title: 'Complete lessons to unlock new abilities.',
-    subtitle: 'Watch your monster grow as your skills develop.',
+    title: 'Watch it grow with every lesson.',
+    subtitle: 'From curious hatchling to powerful creature. Your progress shapes its form.',
   },
   {
-    title: 'Finish the course and mint your monster as an NFT.',
-    subtitle: 'Your creation, permanently on-chain.',
+    title: 'Master ink!. Claim your NFT.',
+    subtitle: 'Complete the course and mint your evolved monster on-chain. Yours forever.',
   },
-];
+] as const;
 
 interface AnimatedTextProps {
   title: string;
   subtitle: string;
   screenKey: number;
+  onAnimationComplete: () => void;
 }
 
-function AnimatedText({ title, subtitle, screenKey, onAnimationComplete }: AnimatedTextProps & { onAnimationComplete?: () => void }) {
+function AnimatedText({ title, subtitle, screenKey, onAnimationComplete }: AnimatedTextProps) {
   const titleRef = useRef<HTMLHeadingElement>(null);
+  const timelineRef = useRef<gsap.core.Timeline | null>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [showSubtitle, setShowSubtitle] = useState(false);
 
   useEffect(() => {
     // Reset state for new screen
     setShowSubtitle(false);
+
+    // Clear any pending timeout from previous animation
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+
+    // Kill any existing timeline
+    if (timelineRef.current) {
+      timelineRef.current.kill();
+      timelineRef.current = null;
+    }
 
     if (!titleRef.current) return;
 
@@ -89,15 +104,17 @@ function AnimatedText({ title, subtitle, screenKey, onAnimationComplete }: Anima
     });
 
     // Animate characters in with GSAP
-    const tl = gsap.timeline({
+    timelineRef.current = gsap.timeline({
       onComplete: () => {
         setShowSubtitle(true);
         // Slight delay before signaling buttons can appear
-        setTimeout(() => onAnimationComplete?.(), 300);
+        timeoutRef.current = setTimeout(() => {
+          onAnimationComplete();
+        }, 300);
       },
     });
 
-    tl.to(allCharSpans, {
+    timelineRef.current.to(allCharSpans, {
       opacity: 1,
       filter: 'blur(0px)',
       y: 0,
@@ -107,7 +124,14 @@ function AnimatedText({ title, subtitle, screenKey, onAnimationComplete }: Anima
     });
 
     return () => {
-      tl.kill();
+      if (timelineRef.current) {
+        timelineRef.current.kill();
+        timelineRef.current = null;
+      }
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
     };
   }, [title, screenKey, onAnimationComplete]);
 
@@ -134,40 +158,56 @@ function AnimatedText({ title, subtitle, screenKey, onAnimationComplete }: Anima
 
 interface OnboardingOverlayProps {
   onComplete: () => void;
+  onScreenChange?: (screen: number) => void;
 }
 
-export function OnboardingOverlay({ onComplete }: OnboardingOverlayProps) {
+export function OnboardingOverlay({ onComplete, onScreenChange }: OnboardingOverlayProps) {
   const [currentScreen, setCurrentScreen] = useState(0);
   const [showButtons, setShowButtons] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const nextButtonRef = useRef<HTMLButtonElement>(null);
 
   const isFirstScreen = currentScreen === 0;
   const isLastScreen = currentScreen === ONBOARDING_SCREENS.length - 1;
 
   const handleNext = useCallback(() => {
+    // Prevent double-clicks during transition
+    if (isTransitioning) return;
+
     if (isLastScreen) {
+      setIsTransitioning(true);
       onComplete();
     } else {
+      setIsTransitioning(true);
       setShowButtons(false);
       setCurrentScreen((prev) => prev + 1);
     }
-  }, [isLastScreen, onComplete]);
+  }, [isLastScreen, onComplete, isTransitioning]);
 
   const handleBack = useCallback(() => {
-    if (!isFirstScreen) {
-      setShowButtons(false);
-      setCurrentScreen((prev) => prev - 1);
-    }
-  }, [isFirstScreen]);
+    // Prevent double-clicks during transition
+    if (isTransitioning || isFirstScreen) return;
 
+    setIsTransitioning(true);
+    setShowButtons(false);
+    setCurrentScreen((prev) => prev - 1);
+  }, [isFirstScreen, isTransitioning]);
+
+  // Stable callback for animation completion
   const handleAnimationComplete = useCallback(() => {
     setShowButtons(true);
+    setIsTransitioning(false);
   }, []);
 
-  // Keyboard navigation (only when buttons are visible)
+  // Notify parent of screen changes
+  useEffect(() => {
+    onScreenChange?.(currentScreen);
+  }, [currentScreen, onScreenChange]);
+
+  // Keyboard navigation (only when buttons are visible and not transitioning)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (!showButtons) return;
+      if (!showButtons || isTransitioning) return;
 
       switch (e.key) {
         case 'ArrowRight':
@@ -185,14 +225,17 @@ export function OnboardingOverlay({ onComplete }: OnboardingOverlayProps) {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleNext, handleBack, showButtons]);
+  }, [handleNext, handleBack, showButtons, isTransitioning]);
 
   // Focus the Next button when it becomes visible for keyboard accessibility
   useEffect(() => {
-    if (showButtons) {
-      nextButtonRef.current?.focus();
+    if (showButtons && !isTransitioning) {
+      // Small delay to ensure DOM is ready
+      requestAnimationFrame(() => {
+        nextButtonRef.current?.focus();
+      });
     }
-  }, [showButtons]);
+  }, [showButtons, isTransitioning]);
 
   const screen = ONBOARDING_SCREENS[currentScreen];
 
@@ -203,6 +246,11 @@ export function OnboardingOverlay({ onComplete }: OnboardingOverlayProps) {
       aria-modal="true"
       aria-label="Welcome to Monsters Ink onboarding"
     >
+      {/* Screen reader announcement */}
+      <div className="sr-only" aria-live="polite" aria-atomic="true">
+        Step {currentScreen + 1} of {ONBOARDING_SCREENS.length}: {screen.title}
+      </div>
+
       {/* Bottom overlay with message */}
       <motion.div
         initial={{ y: 100, opacity: 0 }}
@@ -238,15 +286,17 @@ export function OnboardingOverlay({ onComplete }: OnboardingOverlayProps) {
             style={{
               opacity: showButtons ? 1 : 0,
               transform: showButtons ? 'translateY(0)' : 'translateY(10px)',
+              pointerEvents: showButtons && !isTransitioning ? 'auto' : 'none',
             }}
           >
             {/* Back button - only render if not on first screen */}
             {!isFirstScreen && (
               <button
                 onClick={handleBack}
+                disabled={isTransitioning}
                 aria-label={`Go back to step ${currentScreen}`}
-                tabIndex={showButtons ? 0 : -1}
-                className="px-5 py-2.5 font-pixel text-[8px] uppercase tracking-wider rounded-lg transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:ring-offset-transparent"
+                tabIndex={showButtons && !isTransitioning ? 0 : -1}
+                className="px-5 py-2.5 font-pixel text-[8px] uppercase tracking-wider rounded-lg transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:ring-offset-transparent disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                 style={{
                   background: 'rgba(148, 163, 184, 0.1)',
                   border: '1px solid rgba(148, 163, 184, 0.3)',
@@ -261,16 +311,15 @@ export function OnboardingOverlay({ onComplete }: OnboardingOverlayProps) {
             <button
               ref={nextButtonRef}
               onClick={handleNext}
+              disabled={isTransitioning}
               aria-label={isLastScreen ? 'Begin learning' : `Go to step ${currentScreen + 2}`}
-              tabIndex={showButtons ? 0 : -1}
-              className="px-6 py-2.5 font-pixel text-[8px] uppercase tracking-wider rounded-lg transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-transparent"
+              tabIndex={showButtons && !isTransitioning ? 0 : -1}
+              className="px-6 py-2.5 font-pixel text-[8px] uppercase tracking-wider rounded-lg transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-transparent disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               style={{
                 background: 'rgba(79, 255, 176, 0.15)',
                 border: '1px solid rgba(79, 255, 176, 0.4)',
                 color: 'var(--mi-mint)',
                 boxShadow: '0 0 15px rgba(79, 255, 176, 0.2)',
-                // @ts-expect-error CSS custom property for focus ring
-                '--tw-ring-color': 'var(--mi-mint)',
               }}
             >
               {isLastScreen ? 'Begin' : 'Next'}

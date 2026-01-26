@@ -32,9 +32,9 @@ import { LessonInstructionsPanel } from '@/components/lesson/LessonInstructionsP
 import { LessonCodeEditorPanel } from '@/components/lesson/LessonCodeEditorPanel';
 import { LessonNavigation } from '@/components/lesson/LessonNavigation';
 
-// Dynamic import for WelcomeModelViewer (heavy 3D component)
-const WelcomeModelViewer = dynamic(
-  () => import('@/components/WelcomeModelViewer').then(mod => ({ default: mod.WelcomeModelViewer })),
+// Dynamic import for OnboardingVisuals (contains heavy 3D component)
+const OnboardingVisuals = dynamic(
+  () => import('@/components/OnboardingVisuals').then(mod => ({ default: mod.OnboardingVisuals })),
   {
     ssr: false,
     loading: () => null, // Model should be preloaded, so no loading state needed
@@ -107,6 +107,7 @@ function LessonLayoutInner() {
   const [showRightPanel, setShowRightPanel] = useState(false);
   const [onboardingComplete, setOnboardingComplete] = useState(false);
   const [hasExistingProgress, setHasExistingProgress] = useState<boolean | null>(null);
+  const [onboardingScreen, setOnboardingScreen] = useState(0);
 
   // Check if user has existing progress (skip onboarding if they do)
   useEffect(() => {
@@ -119,10 +120,19 @@ function LessonLayoutInner() {
       return;
     }
 
+    // AbortController for cleanup if component unmounts during fetch
+    const abortController = new AbortController();
+
     // Check for existing progress via API
-    fetch('/api/user/lab-data')
-      .then(res => res.json())
+    fetch('/api/user/lab-data', { signal: abortController.signal })
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to fetch progress');
+        return res.json();
+      })
       .then(data => {
+        // Don't update state if aborted
+        if (abortController.signal.aborted) return;
+
         const hasProgress = !!(data.data?.currentPosition);
         setHasExistingProgress(hasProgress);
         // If user has progress, skip onboarding and show right panel
@@ -131,16 +141,27 @@ function LessonLayoutInner() {
           setShowRightPanel(true);
         }
       })
-      .catch(() => {
-        // On error, assume new user
-        setHasExistingProgress(false);
+      .catch((error) => {
+        // Ignore abort errors, handle other errors as new user
+        if (error.name !== 'AbortError') {
+          setHasExistingProgress(false);
+        }
       });
+
+    return () => {
+      abortController.abort();
+    };
   }, [session?.user, isAuthLoading]);
 
   // Handle onboarding completion
   const handleOnboardingComplete = useCallback(() => {
     setOnboardingComplete(true);
     setShowRightPanel(true);
+  }, []);
+
+  // Handle onboarding screen changes
+  const handleOnboardingScreenChange = useCallback((screen: number) => {
+    setOnboardingScreen(screen);
   }, []);
 
   // Legacy click handler for non-onboarding flow (returning users)
@@ -185,14 +206,14 @@ function LessonLayoutInner() {
             <AnimatePresence mode="wait">
               {showOnboarding ? (
                 <motion.div
-                  key="welcome-model"
+                  key="onboarding-visuals"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ duration: 0.5 }}
                   className="absolute inset-0 flex items-center justify-center"
                 >
-                  <WelcomeModelViewer modelUrl="/monsters/sample_3d.glb" />
+                  <OnboardingVisuals currentScreen={onboardingScreen} />
                 </motion.div>
               ) : (
                 <motion.div
@@ -211,7 +232,10 @@ function LessonLayoutInner() {
           {/* Onboarding Overlay - shown at bottom during onboarding */}
           <AnimatePresence>
             {showOnboarding && (
-              <OnboardingOverlay onComplete={handleOnboardingComplete} />
+              <OnboardingOverlay
+                onComplete={handleOnboardingComplete}
+                onScreenChange={handleOnboardingScreenChange}
+              />
             )}
           </AnimatePresence>
 

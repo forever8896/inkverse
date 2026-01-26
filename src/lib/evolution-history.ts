@@ -17,10 +17,10 @@ export interface AssetsAdded {
 
 export interface EvolutionHistoryEntry {
   stage: EvolutionStage;
-  milestone: string;
+  milestone: string | null;
   timestamp: string; // ISO 8601
-  assets: AssetsAdded;
-  txHash?: string;
+  assets: AssetsAdded | null;
+  txHash?: string | null;
   blockNumber?: number;
 }
 
