@@ -31,6 +31,9 @@ interface NarrativeLoadingScreenProps {
  * Loading screen that shows real progress based on 3D model download.
  * Shows narrative messages tied to actual loading progress.
  */
+// Threshold in ms - if model loads faster than this, assume it's cached
+const CACHE_THRESHOLD_MS = 300;
+
 export function NarrativeLoadingScreen({
   onComplete,
   preloadModelUrl,
@@ -40,6 +43,7 @@ export function NarrativeLoadingScreen({
   const [currentMonster, setCurrentMonster] = useState(0);
   const [modelLoaded, setModelLoaded] = useState(!preloadModelUrl);
   const [loadError, setLoadError] = useState(false);
+  const [isCached, setIsCached] = useState(false);
 
   // Get current message based on loading progress
   const currentMessage = useMemo(() => {
@@ -61,12 +65,20 @@ export function NarrativeLoadingScreen({
 
     let isMounted = true;
     let lastProgressUpdate = 0;
+    const loadStartTime = Date.now();
     const loader = new GLTFLoader();
 
     loader.load(
       preloadModelUrl,
       () => {
         if (!isMounted) return;
+        const loadDuration = Date.now() - loadStartTime;
+
+        // If loaded very fast, it's likely cached - skip loading screen
+        if (loadDuration < CACHE_THRESHOLD_MS) {
+          setIsCached(true);
+        }
+
         setLoadingProgress(100);
         setModelLoaded(true);
       },
@@ -103,26 +115,34 @@ export function NarrativeLoadingScreen({
     };
   }, [preloadModelUrl]);
 
-  // Start exit animation when model is fully loaded
+  // Handle completion - skip loading screen entirely if cached
   useEffect(() => {
-    if (modelLoaded && loadingProgress >= 100 && !isExiting) {
-      // Small delay to show 100% before exiting
-      const exitTimer = setTimeout(() => {
-        setIsExiting(true);
-      }, 800);
-      return () => clearTimeout(exitTimer);
-    }
-  }, [modelLoaded, loadingProgress, isExiting]);
+    if (modelLoaded && loadingProgress >= 100) {
+      // If model was cached, skip loading screen entirely
+      if (isCached) {
+        onComplete();
+        return;
+      }
 
-  // Call onComplete after exit animation
+      // Normal flow: show exit animation
+      if (!isExiting) {
+        const exitTimer = setTimeout(() => {
+          setIsExiting(true);
+        }, 800);
+        return () => clearTimeout(exitTimer);
+      }
+    }
+  }, [modelLoaded, loadingProgress, isExiting, isCached, onComplete]);
+
+  // Call onComplete after exit animation (non-cached flow)
   useEffect(() => {
-    if (isExiting) {
+    if (isExiting && !isCached) {
       const navTimer = setTimeout(() => {
         onComplete();
       }, 600);
       return () => clearTimeout(navTimer);
     }
-  }, [isExiting, onComplete]);
+  }, [isExiting, isCached, onComplete]);
 
   // Cycle through monster images
   useEffect(() => {
@@ -132,6 +152,11 @@ export function NarrativeLoadingScreen({
 
     return () => clearInterval(monsterInterval);
   }, []);
+
+  // Don't render loading screen if model was cached
+  if (isCached) {
+    return null;
+  }
 
   return (
     <motion.div

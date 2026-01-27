@@ -228,11 +228,23 @@ function MagicalImage({ src, alt }: { src: string; alt: string }) {
 
 export function OnboardingVisuals({ currentScreen, className = '' }: OnboardingVisualsProps) {
   const [hasEntered, setHasEntered] = useState(false);
+  const [showRotationHint, setShowRotationHint] = useState(false);
 
   useEffect(() => {
     // Small delay to trigger entrance animation
     const timer = setTimeout(() => setHasEntered(true), 100);
     return () => clearTimeout(timer);
+  }, []);
+
+  // Track viewport height to hide rotation hints on short screens
+  useEffect(() => {
+    const checkHeight = () => {
+      setShowRotationHint(window.innerHeight >= 1024);
+    };
+
+    checkHeight();
+    window.addEventListener('resize', checkHeight);
+    return () => window.removeEventListener('resize', checkHeight);
   }, []);
 
   // Bounds check for safety
@@ -259,95 +271,95 @@ export function OnboardingVisuals({ currentScreen, className = '' }: OnboardingV
           {visual.type === 'image' ? (
             <MagicalImage src={visual.src} alt={visual.alt} />
           ) : (
-            // 3D model with interaction hint
-            <div className="flex flex-col items-center">
-              <div className="w-[400px] h-[400px] sm:w-[500px] sm:h-[500px] md:w-[600px] md:h-[600px]">
-                <WelcomeModelViewer modelUrl={visual.modelUrl} />
-              </div>
-              {/* Cockpit-style interaction indicator */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.8, duration: 0.6 }}
-                className="mt-6 flex flex-col items-center gap-2"
-              >
-                {/* Control indicator */}
-                <div className="relative w-20 h-20 flex items-center justify-center">
-                  {/* Horizontal arrows */}
-                  <motion.span
-                    className="absolute left-0 font-pixel text-lg"
-                    style={{ color: 'var(--mi-mint)' }}
-                    animate={{ x: [-3, 3, -3], opacity: [0.5, 1, 0.5] }}
-                    transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-                  >
-                    ‹
-                  </motion.span>
-                  <motion.span
-                    className="absolute right-0 font-pixel text-lg"
-                    style={{ color: 'var(--mi-mint)' }}
-                    animate={{ x: [3, -3, 3], opacity: [0.5, 1, 0.5] }}
-                    transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-                  >
-                    ›
-                  </motion.span>
-
-                  {/* Vertical arrows - wrapper for rotation, inner for animation */}
-                  <div className="absolute" style={{ top: '-3px', transform: 'rotate(90deg)' }}>
-                    <motion.span
-                      className="font-pixel text-lg"
-                      style={{ color: 'var(--mi-mint)' }}
-                      animate={{ y: [-3, 3, -3], opacity: [0.5, 1, 0.5] }}
-                      transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut', delay: 0.2 }}
-                    >
-                      ‹
-                    </motion.span>
-                  </div>
-                  <div className="absolute" style={{ bottom: '-4px', transform: 'rotate(90deg)' }}>
-                    <motion.span
-                      className="font-pixel text-lg"
-                      style={{ color: 'var(--mi-mint)' }}
-                      animate={{ y: [3, -3, 3], opacity: [0.5, 1, 0.5] }}
-                      transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut', delay: 0.2 }}
-                    >
-                      ›
-                    </motion.span>
-                  </div>
-
-                  {/* Center circle indicator */}
-                  <motion.div
-                    className="w-8 h-8 rounded-full border-2 flex items-center justify-center"
-                    style={{
-                      borderColor: 'rgba(79, 255, 176, 0.4)',
-                      background: 'rgba(79, 255, 176, 0.1)'
-                    }}
-                    animate={{ scale: [1, 1.1, 1] }}
-                    transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                  >
-                    <motion.div
-                      className="w-2 h-2 rounded-full"
-                      style={{ background: 'var(--mi-mint)' }}
-                      animate={{ opacity: [0.5, 1, 0.5] }}
-                      transition={{ duration: 1.5, repeat: Infinity }}
-                    />
-                  </motion.div>
-                </div>
-
-                {/* Label - different text for touch vs mouse devices */}
-                <motion.p
-                  className="font-pixel text-[8px] tracking-wider uppercase"
-                  style={{ color: 'rgba(148, 163, 184, 0.8)' }}
-                  animate={{ opacity: [0.6, 1, 0.6] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                >
-                  <span className="hidden sm:inline">Drag monster to rotate</span>
-                  <span className="sm:hidden">Touch monster to rotate</span>
-                </motion.p>
-              </motion.div>
+            // 3D model viewer
+            <div className="w-[400px] h-[400px] sm:w-[500px] sm:h-[500px] md:w-[600px] md:h-[600px]">
+              <WelcomeModelViewer modelUrl={visual.modelUrl} />
             </div>
           )}
         </motion.div>
       </AnimatePresence>
 
+      {/* Fixed rotation hint at bottom - only on 3D screen and tall viewports */}
+      {visual.type === '3d' && showRotationHint && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8, duration: 0.6 }}
+          className="fixed bottom-64 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 select-none z-30"
+        >
+          {/* Control indicator */}
+          <div className="relative w-20 h-20 flex items-center justify-center">
+            {/* Horizontal arrows */}
+            <motion.span
+              className="absolute left-0 font-pixel text-lg"
+              style={{ color: 'var(--mi-mint)' }}
+              animate={{ x: [-3, 3, -3], opacity: [0.5, 1, 0.5] }}
+              transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              ‹
+            </motion.span>
+            <motion.span
+              className="absolute right-0 font-pixel text-lg"
+              style={{ color: 'var(--mi-mint)' }}
+              animate={{ x: [3, -3, 3], opacity: [0.5, 1, 0.5] }}
+              transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              ›
+            </motion.span>
+
+            {/* Vertical arrows */}
+            <div className="absolute" style={{ top: '-3px', transform: 'rotate(90deg)' }}>
+              <motion.span
+                className="font-pixel text-lg"
+                style={{ color: 'var(--mi-mint)' }}
+                animate={{ y: [-3, 3, -3], opacity: [0.5, 1, 0.5] }}
+                transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut', delay: 0.2 }}
+              >
+                ‹
+              </motion.span>
+            </div>
+            <div className="absolute" style={{ bottom: '-4px', transform: 'rotate(90deg)' }}>
+              <motion.span
+                className="font-pixel text-lg"
+                style={{ color: 'var(--mi-mint)' }}
+                animate={{ y: [3, -3, 3], opacity: [0.5, 1, 0.5] }}
+                transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut', delay: 0.2 }}
+              >
+                ›
+              </motion.span>
+            </div>
+
+            {/* Center circle indicator */}
+            <motion.div
+              className="w-8 h-8 rounded-full border-2 flex items-center justify-center"
+              style={{
+                borderColor: 'rgba(79, 255, 176, 0.4)',
+                background: 'rgba(79, 255, 176, 0.1)'
+              }}
+              animate={{ scale: [1, 1.1, 1] }}
+              transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              <motion.div
+                className="w-2 h-2 rounded-full"
+                style={{ background: 'var(--mi-mint)' }}
+                animate={{ opacity: [0.5, 1, 0.5] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              />
+            </motion.div>
           </div>
+
+          {/* Label */}
+          <motion.p
+            className="font-pixel text-[8px] tracking-wider uppercase"
+            style={{ color: 'rgba(148, 163, 184, 0.8)' }}
+            animate={{ opacity: [0.6, 1, 0.6] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            <span className="hidden sm:inline">Drag monster to rotate</span>
+            <span className="sm:hidden">Touch monster to rotate</span>
+          </motion.p>
+        </motion.div>
+      )}
+    </div>
   );
 }
