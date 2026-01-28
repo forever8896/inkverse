@@ -1,11 +1,16 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import Image from 'next/image';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import {
+  getOnboardingImageUrls,
+  getOnboardingModelUrl,
+} from '@/lib/onboarding-assets';
 
-const MONSTER_IMAGES = [
+// Images shown in the loading carousel (decorative, separate from preload targets)
+const CAROUSEL_IMAGES = [
   '/monsters/17b3d246-bbee-460d-bf10-96ead31ac702.webp',
   '/monsters/c779ad1c-a127-4780-8821-77c28ad70961.webp',
   '/monsters/d0bebeab-0f60-4ebc-aaa2-8a38601485c0.webp',
@@ -21,110 +26,180 @@ const LOADING_MESSAGES = [
   { threshold: 100, message: 'Ready to learn together.' },
 ];
 
+// Threshold in ms - if ALL assets load faster than this, assume cached
+const CACHE_THRESHOLD_MS = 500;
+
+// Progress weight: images are small, model is large
+// Each image = 5%, model = 90%
+const IMAGE_PROGRESS_WEIGHT = 5;
+const MODEL_PROGRESS_WEIGHT = 90;
+
 interface NarrativeLoadingScreenProps {
   onComplete: () => void;
-  /** Path to GLB model to preload during loading screen */
-  preloadModelUrl?: string;
 }
 
 /**
- * Loading screen that shows real progress based on 3D model download.
- * Shows narrative messages tied to actual loading progress.
+ * Loading screen that preloads all onboarding assets (images + 3D model).
+ * Shows real progress based on asset downloads.
+ * If all assets are already cached, skips the loading screen entirely.
  */
-// Threshold in ms - if model loads faster than this, assume it's cached
-const CACHE_THRESHOLD_MS = 300;
-
 export function NarrativeLoadingScreen({
   onComplete,
-  preloadModelUrl,
 }: NarrativeLoadingScreenProps) {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [isExiting, setIsExiting] = useState(false);
   const [currentMonster, setCurrentMonster] = useState(0);
-  const [modelLoaded, setModelLoaded] = useState(!preloadModelUrl);
+  const [allLoaded, setAllLoaded] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const [isCached, setIsCached] = useState(false);
 
+  // Track individual progress
+  const imagesLoadedRef = useRef(0);
+  const modelProgressRef = useRef(0);
+  const loadStartTimeRef = useRef(0);
+
+  // Get asset URLs from shared constants
+  const imageUrls = useMemo(() => getOnboardingImageUrls(), []);
+  const modelUrl = useMemo(() => getOnboardingModelUrl(), []);
+
+  // Calculate combined progress
+  const updateProgress = useCallback(() => {
+    const imageProgress = imagesLoadedRef.current * IMAGE_PROGRESS_WEIGHT;
+    const modelProgress = (modelProgressRef.current / 100) * MODEL_PROGRESS_WEIGHT;
+    const total = imageProgress + modelProgress;
+    setLoadingProgress(Math.round(total));
+  }, []);
+
+  // Check if everything is loaded
+  const checkAllLoaded = useCallback(() => {
+    const imagesComplete = imagesLoadedRef.current >= imageUrls.length;
+    const modelComplete = modelProgressRef.current >= 100;
+
+    if (imagesComplete && modelComplete) {
+      const loadDuration = Date.now() - loadStartTimeRef.current;
+
+      // If all assets loaded very quickly, they were cached
+      if (loadDuration < CACHE_THRESHOLD_MS) {
+        setIsCached(true);
+      }
+
+      setLoadingProgress(100);
+      setAllLoaded(true);
+    }
+  }, [imageUrls.length]);
+
+  // Preload all assets
+  useEffect(() => {
+    // Reset refs for fresh start (handles React Strict Mode remount)
+    imagesLoadedRef.current = 0;
+    modelProgressRef.current = 0;
+    loadStartTimeRef.current = Date.now();
+    let isMounted = true;
+
+    // Helper to mark an image as loaded
+    const onImageLoaded = () => {
+      if (!isMounted) return;
+      imagesLoadedRef.current += 1;
+      updateProgress();
+      checkAllLoaded();
+    };
+
+    // Helper to handle image error (continue anyway)
+    const onImageError = () => {
+      if (!isMounted) return;
+      // Count as loaded to not block progress
+      imagesLoadedRef.current += 1;
+      updateProgress();
+      checkAllLoaded();
+    };
+
+    // Preload images using Image constructor
+    imageUrls.forEach((url) => {
+      const img = new window.Image();
+
+      // Set src first, then check complete status
+      // This avoids race conditions with onload handler
+      img.src = url;
+
+      // If already cached, complete will be true synchronously
+      if (img.complete) {
+        onImageLoaded();
+      } else {
+        // Only attach handlers if not already loaded
+        img.onload = onImageLoaded;
+        img.onerror = onImageError;
+      }
+    });
+
+    // Preload 3D model
+    if (modelUrl) {
+      let lastProgressUpdate = 0;
+      const loader = new GLTFLoader();
+
+      loader.load(
+        modelUrl,
+        () => {
+          if (!isMounted) return;
+          modelProgressRef.current = 100;
+          updateProgress();
+          checkAllLoaded();
+        },
+        (progressEvent) => {
+          if (!isMounted) return;
+          if (progressEvent.lengthComputable && progressEvent.total > 0) {
+            const progress = (progressEvent.loaded / progressEvent.total) * 100;
+            modelProgressRef.current = progress;
+            updateProgress();
+          } else {
+            // Fallback: increment slowly based on time
+            const now = Date.now();
+            if (now - lastProgressUpdate > 500) {
+              lastProgressUpdate = now;
+              modelProgressRef.current = Math.min(modelProgressRef.current + 2, 90);
+              updateProgress();
+            }
+          }
+        },
+        (error) => {
+          if (!isMounted) return;
+          if (process.env.NODE_ENV === 'development') {
+            console.error('[Loading] Failed to preload 3D model:', error);
+          }
+          setLoadError(true);
+          modelProgressRef.current = 100;
+          updateProgress();
+          checkAllLoaded();
+        }
+      );
+    } else {
+      // No model URL, mark as complete
+      modelProgressRef.current = 100;
+      updateProgress();
+      checkAllLoaded();
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [imageUrls, modelUrl, updateProgress, checkAllLoaded]);
+
   // Get current message based on loading progress
   const currentMessage = useMemo(() => {
-    // Find the highest threshold that's <= current progress
     const matchingMessages = LOADING_MESSAGES.filter(
       (m) => loadingProgress >= m.threshold
     );
     return matchingMessages[matchingMessages.length - 1]?.message || LOADING_MESSAGES[0].message;
   }, [loadingProgress]);
 
-  // Preload 3D model with progress tracking
-  useEffect(() => {
-    if (!preloadModelUrl) {
-      // No model to load, complete immediately
-      setLoadingProgress(100);
-      setModelLoaded(true);
-      return;
-    }
-
-    let isMounted = true;
-    let lastProgressUpdate = 0;
-    const loadStartTime = Date.now();
-    const loader = new GLTFLoader();
-
-    loader.load(
-      preloadModelUrl,
-      () => {
-        if (!isMounted) return;
-        const loadDuration = Date.now() - loadStartTime;
-
-        // If loaded very fast, it's likely cached - skip loading screen
-        if (loadDuration < CACHE_THRESHOLD_MS) {
-          setIsCached(true);
-        }
-
-        setLoadingProgress(100);
-        setModelLoaded(true);
-      },
-      (progressEvent) => {
-        if (!isMounted) return;
-        // Calculate actual loading progress from bytes
-        if (progressEvent.lengthComputable && progressEvent.total > 0) {
-          const progress = (progressEvent.loaded / progressEvent.total) * 100;
-          setLoadingProgress(Math.round(progress));
-        } else {
-          // Fallback: increment slowly based on time, not per-event
-          // This prevents rapid jumping when Content-Length is missing
-          const now = Date.now();
-          if (now - lastProgressUpdate > 500) {
-            lastProgressUpdate = now;
-            setLoadingProgress((prev) => Math.min(prev + 2, 90));
-          }
-        }
-      },
-      (error) => {
-        if (!isMounted) return;
-        // Log in development only
-        if (process.env.NODE_ENV === 'development') {
-          console.error('[Loading] Failed to preload 3D model:', error);
-        }
-        setLoadError(true);
-        setLoadingProgress(100);
-        setModelLoaded(true); // Continue anyway on error
-      }
-    );
-
-    return () => {
-      isMounted = false;
-    };
-  }, [preloadModelUrl]);
-
   // Handle completion - skip loading screen entirely if cached
   useEffect(() => {
-    if (modelLoaded && loadingProgress >= 100) {
-      // If model was cached, skip loading screen entirely
+    if (allLoaded) {
       if (isCached) {
         onComplete();
         return;
       }
 
-      // Normal flow: show exit animation
+      // Normal flow: show exit animation after brief pause
       if (!isExiting) {
         const exitTimer = setTimeout(() => {
           setIsExiting(true);
@@ -132,7 +207,7 @@ export function NarrativeLoadingScreen({
         return () => clearTimeout(exitTimer);
       }
     }
-  }, [modelLoaded, loadingProgress, isExiting, isCached, onComplete]);
+  }, [allLoaded, isExiting, isCached, onComplete]);
 
   // Call onComplete after exit animation (non-cached flow)
   useEffect(() => {
@@ -144,16 +219,16 @@ export function NarrativeLoadingScreen({
     }
   }, [isExiting, isCached, onComplete]);
 
-  // Cycle through monster images
+  // Cycle through monster images in carousel
   useEffect(() => {
     const monsterInterval = setInterval(() => {
-      setCurrentMonster((prev) => (prev + 1) % MONSTER_IMAGES.length);
+      setCurrentMonster((prev) => (prev + 1) % CAROUSEL_IMAGES.length);
     }, 2000);
 
     return () => clearInterval(monsterInterval);
   }, []);
 
-  // Don't render loading screen if model was cached
+  // Don't render loading screen if assets were cached
   if (isCached) {
     return null;
   }
@@ -252,7 +327,7 @@ export function NarrativeLoadingScreen({
             className="relative w-28 h-28 md:w-48 md:h-48"
           >
             <Image
-              src={MONSTER_IMAGES[currentMonster]}
+              src={CAROUSEL_IMAGES[currentMonster]}
               alt="Monster"
               fill
               className="object-contain"

@@ -16,6 +16,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import gsap from 'gsap';
+import { ONBOARDING_VISUALS } from '@/lib/onboarding-assets';
 
 // Dynamic import for 3D model viewer (heavy component)
 // No loading state - model is preloaded during NarrativeLoadingScreen
@@ -26,37 +27,6 @@ const WelcomeModelViewer = dynamic(
     loading: () => null,
   }
 );
-
-// Type-safe visual content definitions
-type ImageVisual = {
-  type: 'image';
-  src: string;
-  alt: string;
-};
-
-type ModelVisual = {
-  type: '3d';
-  modelUrl: string;
-};
-
-type ScreenVisual = ImageVisual | ModelVisual;
-
-const SCREEN_VISUALS: readonly ScreenVisual[] = [
-  {
-    type: 'image',
-    src: '/monsters/17b3d246-bbee-460d-bf10-96ead31ac702.webp',
-    alt: 'A colorful crystalline monster',
-  },
-  {
-    type: 'image',
-    src: '/monsters/d0bebeab-0f60-4ebc-aaa2-8a38601485c0.webp',
-    alt: 'A winged cyclops creature',
-  },
-  {
-    type: '3d',
-    modelUrl: '/monsters/sample_3d.glb',
-  },
-] as const;
 
 // Animation variants (static, no need to recreate)
 const TRANSITION_VARIANTS = {
@@ -248,8 +218,8 @@ export function OnboardingVisuals({ currentScreen, className = '' }: OnboardingV
   }, []);
 
   // Bounds check for safety
-  const safeScreen = Math.max(0, Math.min(currentScreen, SCREEN_VISUALS.length - 1));
-  const visual = SCREEN_VISUALS[safeScreen];
+  const safeScreen = Math.max(0, Math.min(currentScreen, ONBOARDING_VISUALS.length - 1));
+  const visual = ONBOARDING_VISUALS[safeScreen];
 
   return (
     <div className={`${className} relative flex items-center justify-center w-full h-full`}>

@@ -240,7 +240,6 @@ export default function Home() {
         {showDarkness && (
           <NarrativeLoadingScreen
             onComplete={handleTransitionComplete}
-            preloadModelUrl="/monsters/sample_3d.glb"
           />
         )}
       </AnimatePresence>
@@ -281,19 +280,13 @@ export default function Home() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4, duration: 0.6 }}
-            className="mb-16 text-center"
+            className="mb-12 text-center"
           >
             <p
-              className="font-pixel text-[10px] md:text-xs tracking-wider mb-2"
+              className="font-pixel text-[10px] md:text-xs tracking-wider mt-6"
               style={{ color: '#4FFFB0' }}
             >
               Inside this egg sleeps your future companion
-            </p>
-            <p
-              className="font-pixel text-[8px] md:text-[10px] tracking-wider"
-              style={{ color: '#94a3b8' }}
-            >
-              Together, you'll learn to code ink! smart contracts
             </p>
           </motion.div>
 
@@ -361,7 +354,7 @@ export default function Home() {
             className="font-pixel text-xs mb-4 tracking-wider"
             style={{ color: '#FFDAB9' }}
           >
-            Wake them up
+            Click the egg to start
           </motion.p>
 
           {/* Value prop */}
@@ -369,11 +362,11 @@ export default function Home() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1.2, duration: 0.6 }}
-            className="font-pixel text-[10px] text-center max-w-lg tracking-wider leading-relaxed"
+            className="font-pixel text-[10px] text-center max-w-lg tracking-wider leading-relaxed text-balance"
             style={{ color: '#94a3b8' }}
           >
-            They evolve as you code. Complete your ink! training and immortalize
-            your companion on-chain.
+            Learn Ink! to create your own unique 3d monster that evolves on-chain!
+            
           </motion.p>
 
           {/* Footer */}
