@@ -101,7 +101,8 @@ export function withAuth<T extends any[]>(
  */
 export async function checkGitHubAccess(session: AuthSession): Promise<boolean> {
   try {
-    // Basic check - user has GitHub account connected
+    // Basic check only: user has a GitHub-linked account.
+    // Intentional: we are NOT enforcing repo count or account age here.
     if (!session.user.id) {
       return false;
     }

@@ -231,6 +231,21 @@ export async function POST(request: NextRequest) {
       validationErrors.push('generationType must be one of: full, image_only');
     }
 
+    // Disallow image-only generation for non-admins in production (token abuse prevention)
+    if (
+      generationType === 'image_only' &&
+      !isAdmin &&
+      process.env.NODE_ENV === 'production'
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Image-only generation is disabled in production.',
+        },
+        { status: 403 }
+      );
+    }
+
     if (validationErrors.length > 0) {
       return NextResponse.json(
         {

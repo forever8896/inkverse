@@ -3,6 +3,14 @@ import { getSessionFromRequest } from '@/lib/auth-server';
 import { query } from '@/lib/postgres';
 import { parseIntSafe } from '@/lib/validation';
 
+async function assertJobOwnership(userId: string, jobId: string): Promise<boolean> {
+  const { rows } = await query<{ user_id: string }>(
+    `SELECT user_id FROM monster_generations WHERE id = $1`,
+    [jobId]
+  );
+  return rows.length > 0 && rows[0].user_id === userId;
+}
+
 // POST /api/progress/trigger-generation - Trigger NFT generation for a completed step
 export async function POST(request: NextRequest) {
   try {
@@ -26,6 +34,16 @@ export async function POST(request: NextRequest) {
     }
 
     const userId = session.user.id;
+
+    if (generationJobId) {
+      const ownsJob = await assertJobOwnership(userId, generationJobId);
+      if (!ownsJob) {
+        return NextResponse.json(
+          { error: 'Invalid generation job' },
+          { status: 403 }
+        );
+      }
+    }
 
     // Atomic insert or update
     // Uses xmax = 0 check to distinguish between insert and update
@@ -111,7 +129,9 @@ export async function GET(request: NextRequest) {
           mg.glb_url,
           mg.progress as generation_progress
         FROM lesson_generation_triggers lgt
-        LEFT JOIN monster_generations mg ON lgt.generation_job_id = mg.id
+        LEFT JOIN monster_generations mg 
+          ON lgt.generation_job_id = mg.id
+          AND mg.user_id = lgt.user_id
         WHERE lgt.user_id = $1
           AND lgt.lesson_id = $2
           AND lgt.chapter_id = $3
@@ -134,7 +154,9 @@ export async function GET(request: NextRequest) {
         mg.glb_url,
         mg.progress as generation_progress
       FROM lesson_generation_triggers lgt
-      LEFT JOIN monster_generations mg ON lgt.generation_job_id = mg.id
+      LEFT JOIN monster_generations mg 
+        ON lgt.generation_job_id = mg.id
+        AND mg.user_id = lgt.user_id
       WHERE lgt.user_id = $1
         AND lgt.lesson_id = $2
     `;
@@ -187,6 +209,16 @@ export async function PATCH(request: NextRequest) {
     }
 
     const userId = session.user.id;
+
+    if (generationJobId) {
+      const ownsJob = await assertJobOwnership(userId, generationJobId);
+      if (!ownsJob) {
+        return NextResponse.json(
+          { error: 'Invalid generation job' },
+          { status: 403 }
+        );
+      }
+    }
 
     const { rows } = await query(`
       UPDATE lesson_generation_triggers

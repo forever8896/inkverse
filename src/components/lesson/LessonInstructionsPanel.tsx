@@ -43,7 +43,7 @@ export function LessonInstructionsPanel() {
             className="flex-1 overflow-y-auto transition-all duration-300"
           >
             {/* Step title rendered as H1 */}
-            <h1 className="font-normal mb-6 text-purple-400 text-balance" style={{ fontSize: '0.6rem', lineHeight: 1.4 }}>
+            <h1 className="font-normal mb-6 text-purple-400 text-balance" style={{ fontSize: '1.2rem', lineHeight: 1.4 }}>
               {(() => {
                 const title = currentStepData.title || '';
                 const emojiMatch = title.match(/^(\p{Emoji_Presentation}|\p{Emoji}\uFE0F?)/u);
