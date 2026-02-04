@@ -455,7 +455,7 @@ export default function MonsterViewerPage({
                           style={{
                             background: isViewing ? config.bg : 'rgba(255, 255, 255, 0.02)',
                             border: `1px solid ${isViewing ? config.color + '40' : 'rgba(255, 255, 255, 0.04)'}`,
-                            ringColor: config.color,
+                            boxShadow: isViewing ? `0 0 0 1px ${config.color}` : undefined,
                           }}
                           whileHover={isUnlocked ? { scale: 1.02 } : {}}
                           whileTap={isUnlocked ? { scale: 0.98 } : {}}
