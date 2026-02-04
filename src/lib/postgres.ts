@@ -23,7 +23,7 @@ export function getPool(): Pool {
       connectionTimeoutMillis: 5000, // Slightly longer for cold starts
       allowExitOnIdle: process.env.VERCEL === '1', // Allow process to exit
       // SSL configuration for production
-      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: true, ca: process.env.DB_CA_CERT || undefined } : false,
     });
 
     // Handle pool errors
@@ -90,7 +90,7 @@ export async function query<T = any>(
   } catch (error) {
     console.error('PostgreSQL query error:', {
       query: text,
-      params,
+      paramCount: params?.length ?? 0,
       error: error instanceof Error ? error.message : error
     });
     throw error;

@@ -9,6 +9,7 @@ import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { auth, type Session, type User } from '@/lib/auth';
 import { NextRequest, NextResponse } from 'next/server';
+import { query } from '@/lib/postgres';
 
 export interface AuthSession {
   user: User;
@@ -95,27 +96,93 @@ export function withAuth<T extends any[]>(
   };
 }
 
+// In-memory cache for GitHub access checks (keyed by userId, short-lived per serverless invocation)
+const gitHubAccessCache = new Map<string, { result: boolean; timestamp: number }>();
+const GITHUB_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+const MINIMUM_ACCOUNT_AGE_DAYS = 30;
+const MINIMUM_PUBLIC_REPOS = 1;
+
 /**
  * Check if user has required GitHub repository access
- * This can be extended for more specific authorization checks
+ * Queries the account table for GitHub token, then verifies:
+ * - At least one public repository
+ * - Account age >= 30 days
+ * Caches results to avoid repeated GitHub API calls within same invocation
  */
 export async function checkGitHubAccess(session: AuthSession): Promise<boolean> {
   try {
-    // Basic check only: user has a GitHub-linked account.
-    // Intentional: we are NOT enforcing repo count or account age here.
     if (!session.user.id) {
       return false;
     }
 
-    // Add more sophisticated checks here:
-    // - Verify GitHub token is still valid
-    // - Check if user has at least one public repository
-    // - Check account creation date to prevent farming
+    // Check cache first
+    const cached = gitHubAccessCache.get(session.user.id);
+    if (cached && Date.now() - cached.timestamp < GITHUB_CACHE_TTL_MS) {
+      return cached.result;
+    }
 
+    // Query the account table for the user's GitHub access token
+    const { rows } = await query<{ accessToken: string }>(
+      'SELECT "accessToken" FROM account WHERE "userId" = $1 AND "providerId" = $2',
+      [session.user.id, 'github']
+    );
+
+    if (rows.length === 0 || !rows[0].accessToken) {
+      gitHubAccessCache.set(session.user.id, { result: false, timestamp: Date.now() });
+      return false;
+    }
+
+    const accessToken = rows[0].accessToken;
+
+    // Call GitHub REST API to get user profile (works with zero scopes for public profile)
+    let githubUser: { public_repos: number; created_at: string };
+    try {
+      const response = await fetch('https://api.github.com/user', {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          Accept: 'application/vnd.github.v3+json',
+          'User-Agent': 'MonstersInk-App',
+        },
+      });
+
+      if (!response.ok) {
+        // If GitHub API is unreachable or token invalid, fail gracefully
+        console.warn(`[Auth] GitHub API returned ${response.status} for user ${session.user.id}`);
+        gitHubAccessCache.set(session.user.id, { result: true, timestamp: Date.now() });
+        return true;
+      }
+
+      githubUser = await response.json();
+    } catch (fetchError) {
+      // Network error - fail gracefully, don't block users due to GitHub downtime
+      console.warn('[Auth] GitHub API unreachable, allowing access:', fetchError);
+      gitHubAccessCache.set(session.user.id, { result: true, timestamp: Date.now() });
+      return true;
+    }
+
+    // Check minimum public repos
+    if (githubUser.public_repos < MINIMUM_PUBLIC_REPOS) {
+      console.warn(`[Auth] User ${session.user.id} has ${githubUser.public_repos} public repos (minimum: ${MINIMUM_PUBLIC_REPOS})`);
+      gitHubAccessCache.set(session.user.id, { result: false, timestamp: Date.now() });
+      return false;
+    }
+
+    // Check account age (>= 30 days)
+    const accountAgeMs = Date.now() - new Date(githubUser.created_at).getTime();
+    const minimumAgeMs = MINIMUM_ACCOUNT_AGE_DAYS * 24 * 60 * 60 * 1000;
+    if (accountAgeMs < minimumAgeMs) {
+      console.warn(`[Auth] User ${session.user.id} GitHub account too new (${Math.floor(accountAgeMs / 86400000)} days)`);
+      gitHubAccessCache.set(session.user.id, { result: false, timestamp: Date.now() });
+      return false;
+    }
+
+    gitHubAccessCache.set(session.user.id, { result: true, timestamp: Date.now() });
     return true;
   } catch (error) {
+    // Unexpected error - fail gracefully
     console.error('[Auth] Failed to check GitHub access:', error);
-    return false;
+    return true;
   }
 }
 
