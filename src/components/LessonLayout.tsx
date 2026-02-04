@@ -104,8 +104,19 @@ function LessonLayoutInner() {
   } = useLessonContext();
 
   // Onboarding state: right panel hidden until onboarding completes
-  const [showRightPanel, setShowRightPanel] = useState(false);
-  const [onboardingComplete, setOnboardingComplete] = useState(false);
+  // Check sessionStorage to survive OAuth redirect page reloads
+  const [showRightPanel, setShowRightPanel] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem('onboarding_complete') === 'true';
+    }
+    return false;
+  });
+  const [onboardingComplete, setOnboardingComplete] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem('onboarding_complete') === 'true';
+    }
+    return false;
+  });
   const [hasExistingProgress, setHasExistingProgress] = useState<boolean | null>(null);
   const [onboardingScreen, setOnboardingScreen] = useState(0);
 
@@ -169,6 +180,8 @@ function LessonLayoutInner() {
   const handleOnboardingComplete = useCallback(async () => {
     setOnboardingComplete(true);
     setShowRightPanel(true);
+    // Persist to sessionStorage so OAuth redirects don't replay the intro
+    sessionStorage.setItem('onboarding_complete', 'true');
 
     // Immediately save initial step progress so user won't see onboarding on refresh
     if (session?.user && lesson?.chapters?.[0]?.steps?.[0]) {
@@ -212,8 +225,8 @@ function LessonLayoutInner() {
     return <EmptyLessonView />;
   }
 
-  // Still checking for progress
-  if (hasExistingProgress === null) {
+  // Still checking for progress (but skip loading screen if onboarding already completed this session)
+  if (hasExistingProgress === null && !onboardingComplete) {
     return (
       <div className="h-screen w-screen bg-slate-900 flex flex-col overflow-hidden">
         <ShaderBackground />

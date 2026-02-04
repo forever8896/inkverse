@@ -4,6 +4,9 @@ import { query } from '@/lib/postgres';
 import { parseIntSafe } from '@/lib/validation';
 import { successResponse, badRequestResponse, unauthorizedResponse, internalErrorResponse } from '@/lib/api-response';
 import { logError } from '@/types/errors';
+import { getLessonById } from '@/lib/lessons-server';
+
+const VALID_EVOLUTION_STAGES = ['egg', 'young', 'young_3d', 'adult'] as const;
 
 // POST /api/progress/lesson - Mark lesson as completed
 export async function POST(request: NextRequest) {
@@ -19,6 +22,18 @@ export async function POST(request: NextRequest) {
 
     if (!lessonId) {
       return badRequestResponse('Missing required field: lessonId');
+    }
+
+    // Validate lessonId exists in content
+    const lesson = getLessonById(Number(lessonId));
+    if (!lesson) {
+      return badRequestResponse(`Lesson ${lessonId} does not exist`);
+    }
+
+    // Validate evolutionStage enum
+    const stage = evolutionStage || 'egg';
+    if (!VALID_EVOLUTION_STAGES.includes(stage)) {
+      return badRequestResponse(`Invalid evolutionStage: ${stage}. Must be one of: ${VALID_EVOLUTION_STAGES.join(', ')}`);
     }
 
     const userId = session.user.id;
@@ -38,7 +53,7 @@ export async function POST(request: NextRequest) {
         evolution_stage = COALESCE(EXCLUDED.evolution_stage, user_lesson_progress.evolution_stage),
         updated_at = NOW()
       RETURNING *
-    `, [userId, lessonId, evolutionStage || 'creature']);
+    `, [userId, lessonId, stage]);
 
     return successResponse({ progress: rows[0] });
 

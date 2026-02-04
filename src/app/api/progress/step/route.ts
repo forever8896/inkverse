@@ -1,9 +1,10 @@
 import { NextRequest } from 'next/server';
 import { getSessionFromRequest } from '@/lib/auth-server';
 import { query } from '@/lib/postgres';
-import { parseIntSafe } from '@/lib/validation';
+import { parseIntSafe, validateCode } from '@/lib/validation';
 import { successResponse, badRequestResponse, unauthorizedResponse, internalErrorResponse } from '@/lib/api-response';
 import { logError } from '@/types/errors';
+import { getLessonById } from '@/lib/lessons-server';
 
 // POST /api/progress/step - Save step progress
 export async function POST(request: NextRequest) {
@@ -29,7 +30,76 @@ export async function POST(request: NextRequest) {
       return badRequestResponse('Missing required fields: lessonId, chapterId, stepId');
     }
 
+    // Validate lesson/chapter/step exist in content
+    const lesson = getLessonById(Number(lessonId));
+    if (!lesson) {
+      return badRequestResponse(`Lesson ${lessonId} does not exist`);
+    }
+
+    const chapter = lesson.chapters?.find(c => c.id === Number(chapterId));
+    if (!chapter) {
+      return badRequestResponse(`Chapter ${chapterId} does not exist in lesson ${lessonId}`);
+    }
+
+    const step = chapter.steps.find(s => s.id === Number(stepId));
+    if (!step) {
+      return badRequestResponse(`Step ${stepId} does not exist in chapter ${chapterId}`);
+    }
+
+    // Server-side code validation: if step has validation rules, verify the code
+    let serverValidationPassed = validationPassed || false;
+    if (step.validation && step.validation.length > 0) {
+      if (completed && !contractCode) {
+        return badRequestResponse('Contract code is required for validation steps');
+      }
+      if (contractCode) {
+        serverValidationPassed = validateCode(contractCode, step.validation);
+      }
+    }
+
     const userId = session.user.id;
+
+    // Check prerequisite: all previous steps in the same chapter must be completed
+    const currentStepId = Number(stepId);
+    if (completed && currentStepId > 1) {
+      const previousStepIds = chapter.steps
+        .filter(s => s.id < currentStepId)
+        .map(s => s.id);
+
+      if (previousStepIds.length > 0) {
+        const { rows: completedPrevious } = await query(`
+          SELECT COUNT(*) as count
+          FROM user_step_progress
+          WHERE user_id = $1
+            AND lesson_id = $2
+            AND chapter_id = $3
+            AND step_id = ANY($4::int[])
+            AND completed_at IS NOT NULL
+        `, [userId, lessonId, chapterId, previousStepIds]);
+
+        const completedCount = parseInt(completedPrevious[0]?.count || '0', 10);
+        if (completedCount < previousStepIds.length) {
+          return badRequestResponse('Previous steps must be completed first');
+        }
+      }
+    }
+
+    // For the first step of chapters > 1, verify the previous chapter is completed
+    if (completed && Number(chapterId) > 1 && currentStepId === chapter.steps[0]?.id) {
+      const prevChapterId = Number(chapterId) - 1;
+      const { rows: prevChapter } = await query(`
+        SELECT completed_at
+        FROM user_chapter_progress
+        WHERE user_id = $1
+          AND lesson_id = $2
+          AND chapter_id = $3
+          AND completed_at IS NOT NULL
+      `, [userId, lessonId, prevChapterId]);
+
+      if (prevChapter.length === 0) {
+        return badRequestResponse('Previous chapter must be completed first');
+      }
+    }
 
     // Upsert step progress
     const { rows } = await query(`
@@ -62,7 +132,7 @@ export async function POST(request: NextRequest) {
       stepId,
       contractCode || null,
       completed ? new Date().toISOString() : null,
-      validationPassed || false,
+      serverValidationPassed,
     ]);
 
     // If step is completed, update chapter progress
