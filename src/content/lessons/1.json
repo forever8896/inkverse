@@ -10,13 +10,6 @@
     "Build and deploy your first Flipper contract",
     "Earn your personalized creature NFT as proof of completion"
   ],
-  "evolutionPath": {
-    "startStage": "egg",
-    "endStage": "creature",
-    "majorEvolution": true
-  },
-  "completed": false,
-  "locked": false,
   "chapters": [
     {
       "id": 1,
@@ -25,50 +18,50 @@
       "description": "Discover what you're building, how this platform works, and the basics of smart contracts",
       "order": 1,
       "concept": "introduction",
-      "estimatedTime": 10,
-      "requiresPreviousChapter": false,
       "steps": [
         {
           "id": 1,
           "chapterId": 5,
-          "order": 1,
           "title": "Welcome to Monsters Ink!",
-          "image": "/lessons/1/1.png",
           "content": "\n<p>Learn <strong>ink! smart contract development</strong> by building and evolving your own digital creature.</p>\n\n<h2>How It Works</h2>\n<ul>\n  <li><strong>Learn</strong> — Complete lessons to master ink! fundamentals</li>\n  <li><strong>Build</strong> — Write real smart contracts that compile and deploy</li>\n  <li><strong>Evolve</strong> — Watch your creature transform as your skills grow</li>\n  <li><strong>Own</strong> — Mint your evolved creature as an NFT on Polkadot</li>\n</ul>\n\n<div data-component=\"highlight-box\">\n<strong>Your Creature, Your Journey</strong><br><br>\nYour creature reflects your progress as an ink! developer. It evolves with each lesson you complete—permanent on-chain proof of your skills.\n</div>\n\n<p>Before writing code, let's understand what you're building.</p>\n          ",
+          "order": 1,
+          "image": "/lessons/1/1.png",
           "difficulty": "easy",
           "estimatedTime": 3
         },
         {
           "id": 19,
           "chapterId": 5,
-          "order": 2,
           "title": "What is a Blockchain?",
-          "image": "/lessons/1/blockchain.png",
           "content": "\n<p>A <strong>decentralised computer</strong> - a network of computers running a program that ensures all computers run the same logic and store the same data.</p>\n\n<h2>What Makes a Blockchain Special?</h2>\n<div data-component=\"info-box\">\nInstead of one server owned by one company, a blockchain is run by <strong>many independent nodes</strong> around the world.<br><br>\n\nEach node:\n<ul>\n  <li>Stores a copy of the data</li>\n  <li>Verifies transactions</li>\n  <li>Agrees on what is true</li>\n</ul>\n\n<strong>No single point of failure. No single owner.</strong>\n</div>\n\n<h2>How Do Computers Agree?</h2>\n<div data-component=\"info-box\">\nBlockchains use <strong>consensus</strong> - rules that decide what data is valid.<br><br>\n\nIf most nodes agree:\n<ul>\n  <li>The data is added</li>\n  <li>The state updates</li>\n  <li>The history becomes permanent</li>\n</ul>\n\nTrying to cheat means convincing thousands of nodes at once.\n<strong>Good luck with that.</strong>\n</div>\n\n<h2>Why Does This Matter?</h2>\n<div data-component=\"success-box\">\nBecause blockchains are:\n<ul>\n  <li><strong>Trustless</strong> - you don't need to trust anyone</li>\n  <li><strong>Transparent</strong> - anyone can verify the rules and data</li>\n  <li><strong>Immutable</strong> - history can't be changed</li>\n  <li><strong>Permissionless</strong> - anyone can participate</li>\n</ul>\n</div>\n\n<p>A blockchain doesn't just store data - it enforces rules.<br>\nAnd those rules are written as <strong>smart contracts</strong>.</p>\n\n<p><strong>Next:</strong> Let's understand smart contracts using a simple vending machine</p>\n          ",
+          "order": 2,
+          "image": "/lessons/1/blockchain.png",
           "difficulty": "easy",
           "estimatedTime": 4
         },
         {
           "id": 2,
           "chapterId": 5,
-          "order": 3,
           "title": "What Are Smart Contracts?",
-          "image": "/lessons/1/2.png",
           "content": "\n<h2>The Vending Machine Analogy</h2>\n<div data-component=\"info-box\">\nImagine a <strong>vending machine</strong>:<br><br>\n1. You insert money ($1.50)<br>\n2. You press the button (B3)<br>\n3. The machine <em>automatically</em> dispenses your snack<br><br>\n<strong>No cashier needed!</strong> The rules are built into the machine.\n</div>\n\n<p>A <strong>smart contract</strong> works the same way:</p>\n<ul>\n  <li><strong>Code defines the rules</strong> (like the vending machine's logic)</li>\n  <li><strong>Executes automatically</strong> when conditions are met</li>\n  <li><strong>No intermediaries</strong> - no middleman required</li>\n</ul>\n\n<h2>Why Smart Contracts?</h2>\n<div data-component=\"success-box\">\nSmart contracts enable <strong>public infrastructure</strong> where the rules are transparent and accessible to all.<br><br>\n\n<strong>What You Can Build:</strong><br><br>\n<strong>AI Agents</strong> - AI that owns a wallet, pays for services, enters agreements autonomously<br>\n<strong>Programmable Games</strong> - Rules enforced by code that developers can't change mid-match<br>\n<strong>Portable Reputation</strong> - Your skills and contributions follow you across platforms<br>\n<strong>Automatic Payments</strong> - Funds move when conditions are met (delivery confirmed, milestone hit)<br>\n<strong>Shared Ownership</strong> - Co-own AI models, datasets, compute—contributors paid automatically\n</div>\n\n<p><strong>Next:</strong> Let's learn about ink! - the language we'll use to write Smart Contracts!</p>\n          ",
+          "order": 3,
+          "image": "/lessons/1/2.png",
           "difficulty": "easy",
           "estimatedTime": 3
         },
         {
           "id": 3,
           "chapterId": 5,
-          "order": 4,
           "title": "What is ink!?",
-          "image": "/lessons/1/3.png",
           "content": "\n<p><strong>ink!</strong> is the Rust Smart Contract language for Polkadot.</p>\n\n<h2>Why ink!?</h2>\n<div data-component=\"info-box\">\n<strong>Built on Rust</strong> - One of the safest programming languages<br><br>\n<strong>Memory safe</strong> - No buffer overflows or null pointer bugs<br>\n<strong>Type safe</strong> - Catches errors at compile time<br>\n<strong>Fast</strong> - Performance close to C/C++<br>\n<strong>Modern</strong> - Great tooling, developer experience and Community!\n</div>\n\n<div data-component=\"info-box\">\n<strong>New to Rust?</strong> Don't worry! We'll teach you what you need.<br><br>\n\nFor deeper learning, check out:<br>\n- <a href=\"https://doc.rust-lang.org/book/\" target=\"_blank\">The Rust Book</a><br>\n- <a href=\"https://rustlings.cool/\" target=\"_blank\">Rustlings</a> - Interactive exercises<br>\n- <a href=\"https://use.ink/\" target=\"_blank\">ink! Official Docs</a>\n</div>\n\n<p><strong>Next:</strong> Let's break down the ink! contract structure!</p>\n          ",
+          "order": 4,
+          "image": "/lessons/1/3.png",
           "difficulty": "easy",
           "estimatedTime": 4
         }
-      ]
+      ],
+      "estimatedTime": 10,
+      "requiresPreviousChapter": false
     },
     {
       "id": 2,
@@ -77,53 +70,53 @@
       "description": "Learn the building blocks of every ink! contract: storage, constructors, and messages",
       "order": 2,
       "concept": "syntax",
-      "estimatedTime": 15,
-      "requiresPreviousChapter": true,
       "steps": [
         {
           "id": 4,
           "chapterId": 5,
-          "order": 1,
           "title": "The Contract Module",
-          "image": "/lessons/1/4.png",
           "content": "\n<p>Every ink! contract starts with this foundation. Let's break it down line by line.</p>\n\n<h2>Line 1: Compiler Configuration</h2>\n<div data-component=\"code-snippet\">\n<code>#![cfg_attr(not(feature = \"std\"), no_std, no_main)]</code>\n</div>\n<p>This tells Rust: <em>\"When compiling for blockchain, don't use standard library.\"</em></p>\n<p>Think of it as <strong>\"blockchain mode\"</strong> - we're compiling to PolkaVM bytecode, not for your computer.</p>\n\n<h2>Line 3: The ink! Macro</h2>\n<div data-component=\"code-snippet\">\n<code>#[ink::contract]</code>\n</div>\n<p>This is a <strong>macro</strong> - a special Rust feature that transforms your code.</p>\n<p>It takes your contract and adds all the blockchain capabilities automatically.</p>\n\n<h2>Line 4-6: The Module</h2>\n<div data-component=\"code-snippet\">\n<code>mod creature {</code><br>\n<code>&nbsp;&nbsp;// Your contract code goes here!</code><br>\n<code>}</code>\n</div>\n<p>This is a Rust <strong>module</strong> - a namespace for your contract's code.</p>\n<p>Everything related to your contract lives inside here.</p>\n\n<div data-component=\"success-box\">\n<strong>Key Takeaway:</strong> These 6 lines are the skeleton of <em>every</em> ink! contract. You'll write them every time.\n</div>\n          ",
+          "order": 1,
           "code": "#![cfg_attr(not(feature = \"std\"), no_std, no_main)]\n\n#[ink::contract]\nmod creature {\n    // Your creature will live here!\n}",
           "expectedCode": "#![cfg_attr(not(feature = \"std\"), no_std, no_main)]\n\n#[ink::contract]\nmod creature {\n    // Your creature will live here!\n}",
           "hint": "This is the foundation of every ink! contract. No changes needed - just understand each line!",
+          "image": "/lessons/1/4.png",
           "difficulty": "easy",
           "estimatedTime": 3
         },
         {
           "id": 5,
           "chapterId": 5,
-          "order": 2,
           "title": "Storage: Your Contract's Memory",
-          "image": "/lessons/1/5.png",
           "content": "\n<p><strong>Storage</strong> is your contract's permanent memory on the blockchain.</p>\n\n<h2>What is Storage?</h2>\n<div data-component=\"info-box\">\nThink of storage like a <strong>hard drive</strong> for your contract:<br><br>\n<strong>Persists forever</strong> on the blockchain<br>\n<strong>Costs gas</strong> to write (modifying costs money)<br>\n<strong>Free to read</strong><br>\n<strong>Defined</strong> using a <code>struct</code> with the <code>#[ink(storage)]</code> macro\n</div>\n\n<h2>Example: Storage for a Monster</h2>\n<div data-component=\"code-snippet\">\n<code>#[ink(storage)]</code><br>\n<code>pub struct Monster {</code><br>\n<code>&nbsp;&nbsp;&nbsp;&nbsp;is_awake: bool,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;// Is the monster awake?</code><br>\n<code>&nbsp;&nbsp;&nbsp;&nbsp;energy: u32,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;// Energy level (0-100)</code><br>\n<code>&nbsp;&nbsp;&nbsp;&nbsp;owner: AccountId,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;// Who owns this monster?</code><br>\n<code>}</code>\n</div>\n\n<h2>Breaking It Down:</h2>\n<ul>\n  <li><code>#[ink(storage)]</code> - Tells ink! \"this struct is the contract's storage\"</li>\n  <li><code>pub struct Monster</code> - Creates a public structure named Monster</li>\n  <li><code>is_awake: bool</code> - A field that stores true/false</li>\n  <li><code>energy: u32</code> - A field that stores a number (0 to 4,294,967,295)</li>\n  <li><code>owner: AccountId</code> - A field that stores a blockchain address</li>\n</ul>\n\n<div data-component=\"highlight-box\">\n<strong>Rule of Thumb:</strong> Storage = The data your contract remembers between transactions.\n</div>\n\n<p><strong>Next:</strong> Let's learn how to create (construct) a contract.</p>\n          ",
+          "order": 2,
+          "image": "/lessons/1/5.png",
           "difficulty": "easy",
           "estimatedTime": 4
         },
         {
           "id": 6,
           "chapterId": 5,
-          "order": 3,
           "title": "Constructors: Birthing Contracts",
-          "image": "/lessons/1/6.png",
           "content": "\n<p><strong>Constructors</strong> are functions that run <em>once</em> when your contract is deployed.</p>\n\n<h2>What is a Constructor?</h2>\n<div data-component=\"info-box\">\nThink of constructors as the <strong>birth certificate</strong> of your contract:<br><br>\n<strong>Runs exactly once</strong> when the contract is deployed<br>\n<strong>Sets up initial storage</strong> values<br>\n<strong>Can accept parameters</strong> (like initial configuration)<br>\n<strong>Multiple allowed</strong> - different ways to deploy\n</div>\n\n<h2>Example: Constructor for a Monster</h2>\n<div data-component=\"code-snippet\">\n<code>#[ink(constructor)]</code><br>\n<code>pub fn new() -> Self {</code><br>\n<code>&nbsp;&nbsp;&nbsp;&nbsp;Self {</code><br>\n<code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;is_awake: false,</code><br>\n<code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;energy: 100,</code><br>\n<code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;owner: Self::env().caller(),</code><br>\n<code>&nbsp;&nbsp;&nbsp;&nbsp;}</code><br>\n<code>}</code>\n</div>\n\n<h2>Breaking It Down:</h2>\n<ul>\n  <li><code>#[ink(constructor)]</code> - Marks this function as a constructor</li>\n  <li><code>pub fn new()</code> - Public function named \"new\" (convention, but you can name it anything)</li>\n  <li><code>-> Self</code> - Returns an instance of the contract (the struct)</li>\n  <li><code>Self { ... }</code> - Creates and returns the contract with initial values</li>\n  <li><code>Self::env().caller()</code> - Gets the address of whoever is deploying the contract</li>\n</ul>\n\n<h2>Multiple Constructors:</h2>\n<div data-component=\"code-snippet\">\n<code>#[ink(constructor)]</code><br>\n<code>pub fn new_awake() -> Self {&nbsp;&nbsp;// Alternative constructor</code><br>\n<code>&nbsp;&nbsp;&nbsp;&nbsp;Self {</code><br>\n<code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;is_awake: true,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;// Born awake!</code><br>\n<code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;energy: 50,</code><br>\n<code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;owner: Self::env().caller(),</code><br>\n<code>&nbsp;&nbsp;&nbsp;&nbsp;}</code><br>\n<code>}</code>\n</div>\n\n<div data-component=\"success-box\">\n<strong>Key Takeaway:</strong> Constructors initialize your contract's storage when it's first deployed.\n</div>\n\n<p><strong>Next:</strong> Let's learn about messages - how to interact with your contract.</p>\n          ",
+          "order": 3,
+          "image": "/lessons/1/6.png",
           "difficulty": "medium",
           "estimatedTime": 4
         },
         {
           "id": 7,
           "chapterId": 5,
-          "order": 4,
           "title": "Messages: Contract Functions",
-          "image": "/lessons/1/7.png",
           "content": "\n<p><strong>Messages</strong> are functions you can call <em>after</em> your contract is deployed.</p>\n\n<h2>Two Types of Messages:</h2>\n\n<div data-component=\"info-box\">\n<strong>1. Read Functions (Getters)</strong> - Using <code>&self</code><br><br>\nOnly <em>read</em> data from storage<br>\n<strong>FREE</strong> - No gas cost<br>\n<strong>Instant</strong> - No blockchain transaction<br>\nExample: \"Is my monster awake?\"<br><br>\n\n<div data-component=\"nested-code\">\n<code>#[ink(message)]</code><br>\n<code>pub fn is_awake(&self) -> bool {</code><br>\n<code>&nbsp;&nbsp;&nbsp;&nbsp;self.is_awake&nbsp;&nbsp;// Just return the value</code><br>\n<code>}</code>\n</div>\n</div>\n\n<div data-component=\"info-box\">\n<strong>2. Write Functions (Setters)</strong> - Using <code>&mut self</code><br><br>\nCan <em>modify</em> storage data<br>\n<strong>Costs gas</strong> - You're changing the blockchain<br>\n<strong>Takes time</strong> - Requires blockchain confirmation<br>\nExample: \"Wake up my monster!\"<br><br>\n\n<div data-component=\"nested-code\">\n<code>#[ink(message)]</code><br>\n<code>pub fn wake_up(&mut self) {</code><br>\n<code>&nbsp;&nbsp;&nbsp;&nbsp;self.is_awake = !self.is_awake;&nbsp;&nbsp;// Toggle</code><br>\n<code>}</code>\n</div>\n</div>\n\n<h2>The Critical Difference:</h2>\n<table>\n  <tr>\n    <th></th>\n    <th><code>&self</code></th>\n    <th><code>&mut self</code></th>\n  </tr>\n  <tr>\n    <td>Can modify storage?</td>\n    <td>No</td>\n    <td>Yes</td>\n  </tr>\n  <tr>\n    <td>Costs gas?</td>\n    <td>Free</td>\n    <td>Costs gas</td>\n  </tr>\n  <tr>\n    <td>Speed</td>\n    <td>Instant</td>\n    <td>Requires confirmation</td>\n  </tr>\n</table>\n\n<div data-component=\"highlight-box\">\n<strong>Golden Rule:</strong><br><br>\nUse <code>&self</code> when you just want to <strong>look</strong><br>\nUse <code>&mut self</code> when you want to <strong>change</strong>\n</div>\n\n<h2>Complete Example:</h2>\n<div data-component=\"code-snippet\">\n<code>impl Monster {</code><br>\n<code>&nbsp;&nbsp;&nbsp;&nbsp;// READ: Get energy level</code><br>\n<code>&nbsp;&nbsp;&nbsp;&nbsp;#[ink(message)]</code><br>\n<code>&nbsp;&nbsp;&nbsp;&nbsp;pub fn get_energy(&self) -> u32 {</code><br>\n<code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.energy</code><br>\n<code>&nbsp;&nbsp;&nbsp;&nbsp;}</code><br>\n<br>\n<code>&nbsp;&nbsp;&nbsp;&nbsp;// WRITE: Feed the monster</code><br>\n<code>&nbsp;&nbsp;&nbsp;&nbsp;#[ink(message)]</code><br>\n<code>&nbsp;&nbsp;&nbsp;&nbsp;pub fn feed(&mut self) {</code><br>\n<code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.energy += 10;&nbsp;&nbsp;// Increase energy</code><br>\n<code>&nbsp;&nbsp;&nbsp;&nbsp;}</code><br>\n<code>}</code>\n</div>\n\n<p><strong>You now understand the 3 pillars of ink! contracts:</strong></p>\n<ul>\n  <li><strong>Storage</strong> - What data your contract remembers</li>\n  <li><strong>Constructors</strong> - How your contract is born</li>\n  <li><strong>Messages</strong> - How users interact with your contract</li>\n</ul>\n\n<div data-component=\"info-box\">\n<strong>Learn More:</strong><br><br>\n- <a href=\"https://use.ink/docs/v6/basics/contract-template\" target=\"_blank\">ink! Contract Template</a><br>\n- <a href=\"https://use.ink/docs/v6/basics/storing-values\" target=\"_blank\">Storing Values in ink!</a><br>\n- <a href=\"https://use.ink/docs/v6/basics/reading-values\" target=\"_blank\">Reading Values</a><br>\n- <a href=\"https://use.ink/docs/v6/basics/mutating-values\" target=\"_blank\">Mutating Values</a>\n</div>\n\n<p><strong>Next chapter:</strong> Put this knowledge into practice by writing your first contract!</p>\n          ",
+          "order": 4,
+          "image": "/lessons/1/7.png",
           "difficulty": "medium",
           "estimatedTime": 4
         }
-      ]
+      ],
+      "estimatedTime": 15,
+      "requiresPreviousChapter": true
     },
     {
       "id": 3,
@@ -132,29 +125,26 @@
       "description": "Write your first complete ink! smart contract step-by-step",
       "order": 3,
       "concept": "implementation",
-      "estimatedTime": 20,
-      "requiresPreviousChapter": true,
       "steps": [
         {
           "id": 8,
           "chapterId": 5,
-          "order": 1,
           "title": "🥚 Let's Build Your Creature!",
-          "image": "/creatures/first_egg.png",
           "content": "\n<h1>Time to Code! 🧬</h1>\n\n<p>You're about to write your first complete <strong>ink! smart contract</strong> - step by step.</p>\n\n<p>By the end of this chapter, you'll have a working Creature contract and unlock your <strong>evolving creature NFT</strong>!</p>\n\n<div data-component=\"highlight-box\">\n<strong>🎨 Your Evolving Creature</strong><br><br>\nComplete this chapter to mint your creature NFT.<br>\n✨ The <strong>same NFT</strong> evolves as you complete more lessons<br>\n🎓 One creature, one journey - permanent on-chain proof of your growth\n</div>\n\n<h2>Your Task:</h2>\n<p><strong>No changes needed yet</strong> - just recognize the foundation from Chapter 1!</p>\n          ",
+          "order": 1,
           "code": "#![cfg_attr(not(feature = \"std\"), no_std, no_main)]\n\n#[ink::contract]\nmod creature {\n    // Your creature will live here!\n}",
           "expectedCode": "#![cfg_attr(not(feature = \"std\"), no_std, no_main)]\n\n#[ink::contract]\nmod creature {\n    // Your creature will live here!\n}",
           "hint": "This is your foundation! Every ink! contract needs these lines to work on the blockchain. No changes needed - just understand each line!",
+          "image": "/creatures/first_egg.png",
           "difficulty": "easy",
           "estimatedTime": 2
         },
         {
           "id": 9,
           "chapterId": 5,
-          "order": 2,
           "title": "🧠 Give Your Creature Memory",
-          "image": "/creatures/egg_cracks.png",
           "content": "\n<h1>Give Your Creature Memory! 🧠</h1>\n\n<p>Your creature needs memory to remember if it's awake or sleeping.</p>\n\n<h2>Your Task:</h2>\n<p>Replace the comment with a storage structure that tracks consciousness.</p>\n\n<div data-component=\"info-box\">\n<strong>💡 Add these 4 lines:</strong><br><br>\n<code>#[ink(storage)]</code><br>\n<code>pub struct Creature {</code><br>\n<code>&nbsp;&nbsp;&nbsp;&nbsp;is_awake: bool,</code><br>\n<code>}</code>\n</div>\n\n<p>This creates permanent memory on the blockchain - your creature will remember its state forever!</p>\n          ",
+          "order": 2,
           "code": "#![cfg_attr(not(feature = \"std\"), no_std, no_main)]\n\n#[ink::contract]\nmod creature {\n    // Your creature will live here!\n}",
           "expectedCode": "#![cfg_attr(not(feature = \"std\"), no_std, no_main)]\n\n#[ink::contract]\nmod creature {\n    #[ink(storage)]\n    pub struct Creature {\n        is_awake: bool,\n    }\n}",
           "hint": "Replace the comment with the storage structure. Start with #[ink(storage)], then create the struct with one boolean field!",
@@ -178,19 +168,19 @@
               ]
             }
           ],
-          "difficulty": "easy",
-          "estimatedTime": 3,
+          "image": "/creatures/egg_cracks.png",
           "triggersGeneration": true,
           "generationStage": "young",
+          "difficulty": "easy",
+          "estimatedTime": 3,
           "evolutionMilestone": "First ink! Contract Storage"
         },
         {
           "id": 10,
           "chapterId": 5,
-          "order": 3,
           "title": "🏗️ Create Implementation Block",
-          "image": "/creatures/first_sleeping.png",
           "content": "\n<h1>Create the Implementation Block! 🏗️</h1>\n\n<p>Now we need to add functions to your creature. First, create the implementation block.</p>\n\n<h2>Your Task:</h2>\n<p>After the struct, add an empty implementation block.</p>\n\n<div data-component=\"info-box\">\n<strong>💡 Add these lines after the struct:</strong><br><br>\n1. Empty line<br>\n2. <code>impl Creature {</code><br>\n3. <code>}</code>\n</div>\n\n<p>All your creature's abilities will go inside this block!</p>\n          ",
+          "order": 3,
           "code": "#![cfg_attr(not(feature = \"std\"), no_std, no_main)]\n\n#[ink::contract]\nmod creature {\n    #[ink(storage)]\n    pub struct Creature {\n        is_awake: bool,\n    }\n}",
           "expectedCode": "#![cfg_attr(not(feature = \"std\"), no_std, no_main)]\n\n#[ink::contract]\nmod creature {\n    #[ink(storage)]\n    pub struct Creature {\n        is_awake: bool,\n    }\n\n    impl Creature {\n    }\n}",
           "hint": "Add 'impl Creature { }' after the struct to create a place for your creature's functions!",
@@ -202,16 +192,16 @@
               ]
             }
           ],
+          "image": "/creatures/first_sleeping.png",
           "difficulty": "easy",
           "estimatedTime": 2
         },
         {
           "id": 11,
           "chapterId": 5,
-          "order": 4,
           "title": "🐣 Birth Your Creature",
-          "image": "/creatures/first_sleeping.png",
           "content": "\n<h1>Birth Your Creature! 🐣</h1>\n\n<p>Every creature needs a way to be born. Let's add a constructor!</p>\n\n<h2>Your Task:</h2>\n<p>Inside the impl block, add a constructor function.</p>\n\n<div data-component=\"info-box\">\n<strong>💡 Add inside the impl block:</strong><br><br>\n<code>#[ink(constructor)]</code><br>\n<code>pub fn new() -> Self {</code><br>\n<code>&nbsp;&nbsp;&nbsp;&nbsp;Self { is_awake: false }</code><br>\n<code>}</code>\n</div>\n\n<p>Your creature will be born sleeping peacefully... for now! 💤</p>\n          ",
+          "order": 4,
           "code": "#![cfg_attr(not(feature = \"std\"), no_std, no_main)]\n\n#[ink::contract]\nmod creature {\n    #[ink(storage)]\n    pub struct Creature {\n        is_awake: bool,\n    }\n\n    impl Creature {\n        // Add constructor here!\n    }\n}",
           "expectedCode": "#![cfg_attr(not(feature = \"std\"), no_std, no_main)]\n\n#[ink::contract]\nmod creature {\n    #[ink(storage)]\n    pub struct Creature {\n        is_awake: bool,\n    }\n\n    impl Creature {\n        #[ink(constructor)]\n        pub fn new() -> Self {\n            Self { is_awake: false }\n        }\n    }\n}",
           "hint": "Add the constructor inside the impl block. Don't forget the #[ink(constructor)] attribute!",
@@ -235,16 +225,16 @@
               ]
             }
           ],
+          "image": "/creatures/first_sleeping.png",
           "difficulty": "medium",
           "estimatedTime": 3
         },
         {
           "id": 12,
           "chapterId": 5,
-          "order": 5,
           "title": "📖 Add Default Birth Method",
-          "image": "/creatures/first_sleeping.png",
           "content": "\n<h1>Add a Default Birth Method! 📖</h1>\n\n<p>Let's add a second constructor that uses default values. This is a common pattern in ink! contracts.</p>\n\n<h2>Your Task:</h2>\n<p>Add a default constructor after the new() function.</p>\n\n<div data-component=\"info-box\">\n<strong>💡 Add after the new() function:</strong><br><br>\n<code>#[ink(constructor)]</code><br>\n<code>pub fn default() -> Self {</code><br>\n<code>&nbsp;&nbsp;&nbsp;&nbsp;Self::new()</code><br>\n<code>}</code>\n</div>\n\n<p>This lets users deploy without specifying anything - convenient! ✨</p>\n          ",
+          "order": 5,
           "code": "#![cfg_attr(not(feature = \"std\"), no_std, no_main)]\n\n#[ink::contract]\nmod creature {\n    #[ink(storage)]\n    pub struct Creature {\n        is_awake: bool,\n    }\n\n    impl Creature {\n        #[ink(constructor)]\n        pub fn new() -> Self {\n            Self { is_awake: false }\n        }\n\n        // Add default constructor here!\n    }\n}",
           "expectedCode": "#![cfg_attr(not(feature = \"std\"), no_std, no_main)]\n\n#[ink::contract]\nmod creature {\n    #[ink(storage)]\n    pub struct Creature {\n        is_awake: bool,\n    }\n\n    impl Creature {\n        #[ink(constructor)]\n        pub fn new() -> Self {\n            Self { is_awake: false }\n        }\n\n        #[ink(constructor)]\n        pub fn default() -> Self {\n            Self::new()\n        }\n    }\n}",
           "hint": "Constructors can delegate to other constructors! This default() constructor just calls new() for convenience.",
@@ -268,16 +258,16 @@
               ]
             }
           ],
+          "image": "/creatures/first_sleeping.png",
           "difficulty": "medium",
           "estimatedTime": 3
         },
         {
           "id": 13,
           "chapterId": 5,
-          "order": 6,
           "title": "👁️ Let Your Creature Speak",
-          "image": "/creatures/first_sleeping.png",
           "content": "\n<h1>Let Your Creature Speak! 👁️</h1>\n\n<p>Your creature needs to tell others if it's awake or sleeping.</p>\n\n<h2>Your Task:</h2>\n<p>Add a function to check if the creature is awake.</p>\n\n<div data-component=\"info-box\">\n<strong>💡 Add after the constructors:</strong><br><br>\n<code>#[ink(message)]</code><br>\n<code>pub fn is_awake(&self) -> bool {</code><br>\n<code>&nbsp;&nbsp;&nbsp;&nbsp;self.is_awake</code><br>\n<code>}</code>\n</div>\n\n<p>Remember: <code>&self</code> means read-only, so it's FREE! 💰</p>\n          ",
+          "order": 6,
           "code": "#![cfg_attr(not(feature = \"std\"), no_std, no_main)]\n\n#[ink::contract]\nmod creature {\n    #[ink(storage)]\n    pub struct Creature {\n        is_awake: bool,\n    }\n\n    impl Creature {\n        #[ink(constructor)]\n        pub fn new() -> Self {\n            Self { is_awake: false }\n        }\n\n        #[ink(constructor)]\n        pub fn default() -> Self {\n            Self::new()\n        }\n\n        // Add is_awake() message here!\n    }\n}",
           "expectedCode": "#![cfg_attr(not(feature = \"std\"), no_std, no_main)]\n\n#[ink::contract]\nmod creature {\n    #[ink(storage)]\n    pub struct Creature {\n        is_awake: bool,\n    }\n\n    impl Creature {\n        #[ink(constructor)]\n        pub fn new() -> Self {\n            Self { is_awake: false }\n        }\n\n        #[ink(constructor)]\n        pub fn default() -> Self {\n            Self::new()\n        }\n\n        #[ink(message)]\n        pub fn is_awake(&self) -> bool {\n            self.is_awake\n        }\n    }\n}",
           "hint": "This function is a read (getter) function. In ink!, &self means you're only reading data, not changing anything. Add #[ink(message)] above your function to make it callable from outside.",
@@ -301,18 +291,18 @@
               ]
             }
           ],
-          "difficulty": "medium",
-          "estimatedTime": 3,
+          "image": "/creatures/first_sleeping.png",
           "requiresAuth": true,
-          "displayStage": "young"
+          "displayStage": "young",
+          "difficulty": "medium",
+          "estimatedTime": 3
         },
         {
           "id": 14,
           "chapterId": 5,
-          "order": 7,
           "title": "🔄 The Final Power: Wake Up!",
-          "image": "/creatures/first_awake.png",
           "content": "\n<h1>The Final Power: Wake Up! 🔄</h1>\n\n<p>Give your creature the ultimate ability - to control its own consciousness!</p>\n\n<h2>Your Task:</h2>\n<p>Add a function to toggle the creature's consciousness.</p>\n\n<div data-component=\"info-box\">\n<strong>💡 Add after the is_awake function:</strong><br><br>\n<code>#[ink(message)]</code><br>\n<code>pub fn wake_up(&mut self) {</code><br>\n<code>&nbsp;&nbsp;&nbsp;&nbsp;self.is_awake = !self.is_awake;</code><br>\n<code>}</code>\n</div>\n\n<p>The <code>!</code> operator flips the boolean: <code>true</code> → <code>false</code>, <code>false</code> → <code>true</code></p>\n\n<p>Remember: <code>&mut self</code> because we're <strong>modifying</strong> storage! ✏️</p>\n\n<div data-component=\"success-box\">\n<strong>🌟 Your creature will awaken when you complete this!</strong> Watch its eyes open! 👁️\n</div>\n          ",
+          "order": 7,
           "code": "#![cfg_attr(not(feature = \"std\"), no_std, no_main)]\n\n#[ink::contract]\nmod creature {\n    #[ink(storage)]\n    pub struct Creature {\n        is_awake: bool,\n    }\n\n    impl Creature {\n        #[ink(constructor)]\n        pub fn new() -> Self {\n            Self { is_awake: false }\n        }\n\n        #[ink(constructor)]\n        pub fn default() -> Self {\n            Self::new()\n        }\n\n        #[ink(message)]\n        pub fn is_awake(&self) -> bool {\n            self.is_awake\n        }\n\n        // Add wake_up() message here!\n    }\n}",
           "expectedCode": "#![cfg_attr(not(feature = \"std\"), no_std, no_main)]\n\n#[ink::contract]\nmod creature {\n    #[ink(storage)]\n    pub struct Creature {\n        is_awake: bool,\n    }\n\n    impl Creature {\n        #[ink(constructor)]\n        pub fn new() -> Self {\n            Self { is_awake: false }\n        }\n\n        #[ink(constructor)]\n        pub fn default() -> Self {\n            Self::new()\n        }\n\n        #[ink(message)]\n        pub fn is_awake(&self) -> bool {\n            self.is_awake\n        }\n\n        #[ink(message)]\n        pub fn wake_up(&mut self) {\n            self.is_awake = !self.is_awake;\n        }\n    }\n}",
           "hint": "This function is a write (setter) function. In ink!, using &mut self means you want to change the contract's state. The ! operator flips the boolean: true becomes false and vice versa.",
@@ -342,11 +332,14 @@
               ]
             }
           ],
+          "image": "/creatures/first_awake.png",
+          "displayStage": "young",
           "difficulty": "medium",
-          "estimatedTime": 4,
-          "displayStage": "young"
+          "estimatedTime": 4
         }
-      ]
+      ],
+      "estimatedTime": 20,
+      "requiresPreviousChapter": true
     },
     {
       "id": 4,
@@ -355,44 +348,44 @@
       "description": "Compile, test, and deploy your Flipper contract to the blockchain",
       "order": 4,
       "concept": "deployment",
-      "estimatedTime": 10,
-      "requiresPreviousChapter": true,
       "steps": [
         {
           "id": 15,
           "chapterId": 5,
-          "order": 1,
           "title": "🔨 Understanding Compilation",
-          "image": "/creatures/first_awake.png",
           "content": "\n<h1>Compiling Your Contract 🔨</h1>\n\n<p>Time to transform your Rust code into blockchain-ready PolkaVM bytecode!</p>\n\n<h2>What Happens During Compilation?</h2>\n<div data-component=\"info-box\">\n<strong>📦 Three Artifacts Are Generated:</strong><br><br>\n\n<strong>1. <code>flipper.contract</code></strong><br>\n&nbsp;&nbsp;&nbsp;&nbsp;→ The complete bundle (deploy this!)<br>\n&nbsp;&nbsp;&nbsp;&nbsp;→ Contains PolkaVM bytecode + metadata<br><br>\n\n<strong>2. <code>flipper.polkavm</code></strong><br>\n&nbsp;&nbsp;&nbsp;&nbsp;→ Compiled PolkaVM bytecode<br>\n&nbsp;&nbsp;&nbsp;&nbsp;→ The actual executable on the blockchain<br><br>\n\n<strong>3. <code>flipper.json</code></strong><br>\n&nbsp;&nbsp;&nbsp;&nbsp;→ Contract metadata (ABI)<br>\n&nbsp;&nbsp;&nbsp;&nbsp;→ Describes your contract's interface\n</div>\n\n<h2>Using pop-cli to Build:</h2>\n<div style=\"background: #1e293b; border: 1px solid #475569; border-radius: 8px; padding: 12px; margin: 12px 0; font-family: monospace;\">\n<code>pop build</code>\n</div>\n\n<p>This single command:</p>\n<ul>\n  <li>✅ Compiles your Rust code to PolkaVM</li>\n  <li>✅ Optimizes the bytecode for minimal size</li>\n  <li>✅ Generates the metadata JSON</li>\n  <li>✅ Bundles everything into a <code>.contract</code> file</li>\n</ul>\n\n<div data-component=\"highlight-box\">\n<strong>💡 Pro Tip:</strong> Always build before deploying! The compiler catches many errors before they hit the blockchain.\n</div>\n          ",
+          "order": 1,
+          "image": "/creatures/first_awake.png",
           "difficulty": "easy",
           "estimatedTime": 3
         },
         {
           "id": 16,
           "chapterId": 5,
-          "order": 2,
           "title": "🚀 Deploying Your Contract",
-          "image": "/creatures/first_awake.png",
           "content": "\n<h1>Deploy to the Blockchain! 🚀</h1>\n\n<p>Let's bring your Flipper to life on a real blockchain!</p>\n\n<h2>Step 1: Start a Local Node</h2>\n<div style=\"background: #1e293b; border: 1px solid #475569; border-radius: 8px; padding: 12px; margin: 12px 0; font-family: monospace;\">\n<code>pop up parachain -f ./network.toml</code>\n</div>\n<p>This starts a local Polkadot parachain on your computer - like a personal blockchain! 🖥️</p>\n\n<h2>Step 2: Deploy the Contract</h2>\n<div style=\"background: #1e293b; border: 1px solid #475569; border-radius: 8px; padding: 12px; margin: 12px 0; font-family: monospace;\">\n<code>pop up contract --constructor new --args \"true\"</code>\n</div>\n\n<p>This command:</p>\n<ul>\n  <li>📤 Uploads your <code>.contract</code> file to the chain</li>\n  <li>🏗️ Instantiates it using the <code>new(true)</code> constructor</li>\n  <li>💰 Uses test tokens to pay for deployment</li>\n  <li>📝 Returns your contract address</li>\n</ul>\n\n<div data-component=\"info-box\">\n<strong>🎯 Alternative:</strong> Use the <code>default</code> constructor:<br><br>\n<code>pop up contract --constructor default</code><br><br>\nThis deploys with <code>value = false</code>!\n</div>\n\n<div data-component=\"success-box\">\n<strong>🎉 Your contract is now live!</strong> You'll receive a contract address like:<br>\n<code>0x8eaf04151687736326c9fea17e25fc5287613693</code>\n</div>\n          ",
+          "order": 2,
+          "image": "/creatures/first_awake.png",
           "difficulty": "medium",
           "estimatedTime": 4
         },
         {
           "id": 17,
           "chapterId": 5,
-          "order": 3,
           "title": "🎮 Interacting with Your Contract",
-          "image": "/creatures/first_awake.png",
           "content": "\n<h1>Call Your Contract! 🎮</h1>\n\n<p>Now let's interact with your deployed Flipper contract!</p>\n\n<h2>Reading the Value (Free! 💰)</h2>\n<div style=\"background: #1e293b; border: 1px solid #475569; border-radius: 8px; padding: 12px; margin: 12px 0; font-family: monospace;\">\n<code>pop call contract --contract &lt;ADDRESS&gt; --message get</code>\n</div>\n\n<p>This calls the <code>get()</code> function. Since it uses <code>&self</code>, it's a <strong>dry-run</strong> - no gas needed!</p>\n\n<div data-component=\"info-box\">\n<strong>Output:</strong><br>\n<code>Result: true</code>\n</div>\n\n<h2>Flipping the Value (Costs Gas ⛽)</h2>\n<div style=\"background: #1e293b; border: 1px solid #475569; border-radius: 8px; padding: 12px; margin: 12px 0; font-family: monospace;\">\n<code>pop call contract --contract &lt;ADDRESS&gt; --message flip --execute</code>\n</div>\n\n<p>The <code>--execute</code> flag means \"submit this as a transaction.\" It:</p>\n<ul>\n  <li>✅ Modifies blockchain state</li>\n  <li>✅ Costs gas (test tokens on local chain)</li>\n  <li>✅ Waits for block confirmation</li>\n  <li>✅ Returns a transaction hash</li>\n</ul>\n\n<h2>Verify the Flip:</h2>\n<div style=\"background: #1e293b; border: 1px solid #475569; border-radius: 8px; padding: 12px; margin: 12px 0; font-family: monospace;\">\n<code>pop call contract --contract &lt;ADDRESS&gt; --message get</code>\n</div>\n\n<div data-component=\"info-box\">\n<strong>Output:</strong><br>\n<code>Result: false&nbsp;&nbsp;// It flipped! 🎉</code>\n</div>\n\n<h2>Testing Before Executing:</h2>\n<div data-component=\"highlight-box\">\n<strong>💡 Pro Tip:</strong> Always test with <code>--dry-run</code> first!<br><br>\n<code>pop call contract --contract &lt;ADDRESS&gt; --message flip --dry-run</code><br><br>\nThis simulates the call without spending gas.\n</div>\n\n<p><strong>Congratulations!</strong> 🎊 You've successfully:</p>\n<ul>\n  <li>✅ Written a complete ink! smart contract</li>\n  <li>✅ Compiled it to PolkaVM bytecode</li>\n  <li>✅ Deployed it to a blockchain</li>\n  <li>✅ Interacted with it using read and write functions</li>\n</ul>\n\n<p><strong>Next:</strong> Generate your unique creature NFT!</p>\n          ",
-          "difficulty": "medium",
-          "estimatedTime": 3,
+          "order": 3,
+          "image": "/creatures/first_awake.png",
           "triggersGeneration": true,
           "generationStage": "young_3d",
-          "evolutionMilestone": "Contract Deployment Mastery",
-          "displayStage": "young_3d"
+          "displayStage": "young_3d",
+          "difficulty": "medium",
+          "estimatedTime": 3,
+          "evolutionMilestone": "Contract Deployment Mastery"
         }
-      ]
+      ],
+      "estimatedTime": 10,
+      "requiresPreviousChapter": true
     },
     {
       "id": 5,
@@ -401,24 +394,31 @@
       "description": "Generate your personalized NFT as proof of completion",
       "order": 5,
       "concept": "completion",
-      "estimatedTime": 5,
-      "requiresPreviousChapter": true,
       "steps": [
         {
           "id": 18,
           "chapterId": 5,
-          "order": 1,
           "title": "🎨 Generate Your Creature NFT",
-          "image": "/creatures/first_awake.png",
           "content": "\n<h1>You Did It! 🎉</h1>\n\n<p>You've completed <strong>The Egg Awakens</strong> and mastered ink! fundamentals!</p>\n\n<h2>What You Learned:</h2>\n<div data-component=\"info-box\">\n✅ <strong>Smart Contracts</strong> - What they are and why they matter<br>\n✅ <strong>ink! Syntax</strong> - Macros, modules, and structure<br>\n✅ <strong>Storage</strong> - How contracts remember data<br>\n✅ <strong>Constructors</strong> - How contracts are deployed<br>\n✅ <strong>Messages</strong> - Read vs Write functions<br>\n✅ <strong>Deployment</strong> - Compiling and running on-chain<br>\n✅ <strong>Interaction</strong> - Calling contract functions\n</div>\n\n<h2>Your Flipper Contract:</h2>\n<div data-component=\"success-box\">\n<strong>📝 Complete Contract Features:</strong><br><br>\n💾 <code>Storage</code> - Stores a boolean value<br>\n🏗️ <code>new(init_value)</code> - Constructor with parameter<br>\n🏗️ <code>default()</code> - Constructor with default value<br>\n👁️ <code>get()</code> - Read the current value<br>\n🔄 <code>flip()</code> - Toggle the value\n</div>\n\n<h2>🌟 Claim Your Reward!</h2>\n\n<p>Your creature is ready to evolve from an egg into its first form!</p>\n\n<div style=\"background: #7c3aed; border: 1px solid #a78bfa; border-radius: 8px; padding: 20px; margin: 16px 0; color: white;\">\n<h3 style=\"margin-top: 0;\">🎨 NFT Generation</h3>\n\n<strong>What You Get:</strong><br>\n🖼️ A unique creature image generated by AI<br>\n🎭 A 3D model of your creature (optional)<br>\n📜 An NFT minted on Polkadot as proof of completion<br>\n💼 A portfolio piece showcasing your ink! skills<br><br>\n\n<strong>Requirements:</strong><br>\n✅ Completed all lesson steps<br>\n✅ GitHub account verified<br>\n💰 Generation cost: ~$0.70 (OpenAI + fal.ai)<br><br>\n\n<strong>Your creature will be one-of-a-kind!</strong> No two are alike.\n</div>\n\n<div data-component=\"info-box\">\n<strong>📚 What's Next?</strong><br><br>\n\n<strong>Lesson 2: The Creature Communicates</strong><br>\nLearn about events, errors, and advanced contract patterns!<br><br>\n\nYour creature will continue to evolve as you progress through the lessons!\n</div>\n\n<p style=\"text-align: center; margin-top: 32px;\">\n<strong>Click the button below to generate your creature!</strong> 🎨👇\n</p>\n          ",
-          "difficulty": "easy",
-          "estimatedTime": 2,
+          "order": 1,
+          "image": "/creatures/first_awake.png",
           "triggersGeneration": true,
           "generationStage": "adult",
-          "evolutionMilestone": "Lesson 1 Complete - Flipper Master",
-          "displayStage": "adult"
+          "displayStage": "adult",
+          "difficulty": "easy",
+          "estimatedTime": 2,
+          "evolutionMilestone": "Lesson 1 Complete - Flipper Master"
         }
-      ]
+      ],
+      "estimatedTime": 5,
+      "requiresPreviousChapter": true
     }
-  ]
+  ],
+  "evolutionPath": {
+    "startStage": "egg",
+    "endStage": "creature",
+    "majorEvolution": true
+  },
+  "completed": false,
+  "locked": false
 }
