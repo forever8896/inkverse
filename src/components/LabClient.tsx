@@ -11,6 +11,7 @@ import { useSession } from '@/lib/auth-client';
 import { useAccounts } from '@reactive-dot/react';
 import type { LabDataResponse, UserMonster, UserProgress } from '@/app/api/user/lab-data/route';
 import { NarrativeLoadingScreen } from '@/components/NarrativeLoadingScreen';
+import { MonsterGallery } from '@/components/gallery';
 
 // Lazy load 3D viewer for performance (~500KB Three.js)
 const MonsterViewer = dynamic(() => import('./MonsterViewer'), {
@@ -169,6 +170,9 @@ export default function LabClient({ chapters }: { chapters: Lesson[] }) {
             }}
           >
             <FloatingParticles />
+
+            {/* Community Monster Gallery - Background layer */}
+            <MonsterGallery />
 
             <div className="relative z-10">
               <div className="max-w-5xl mx-auto px-6 py-16">
