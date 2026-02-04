@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { authClient } from '@/lib/auth-client';
+import { authClient, signIn } from '@/lib/auth-client';
 import { Lesson, Chapter, Step } from '@/lib/lesson-types';
 import LessonContent from '@/components/LessonContent';
 import MonacoCodeEditor from '@/components/MonacoCodeEditor';
@@ -17,6 +17,7 @@ import { useLessonEditorPersistence } from '@/hooks/useLessonEditorPersistence';
 import { SaveIndicator } from '@/components/lesson-editor/SaveIndicator';
 import { DraftRecoveryModal } from '@/components/lesson-editor/DraftRecoveryModal';
 import { ActivityLog } from '@/components/lesson-editor/ActivityLog';
+import { PRConfirmModal } from '@/components/lesson-editor/PRConfirmModal';
 import { EditorDraft, HistoryAction, getActiveLessonId, loadDraft, validateAndClampIndices } from '@/lib/lesson-editor-storage';
 
 // Component palette for drag & drop
@@ -60,6 +61,12 @@ export default function LessonEditorPage() {
   const [recentlyAddedComponent, setRecentlyAddedComponent] = useState<string | null>(null);
   const [hoveredComponent, setHoveredComponent] = useState<{ name: string; template: string; rect: DOMRect } | null>(null);
   const [copiedToClipboard, setCopiedToClipboard] = useState(false);
+
+  // PR submission state
+  const [showPRConfirmModal, setShowPRConfirmModal] = useState(false);
+  const [isPRSubmitting, setIsPRSubmitting] = useState(false);
+  const [prResult, setPrResult] = useState<{ prUrl: string; prNumber: number } | null>(null);
+  const [prError, setPrError] = useState<string | null>(null);
 
   // Auto-save state
   const [showDraftRecovery, setShowDraftRecovery] = useState(false);
@@ -430,6 +437,66 @@ export default function LessonEditorPage() {
     });
   };
 
+  // Open PR confirmation modal (validates lesson first)
+  const handlePRClick = () => {
+    if (!session) {
+      toast.error('You must be logged in to submit a PR. Redirecting to login...');
+      signIn.social({ provider: 'github', callbackURL: '/lesson-editor' });
+      return;
+    }
+
+    const output = { ...lesson, chapters };
+    const validation = validateLesson(output);
+    if (!validation.success) {
+      toast.error('Validation failed! Fix errors before submitting PR.', {
+        description: validation.errors?.slice(0, 3).map(e => `${e.field}: ${e.message}`).join('\n'),
+        duration: 6000,
+      });
+      return;
+    }
+
+    setPrResult(null);
+    setPrError(null);
+    setShowPRConfirmModal(true);
+  };
+
+  // Submit PR to GitHub
+  const handlePRSubmit = async () => {
+    setIsPRSubmitting(true);
+    setPrError(null);
+
+    try {
+      const output = { ...lesson, chapters };
+      const response = await fetch('/api/lesson-editor/pr', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lesson: output }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (response.status === 409 && data.prUrl) {
+          setPrError(`A PR already exists for this lesson.`);
+          setPrResult({ prUrl: data.prUrl, prNumber: data.prNumber });
+        } else {
+          setPrError(data.error || 'Failed to create PR');
+        }
+        return;
+      }
+
+      setPrResult({ prUrl: data.prUrl, prNumber: data.prNumber });
+      toast.success('Pull request created!', {
+        description: `PR #${data.prNumber}`,
+      });
+    } catch (err) {
+      setPrError('Network error. Please try again.');
+      console.error('[PR] Submit failed:', err);
+    } finally {
+      setIsPRSubmitting(false);
+    }
+  };
+
   // Load JSON from input with validation
   const loadJson = () => {
     try {
@@ -503,6 +570,20 @@ export default function LessonEditorPage() {
           draft={pendingDraft}
           onRestore={handleRestoreDraft}
           onDiscard={handleDiscardDraft}
+        />
+      )}
+
+      {showPRConfirmModal && (
+        <PRConfirmModal
+          lessonTitle={lesson.title || 'Untitled Lesson'}
+          lessonId={lesson.id || 0}
+          chapterCount={chapters.length}
+          stepCount={chapters.reduce((sum, ch) => sum + ch.steps.length, 0)}
+          isSubmitting={isPRSubmitting}
+          result={prResult}
+          error={prError}
+          onSubmit={handlePRSubmit}
+          onClose={() => setShowPRConfirmModal(false)}
         />
       )}
 
@@ -987,6 +1068,13 @@ export default function LessonEditorPage() {
                   className="w-full mb-3 py-2 bg-emerald-600/20 hover:bg-emerald-600/40 border border-emerald-500/50 rounded text-sm font-pixel uppercase text-emerald-300"
                 >
                   Generate JSON
+                </button>
+
+                <button
+                  onClick={handlePRClick}
+                  className="w-full mb-3 py-2 bg-[#1E4CDD]/20 hover:bg-[#1E4CDD]/40 border border-[#1E4CDD]/50 hover:border-blue-400 rounded text-[8px] font-pixel uppercase text-blue-300 hover:text-blue-100 transition-all hover:shadow-lg hover:shadow-[#1E4CDD]/20"
+                >
+                  PR Your Changes
                 </button>
 
                 {jsonOutput && (
