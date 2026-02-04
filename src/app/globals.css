@@ -892,3 +892,47 @@ h6 {
   background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath d='M8 2L1 14h14L8 2z' fill='%23f59e0b'/%3E%3Cpath d='M8 6v4M8 12v1' stroke='%23000' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E") center center no-repeat !important;
   margin-left: 3px;
 }
+
+/* ============================================
+   MONSTER GALLERY ANIMATIONS
+   ============================================ */
+
+/* Horizontal lane scrolling animation for gallery lanes */
+@keyframes gallery-lane-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+/* Legacy floating card animation - kept for backwards compatibility */
+@keyframes float-across {
+  0% {
+    transform: translateX(-200px);
+    opacity: 0;
+  }
+  3% {
+    opacity: 0.85;
+  }
+  97% {
+    opacity: 0.85;
+  }
+  100% {
+    transform: translateX(calc(100vw + 200px));
+    opacity: 0;
+  }
+}
+
+.animate-float-across {
+  animation: float-across 60s linear infinite;
+}
+
+/* Accessibility: Respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .animate-float-across,
+  [style*="gallery-lane-scroll"] {
+    animation: none !important;
+  }
+}
