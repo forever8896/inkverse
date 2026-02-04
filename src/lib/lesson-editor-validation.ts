@@ -22,15 +22,15 @@ const StepSchema = z.object({
     type: z.enum(['includes', 'excludes', 'regex', 'custom']),
     patterns: z.array(z.string()),
     message: z.string().optional(),
-  })).optional(),
+  }).passthrough()).optional(),
   image: z.string().optional(),
   requiresAuth: z.boolean().optional(),
   triggersGeneration: z.boolean().optional(),
-  generationStage: z.enum(['young', 'adult']).optional(),
-  displayStage: z.enum(['egg', 'young', 'adult']).optional(),
+  generationStage: z.enum(['young', 'young_3d', 'adult']).optional(),
+  displayStage: z.enum(['egg', 'young', 'young_3d', 'adult']).optional(),
   difficulty: z.enum(['easy', 'medium', 'hard']).optional(),
   estimatedTime: z.number().int().positive().optional(),
-});
+}).passthrough();
 
 // Chapter validation schema
 const ChapterSchema = z.object({
@@ -45,7 +45,7 @@ const ChapterSchema = z.object({
   requiresPreviousChapter: z.boolean(),
   completed: z.boolean().optional(),
   currentStepId: z.number().int().optional(),
-});
+}).passthrough();
 
 // Lesson validation schema
 const LessonSchema = z.object({
@@ -60,10 +60,10 @@ const LessonSchema = z.object({
     startStage: z.string(),
     endStage: z.string(),
     majorEvolution: z.boolean(),
-  }).optional(),
+  }).passthrough().optional(),
   completed: z.boolean(),
   locked: z.boolean(),
-});
+}).passthrough();
 
 export type ValidatedLesson = z.infer<typeof LessonSchema>;
 export type ValidatedChapter = z.infer<typeof ChapterSchema>;
