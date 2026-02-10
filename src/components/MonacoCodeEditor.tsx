@@ -195,6 +195,7 @@ const MonacoCodeEditor = forwardRef<MonacoCodeEditorRef, MonacoCodeEditorProps>(
       automaticLayout: true,
       tabSize: 4,
       insertSpaces: true,
+      formatOnPaste: true,
       wordWrap: 'on',
       lineNumbers: 'on',
       glyphMargin: true, // Enable for error/warning icons
