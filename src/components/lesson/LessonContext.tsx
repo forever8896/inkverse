@@ -347,6 +347,47 @@ export function LessonProvider({
   }, [currentStep, currentStepData?.displayStage]);
 
   // -------------------------------------------------------------------------
+  // Preload next step's image to avoid delay on navigation
+  // -------------------------------------------------------------------------
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (!lesson?.chapters || !currentChapterData) return;
+
+    // Respect data saver mode on mobile
+    const connection = (navigator as any).connection;
+    if (connection?.saveData) return;
+
+    // Find the next step's image URL
+    let nextImage: string | undefined;
+    const steps = currentChapterData.steps;
+
+    if (currentStep < steps.length - 1) {
+      nextImage = steps[currentStep + 1]?.image;
+    } else if (currentChapter < lesson.chapters.length - 1) {
+      nextImage = lesson.chapters[currentChapter + 1]?.steps?.[0]?.image;
+    }
+
+    if (!nextImage) return;
+
+    // Delay to avoid competing with the current step's image load
+    const imageUrl = nextImage;
+    let img: HTMLImageElement | null = null;
+    const timeoutId = window.setTimeout(() => {
+      img = new window.Image();
+      // Preload through Next.js image optimizer to match what <Image fill> requests
+      img.src = `/_next/image?url=${encodeURIComponent(imageUrl)}&w=1080&q=75`;
+    }, 300);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      if (img) {
+        img.src = '';
+        img = null;
+      }
+    };
+  }, [lesson, currentChapter, currentStep, currentChapterData]);
+
+  // -------------------------------------------------------------------------
   // Initialize code on step change
   // -------------------------------------------------------------------------
   useEffect(() => {
