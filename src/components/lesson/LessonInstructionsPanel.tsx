@@ -26,7 +26,7 @@ export function LessonInstructionsPanel() {
 
   return (
     <motion.div
-      className={`p-6 flex flex-col overflow-hidden backdrop-blur-md bg-white/5 rounded-xl mb-4 transition-all duration-500 ease-out ${
+      className={`p-6 flex flex-col overflow-clip backdrop-blur-md bg-white/5 rounded-xl mb-4 transition-all duration-500 ease-out ${
         isTransitioning
           ? 'opacity-0 translate-x-4'
           : 'opacity-100 translate-x-0'
@@ -40,7 +40,7 @@ export function LessonInstructionsPanel() {
         <div className="flex-1 flex flex-col min-h-0">
           <div
             ref={lessonContentRef}
-            className="flex-1 overflow-y-auto transition-all duration-300"
+            className="flex-1 overflow-y-auto overscroll-y-contain"
           >
             {/* Step title rendered as H1 */}
             <h1 className="font-normal mb-6 text-purple-400 text-balance" style={{ fontSize: '1.2rem', lineHeight: 1.4 }}>
