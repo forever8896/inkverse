@@ -101,13 +101,7 @@
   --color-mi-cream: var(--mi-cream);
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    --background: #ffffff;
-    --foreground: #1e293b;
-    --muted: #64748b;
-  }
-}
+/* Force dark mode always - no light mode override */
 
 body {
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;

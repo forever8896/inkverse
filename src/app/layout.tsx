@@ -46,7 +46,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className="bg-black">
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${pressStart2P.variable} ${unbounded.variable} antialiased bg-gradient-to-b from-[#0a0412] via-[#1a0a2e] to-[#0f0520] min-h-screen`}
       >
