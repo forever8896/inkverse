@@ -73,9 +73,39 @@ const getMonacoKind = (type: string): number => {
   }
 };
 
+// Simple Rust/ink! code formatter for paste operations
+function formatRustCode(code: string): string {
+  const lines = code.split('\n');
+  const formatted: string[] = [];
+  let indent = 0;
+
+  for (const rawLine of lines) {
+    const trimmed = rawLine.trim();
+    if (!trimmed) {
+      formatted.push('');
+      continue;
+    }
+
+    // Decrease indent for closing braces/parens
+    if (/^[}\])],?;?$/.test(trimmed) || trimmed.startsWith('}')) {
+      indent = Math.max(0, indent - 1);
+    }
+
+    formatted.push('    '.repeat(indent) + trimmed);
+
+    // Increase indent after opening braces
+    const opens = (trimmed.match(/{/g) || []).length;
+    const closes = (trimmed.match(/}/g) || []).length;
+    indent = Math.max(0, indent + opens - closes);
+  }
+
+  return formatted.join('\n');
+}
+
 // Global variables to prevent re-registration
 let isThemeDefined = false;
 let isCompletionProviderRegistered = false;
+let isFormattingProviderRegistered = false;
 
 const MonacoCodeEditor = forwardRef<MonacoCodeEditorRef, MonacoCodeEditorProps>(function MonacoCodeEditor({
   value,
@@ -180,8 +210,19 @@ const MonacoCodeEditor = forwardRef<MonacoCodeEditorRef, MonacoCodeEditorProps>(
     monacoRef.current = monaco;
 
     // Custom completion provider disabled - using native Rust language server instead
-    // This allows Monaco's built-in Rust support to handle autocomplete
     isCompletionProviderRegistered = true;
+
+    // Register formatting provider for Rust so formatOnPaste works
+    if (!isFormattingProviderRegistered) {
+      monaco.languages.registerDocumentRangeFormattingEditProvider('rust', {
+        provideDocumentRangeFormattingEdits(model, range) {
+          const text = model.getValueInRange(range);
+          const formatted = formatRustCode(text);
+          return [{ range, text: formatted }];
+        },
+      });
+      isFormattingProviderRegistered = true;
+    }
 
     // Configure editor for better ink! experience
     editor.updateOptions({
