@@ -2,6 +2,7 @@
   "name": "monsters-ink",
   "version": "0.1.0",
   "private": true,
+  "license": "Apache-2.0",
   "scripts": {
     "predev": "lsof -ti:3004 | xargs kill -9 2>/dev/null || true",
     "dev": "PORT=3004 next dev --turbopack",
@@ -12,6 +13,7 @@
     "start": "PORT=3004 next start",
     "lint": "next lint",
     "test": "vitest",
+    "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
     "storage:start": "node scripts/setup-minio.js",
@@ -80,6 +82,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^5.1.2",
+    "@vitest/coverage-v8": "^4.0.18",
     "@vitest/ui": "^4.0.15",
     "eslint": "^9",
     "eslint-config-next": "16.0.8",
