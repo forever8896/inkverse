@@ -115,7 +115,7 @@ function HintTooltip({ hint, isVisible }: { hint: string; isVisible: boolean }) 
           } w-[min(90vw,420px)]`}
           aria-live="polite"
         >
-          <div className="p-4 bg-[#FF9F1C]/10 border border-[#FF9F1C]/40 rounded-lg shadow-xl backdrop-blur-lg pointer-events-auto">
+          <div className="p-4 bg-slate-900 border border-[#FF9F1C]/40 rounded-lg shadow-xl pointer-events-auto">
             <h4 className="font-pixel text-[8px] uppercase tracking-wider text-[#FF9F1C] mb-2">
               Hint
             </h4>

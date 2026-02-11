@@ -30,7 +30,7 @@ interface UseToastNotificationsResult {
 export function useToastNotifications(autoRemoveDelay: number = 5000): UseToastNotificationsResult {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
-  const addToast = useCallback((toast: ToastInput) => {
+  const addToast = useCallback((toast: ToastInput): string => {
     const id = Math.random().toString(36).substr(2, 9);
     const newToast = { ...toast, id };
     setToasts((prev) => [...prev, newToast]);
@@ -39,6 +39,8 @@ export function useToastNotifications(autoRemoveDelay: number = 5000): UseToastN
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
     }, autoRemoveDelay);
+
+    return id;
   }, [autoRemoveDelay]);
 
   const removeToast = useCallback((id: string) => {
@@ -60,22 +62,29 @@ export function ToastContainer({ toasts }: { toasts: Toast[] }) {
         <div
           key={toast.id}
           className={`
-            px-6 py-4 rounded-lg shadow-lg border
-            ${toast.type === 'success' ? 'bg-pink-700/90 border-pink-400 text-white' : ''}
-            ${toast.type === 'error' ? 'bg-red-700/90 border-red-400 text-white' : ''}
-            ${toast.type === 'info' ? 'bg-blue-700/90 border-blue-400 text-white' : ''}
-            animate-fade-in-up pointer-events-auto
+            px-5 py-4 rounded-lg border shadow-xl
+            bg-slate-900
+            ${toast.type === 'success' ? 'border-[#4FFFB0]/50 shadow-[#4FFFB0]/10' : ''}
+            ${toast.type === 'error' ? 'border-[#FF9F1C]/50 shadow-[#FF9F1C]/10' : ''}
+            ${toast.type === 'info' ? 'border-[#1E4CDD]/50 shadow-[#1E4CDD]/10' : ''}
+            animate-toast-fly-in pointer-events-auto
           `}
           style={{ minWidth: 280, maxWidth: 400 }}
           role="alert"
           aria-live="polite"
         >
-          <div className="font-semibold mb-1">{toast.title}</div>
-          <div className="text-sm mb-2">{toast.message}</div>
+          <div className={`font-pixel text-[8px] uppercase tracking-wider mb-2 ${
+            toast.type === 'success' ? 'text-[#4FFFB0]' : ''
+          }${
+            toast.type === 'error' ? 'text-[#FF9F1C]' : ''
+          }${
+            toast.type === 'info' ? 'text-[#FFDAB9]' : ''
+          }`}>{toast.title}</div>
+          <div className="text-sm text-slate-300 leading-relaxed">{toast.message}</div>
           {toast.action && (
             <button
               onClick={toast.action.onClick}
-              className="mt-2 px-3 py-1 bg-white/20 hover:bg-white/30 rounded text-xs font-medium transition-colors duration-200 border border-white/30"
+              className="mt-3 px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded text-xs font-pixel text-[7px] uppercase tracking-wider text-slate-200 transition-colors duration-200 border border-white/20"
             >
               {toast.action.label}
             </button>

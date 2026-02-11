@@ -217,7 +217,7 @@ export function LessonProvider({
   // External Hooks
   // -------------------------------------------------------------------------
   const { data: session, isPending: isAuthLoading } = useSession();
-  const { toasts, addToast } = useToastNotifications();
+  const { toasts, addToast, removeToast } = useToastNotifications();
   const accounts = useAccounts();
   const {
     compile,
@@ -540,8 +540,33 @@ export function LessonProvider({
           message: 'Running Rust compiler to check your code...',
         });
 
+        // Progressive cold start messages if the service takes a while
+        let activeToastId: string | null = null;
+        const coldStartTimers: ReturnType<typeof setTimeout>[] = [];
+
+        const showColdStartMessage = (title: string, message: string) => {
+          if (activeToastId) removeToast(activeToastId);
+          activeToastId = addToast({ type: 'info', title, message });
+        };
+
+        coldStartTimers.push(setTimeout(() => {
+          showColdStartMessage('⏳ Starting up...', 'One moment — the compiler is waking up.');
+        }, 12000));
+
+        coldStartTimers.push(setTimeout(() => {
+          showColdStartMessage('⏳ Hang tight...', "Don't worry, we only need to start this once.");
+        }, 19000));
+
+        coldStartTimers.push(setTimeout(() => {
+          showColdStartMessage('⏳ Nearly ready...', 'Should be ready any second...');
+        }, 26000));
+
         // Call the compilation service for real Rust compiler errors
         const compilationResponse = await compile(userCode);
+
+        // Clear all cold start timers and dismiss any visible message
+        coldStartTimers.forEach(clearTimeout);
+        if (activeToastId) removeToast(activeToastId);
 
         if (compilationResponse.serviceUnavailable) {
           // Service unavailable - play error sound
@@ -552,14 +577,8 @@ export function LessonProvider({
             message: 'Code validation service is offline. Please try again later.',
           });
         } else if (!compilationResponse.success && compilationResponse.errors.length > 0) {
-          // Show actual Rust compilation errors - play error sound
+          // Compilation errors - play error sound, Squink popup handles display
           playWrongSound();
-          const firstError = compilationResponse.errors[0];
-          addToast({
-            type: 'error',
-            title: `🔍 Compiler Error${firstError.code ? ` [${firstError.code}]` : ''}`,
-            message: firstError.message,
-          });
         } else if (compilationResponse.success) {
           // Code compiles successfully but doesn't match expected pattern
           // This is a "soft" error - code works but not what we expected
@@ -570,13 +589,8 @@ export function LessonProvider({
             message: validationResult.feedback,
           });
         } else {
-          // Unknown error - play error sound
+          // Unknown error - play error sound, Squink popup handles display
           playWrongSound();
-          addToast({
-            type: 'error',
-            title: '🔍 Check Failed',
-            message: 'Unable to validate code. Please try again.',
-          });
         }
         return false;
       }
