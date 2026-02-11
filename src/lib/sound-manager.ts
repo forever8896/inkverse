@@ -1,8 +1,9 @@
 /**
  * SoundManager - Simple, reliable audio playback
  *
- * Creates fresh Audio elements for each play to avoid all pooling issues.
- * Tracks active sounds for stop functionality.
+ * Preloads Audio elements on first interaction, then clones them for each play.
+ * Cloned elements have the source already buffered, avoiding "media removed from
+ * document" errors that occur when fresh Audio elements are GC'd mid-load.
  */
 
 export const SOUND_PATHS = {
@@ -28,6 +29,7 @@ const VOLUMES: Record<SoundName, number> = {
 class SoundManagerClass {
   private static instance: SoundManagerClass | null = null;
   private activeSounds: Map<SoundName, Set<HTMLAudioElement>> = new Map();
+  private preloaded: Map<SoundName, HTMLAudioElement> = new Map();
   private masterVolume = 1.0;
   private isMuted = false;
 
@@ -46,7 +48,24 @@ class SoundManagerClass {
   }
 
   /**
-   * Play a sound - always creates a fresh Audio element
+   * Preload all sounds so cloned elements already have the source buffered
+   */
+  private ensurePreloaded(name: SoundName): HTMLAudioElement | null {
+    if (this.preloaded.has(name)) return this.preloaded.get(name)!;
+
+    const path = SOUND_PATHS[name];
+    if (!path) return null;
+
+    const audio = new Audio(path);
+    audio.preload = 'auto';
+    // Trigger load without playing
+    audio.load();
+    this.preloaded.set(name, audio);
+    return audio;
+  }
+
+  /**
+   * Play a sound - clones a preloaded Audio element for reliable playback
    */
   play(name: SoundName, volumeOverride?: number): boolean {
     if (typeof window === 'undefined') return false;
@@ -56,7 +75,12 @@ class SoundManagerClass {
     if (!path) return false;
 
     try {
-      const audio = new Audio(path);
+      // Clone from preloaded element (source already buffered) or create fresh
+      const source = this.ensurePreloaded(name);
+      const audio = source
+        ? source.cloneNode(true) as HTMLAudioElement
+        : new Audio(path);
+
       const baseVolume = VOLUMES[name] ?? 0.5;
       audio.volume = Math.max(0, Math.min(1, (volumeOverride ?? 1) * baseVolume * this.masterVolume));
 
@@ -147,15 +171,20 @@ class SoundManagerClass {
   }
 
   isFullyLoaded(): boolean {
-    return true;
+    return this.preloaded.size === Object.keys(SOUND_PATHS).length;
   }
 
   initialize(): Promise<void> {
+    // Preload all sounds
+    for (const name of Object.keys(SOUND_PATHS)) {
+      this.ensurePreloaded(name as SoundName);
+    }
     return Promise.resolve();
   }
 
   markUserInteraction(): void {
-    // No-op - not needed with fresh Audio approach
+    // Preload on first interaction so sounds are ready
+    this.initialize();
   }
 }
 
