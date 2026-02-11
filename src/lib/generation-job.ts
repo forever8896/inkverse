@@ -87,10 +87,10 @@ export const ERROR_HANDLERS: Record<ErrorType, Omit<JobError, 'currentRetries' |
   },
   fal_api_error: {
     type: 'fal_api_error',
-    userMessage: "Our 3D service provider seems to be down. Please check back in 10-15 minutes.",
+    userMessage: "Our 3D service hit a temporary issue. Retrying automatically...",
     retryable: true,
-    suggestedRetryDelay: 600,
-    maxRetries: 3
+    suggestedRetryDelay: 60,
+    maxRetries: 5
   },
   database_error: {
     type: 'database_error',

@@ -215,7 +215,8 @@ const MonacoCodeEditor = forwardRef<MonacoCodeEditorRef, MonacoCodeEditorProps>(
     // Register formatting provider for Rust so formatOnPaste works
     if (!isFormattingProviderRegistered) {
       monaco.languages.registerDocumentRangeFormattingEditProvider('rust', {
-        provideDocumentRangeFormattingEdits(model, range) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        provideDocumentRangeFormattingEdits(model: any, range: any) {
           const text = model.getValueInRange(range);
           const formatted = formatRustCode(text);
           return [{ range, text: formatted }];

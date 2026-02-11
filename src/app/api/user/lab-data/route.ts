@@ -47,7 +47,8 @@ export async function GET(request: NextRequest) {
     console.log('[Lab Data] Fetching data for user:', userId);
 
     // Get the most recent step the user visited (where they should continue)
-    // This returns the last step they were on, based on when they visited it
+    // Use updated_at (not created_at) so revisiting a step or progressing
+    // forward correctly reflects the user's current position.
     const { rows: positionRows } = await query(`
       SELECT
         lesson_id,
@@ -55,7 +56,7 @@ export async function GET(request: NextRequest) {
         step_id
       FROM user_step_progress
       WHERE user_id = $1
-      ORDER BY created_at DESC
+      ORDER BY updated_at DESC
       LIMIT 1
     `, [userId]);
 

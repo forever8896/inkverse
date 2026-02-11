@@ -39,6 +39,7 @@ export interface GenerationJobData {
 
   progress: number;
   errorMessage?: string;
+  userMessage?: string;
   imageS3Key?: string;
   imageUrl?: string;
   glbS3Key?: string;

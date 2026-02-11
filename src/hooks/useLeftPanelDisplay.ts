@@ -52,6 +52,7 @@ export function useLeftPanelDisplay() {
       type: 'generation' as const,
       status: asset.status || 'unknown',
       error: asset.error || asset.evolutionError,
+      userMessage: asset.userMessage,
       onRetry: handleRetry,
       isEvolving: asset.isEvolving,
     };

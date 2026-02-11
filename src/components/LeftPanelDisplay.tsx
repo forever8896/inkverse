@@ -5,7 +5,7 @@ import {
 } from '@/hooks/useLeftPanelDisplay';
 import { CreatureStageDisplay } from '@/components/CreatureStageDisplay';
 import { LessonStepImageDisplay } from '@/components/LessonStepImageDisplay';
-import { isProcessing } from '@/lib/status-constants';
+import { isProcessing, isRetrying, STATUS_MESSAGES, type GenerationStatus } from '@/lib/status-constants';
 
 /**
  * Smart display component that shows the appropriate content based on priority hierarchy:
@@ -50,6 +50,7 @@ function renderDisplayContent(display: LeftPanelDisplay) {
         <GenerationStatusDisplay
           status={display.status || 'unknown'}
           error={display.error}
+          userMessage={display.userMessage}
           onRetry={display.onRetry}
           isEvolving={display.isEvolving}
         />
@@ -72,19 +73,35 @@ function renderDisplayContent(display: LeftPanelDisplay) {
 function GenerationStatusDisplay({
   status,
   error,
+  userMessage,
   onRetry,
   isEvolving,
 }: {
   status: string;
   error: string | null;
+  userMessage?: string | null;
   onRetry: () => void;
   isEvolving?: boolean;
 }) {
-  const title = isEvolving ? 'Evolving Monster...' : 'Synthesizing DNA...';
+  const retrying = isRetrying(status);
+  const statusMessage = STATUS_MESSAGES[status as GenerationStatus];
+
+  const title = isEvolving
+    ? 'Evolving Monster...'
+    : statusMessage || 'Synthesizing DNA...';
+  // Use the workflow's userMessage when available (e.g. "Our 3D service hit a temporary issue. Retrying automatically...")
+  // Otherwise fall back to contextual subtitles
   const subtitle = isEvolving
     ? 'Unlocking your 3D model on the blockchain.'
+    : userMessage
+    ? userMessage
+    : retrying
+    ? 'Automatic retry in progress — keep this page open.'
     : 'Your unique creature is being generated in the bio-chamber.';
   const errorText = isEvolving ? 'Evolution Failed. Retry?' : 'Generation Failed. Retry?';
+
+  // Only show the manual retry button for errors that are NOT auto-retrying
+  const showRetryButton = error && !retrying;
 
   return (
     <div className="relative w-full h-full flex flex-col items-center justify-center overflow-hidden">
@@ -96,7 +113,11 @@ function GenerationStatusDisplay({
         className="z-10 flex flex-col items-center text-center p-6"
       >
         {/* DNA Spinner Animation */}
-        <div className="w-16 h-16 mb-4 border-4 border-purple-500 border-t-transparent rounded-full animate-spin shadow-[0_0_15px_rgba(168,85,247,0.5)]" />
+        <div className={`w-16 h-16 mb-4 border-4 border-t-transparent rounded-full animate-spin ${
+          retrying
+            ? 'border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.5)]'
+            : 'border-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.5)]'
+        }`} />
 
         <h3 className="text-xl font-bold text-white mb-2">
           {title}
@@ -105,7 +126,7 @@ function GenerationStatusDisplay({
           {subtitle}
         </p>
 
-        {error && (
+        {showRetryButton && (
           <button
             onClick={onRetry}
             className="mt-6 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-200 text-xs rounded border border-red-500/50 transition-colors"

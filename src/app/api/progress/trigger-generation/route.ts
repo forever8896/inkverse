@@ -144,7 +144,9 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // If only lessonId provided, return the most recent trigger for this lesson
+    // If only lessonId provided, return the most relevant trigger for this lesson.
+    // Prefer active (processing) jobs over terminal (completed/failed) ones,
+    // so users reconnect to in-flight generations after page navigation.
     // If stage is provided, filter by it (Fix #3)
     let queryText = `
       SELECT
@@ -154,7 +156,7 @@ export async function GET(request: NextRequest) {
         mg.glb_url,
         mg.progress as generation_progress
       FROM lesson_generation_triggers lgt
-      LEFT JOIN monster_generations mg 
+      LEFT JOIN monster_generations mg
         ON lgt.generation_job_id = mg.id
         AND mg.user_id = lgt.user_id
       WHERE lgt.user_id = $1
@@ -162,13 +164,25 @@ export async function GET(request: NextRequest) {
     `;
 
     const queryParams: (string | number)[] = [userId, lessonId];
-    
+
     if (stage) {
       queryText += ` AND lgt.stage = $3`;
       queryParams.push(stage);
     }
-    
-    queryText += ` ORDER BY lgt.triggered_at DESC LIMIT 1`;
+
+    // Active/processing jobs get priority over terminal ones.
+    // Among terminal jobs, prefer the most recently updated (freshest URLs).
+    // Use IS NULL check + completed/failed to avoid enum mismatch errors.
+    queryText += `
+      ORDER BY
+        CASE WHEN mg.status IS NULL
+          OR mg.status IN (
+            'completed', 'failed', 'failed_permanent',
+            'image_generation_failed', 'conversion_failed',
+            'nft_minting_failed', 'prerequisites_failed'
+          ) THEN 1 ELSE 0 END,
+        COALESCE(mg.updated_at, lgt.triggered_at) DESC
+      LIMIT 1`;
 
     const { rows } = await query(queryText, queryParams);
 

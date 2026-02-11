@@ -17,7 +17,7 @@ export type ToastInput = Omit<Toast, 'id'>;
 
 interface UseToastNotificationsResult {
   toasts: Toast[];
-  addToast: (toast: ToastInput) => void;
+  addToast: (toast: ToastInput) => string;
   removeToast: (id: string) => void;
 }
 

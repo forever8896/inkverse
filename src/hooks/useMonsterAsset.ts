@@ -64,6 +64,7 @@ interface UseMonsterAssetReturn {
   status: GenerationJobData['status'] | null;
   progress: number;
   error: string | null;
+  userMessage: string | null;
 
   // Asset URLs (Ready to use)
   imageUrl: string | null;
@@ -116,6 +117,10 @@ export function useMonsterAsset(userId: string | undefined, lessonId: number, cu
   const lastRefreshRef = useRef<number>(0);
   const resumeCheckedRef = useRef<string | null>(null);
   const monsterFetchedRef = useRef<boolean>(false);
+  // Tracks whether triggerGeneration explicitly set the jobId.
+  // Prevents checkResume from overriding an active in-flight generation
+  // when the effect re-fires due to currentStage changes.
+  const generationActiveRef = useRef<boolean>(false);
 
   const {
     jobs,
@@ -169,6 +174,15 @@ export function useMonsterAsset(userId: string | undefined, lessonId: number, cu
   useEffect(() => {
     const checkResume = async () => {
       if (!userId || !lessonId) {
+        setIsLoadingInitialState(false);
+        return;
+      }
+
+      // Don't override a jobId that was explicitly set by triggerGeneration.
+      // When triggerGeneration sets the active job (e.g. a retrying conversion),
+      // subsequent checkResume calls (triggered by currentStage changes) could
+      // fetch an older completed job from trigger-generation and clobber it.
+      if (generationActiveRef.current) {
         setIsLoadingInitialState(false);
         return;
       }
@@ -241,6 +255,8 @@ export function useMonsterAsset(userId: string | undefined, lessonId: number, cu
         startPolling(jobId);
       } else {
         stopPolling(jobId);
+        // Job reached terminal state — allow checkResume to work again
+        generationActiveRef.current = false;
 
         // Refresh monster data when job completes
         if (job.status === 'completed') {
@@ -322,6 +338,8 @@ export function useMonsterAsset(userId: string | undefined, lessonId: number, cu
       }
 
       setJobId(newJobId);
+      // Mark generation as explicitly active so checkResume won't override
+      generationActiveRef.current = true;
 
       // Start polling immediately
       await fetchJobStatus(newJobId);
@@ -373,6 +391,7 @@ export function useMonsterAsset(userId: string | undefined, lessonId: number, cu
       if (data.jobId) {
         // Adult evolution - track the job
         setJobId(data.jobId);
+        generationActiveRef.current = true;
         await fetchJobStatus(data.jobId);
         startPolling(data.jobId);
       } else {
@@ -411,6 +430,7 @@ export function useMonsterAsset(userId: string | undefined, lessonId: number, cu
     status: job?.status || null,
     progress: job?.progress || 0,
     error: job?.errorMessage || null,
+    userMessage: job?.userMessage || null,
 
     imageUrl: currentImageUrl,
     modelUrl: currentModelUrl,
