@@ -18,8 +18,8 @@ export function WalletRequiredOverlay({ isOpen, onWalletConnected, onClose }: Wa
   const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Use array destructuring to get the connect function
-  const connectWallet = useWalletConnector()[1];
+  // useWalletConnector returns [state, connectFn] - reactive-dot catches errors internally
+  const [connectState, connectWallet] = useWalletConnector();
 
   const handleConnect = async () => {
     if (wallets.length === 0) {
@@ -31,8 +31,17 @@ export function WalletRequiredOverlay({ isOpen, onWalletConnected, onClose }: Wa
     setError(null);
 
     try {
-      // Try to connect to the first available wallet
+      // connectWallet's returned promise resolves even on failure (reactive-dot catches internally),
+      // so we need to also check connectState after the call
       await connectWallet(wallets[0]);
+
+      // Give a short delay for accounts to propagate through reactive-dot state
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // If no accounts appeared after connection, the extension likely rejected
+      if (!accounts || accounts.length === 0) {
+        setError('Wallet connected but no accounts found. Please check your extension and ensure you have accounts.');
+      }
     } catch (err) {
       console.error('Connection failed:', err);
       setError('Failed to connect wallet. Please try again.');

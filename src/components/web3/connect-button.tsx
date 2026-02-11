@@ -66,10 +66,19 @@ export function ConnectButton() {
     )
   }
 
+  // If only one wallet, connect directly without dropdown
+  if (wallets?.length === 1) {
+    return (
+      <Button size="lg" variant="glass" className="min-w-[200px]" onClick={() => handleConnect(wallets[0])}>
+        <LinkIcon /> Connect Wallet
+      </Button>
+    )
+  }
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button size="lg" variant="glass" className="min-w-[200px]" onClick={() => handleConnect()}>
+        <Button size="lg" variant="glass" className="min-w-[200px]">
           <LinkIcon /> Connect Wallet
         </Button>
       </DropdownMenuTrigger>
